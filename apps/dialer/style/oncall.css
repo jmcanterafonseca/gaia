@@ -57,6 +57,15 @@ html * {
   font-family: 'FontLight';
 }
 
+
+#keyboard-container .keypad-number  {
+  font-family: 'FontSemibold';
+}
+
+#keyboard-container .keypad-text  {
+  font-family: 'FontLight';
+}
+
 #phone-number-view {
   width:100%;
   border:0;
@@ -190,7 +199,7 @@ body.hidden *[data-l10n-id] {
 }
 
 #call-screen.displayed.prerender {
-  -moz-transform: translateY(-1px); 
+  -moz-transform: translateY(-1px);
 }
 
 #cs-header {
@@ -344,7 +353,7 @@ button[disabled] .icon-keypad-visibility {
 }
 
 #callbar-hang-up-action {
-  background: -moz-linear-gradient(top, #ff0000 1%, #ce0000 100%); 
+  background: -moz-linear-gradient(top, #ff0000 1%, #ce0000 100%);
   opacity: 1.0;
   margin: 1rem .5rem 1.5rem 1.5rem;
 }
