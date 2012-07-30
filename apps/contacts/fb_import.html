@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+    <link rel="stylesheet" href="style/core/css/root.css">
+
+    <link rel="stylesheet" href="style/lists/style.css">
+    <link rel="stylesheet" href="style/dialogs/style.css">
+
+    <link rel="stylesheet" href="style/fb/headers/style.css">
+    <link href="style/fb/fbint.css" rel="stylesheet">
+
+    <link rel="resource" type="application/l10n" href="locale/fbowd.properties">
+
+    <style>
+      ol.unbordered > li {
+        border: none !important;
+      }
+
+      li[data-uuid]{
+        border-top:none !important;
+      }
+
+      li[data-uuid]:last-child {
+        border-bottom:none !important;
+      }
+    </style>
+
+  </head>
+
+  <body role="application">
+
+    <section role="region" id="content">
+
+      <header>
+        <a href="#" onclick="owdFbInt.ui.back()">
+                                  <span class="icon icon-close">close</span></a>
+        <menu type="toolbar">
+          <button  onclick="owdFbInt.ui.importAll(event)">
+            Import
+          </button>
+        </menu>
+        <h1>Facebook Friends</h1>
+      </header>
+
+      <section id="main">
+        <div id="shortcuts">
+          <abbr id="current" title="Contacts by "></abbr>
+          <ol class="unbordered">
+            <li data-template data-letter="#letter#">
+              <a href="#">
+                <abbr title="Jump to #letter#">#letter#</abbr>
+              </a>
+            </li>
+          </ol>
+        </div>
+
+        <!-- Contacts List Section -->
+        <section id='mainContent' data-state="selection">
+          <ol id="groups-list" class="unbordered">
+            <li id="group-#group#" data-template>
+              <h2 class="block-title">
+                <abbr title="Contacts listed #group#">#group#</abbr>
+              </h2>
+
+              <ol id="contacts-list-#group#">
+
+                <li data-template data-uuid="#uid#" aria-disabled="false">
+                  <div class="aside end" role="presentation">
+                    <input type="checkbox" name="#uid#">
+                    <span></span>
+                  </div>
+
+                  <img data-src='https://graph.facebook.com/#uid#/picture?type=square'>
+
+                    <dl>
+                      <dt>#givenName# <strong>#familyName#</strong></dt>
+                      <dd>#cell1# #email1#</dd>
+                    </dl>
+                </li>
+
+              </ol>
+            </li>
+          </ol>
+        </section> <!-- mainContent -->
+
+      <div style="height:6.5rem">
+        <menu class="bottom" type="toolbar">
+          <button id="selunsel" onclick="owdFbInt.ui.selectAll(event)">Select All</button>
+        </menu>
+      </div>
+
+    </section> <!-- main -->
+
+    </section> <!-- role="region" -->
+
+     <section id="curtain">
+        <img src="style/fb/f_logo.png">
+        <p>Please wait. We are retrieving your Facebook Friends.</p>
+        <p>This operation may take several minutes</p>
+        <div>
+          <img src="style/fb/throbber.gif">
+        </div>
+    </section>
+
+<!-- temorary hack because window.open stopped working -->
+  <script>
+   var token =
+    'AAAEmVyLJ6WYBAIcY2Dv2DHyAKeZCJGjkrlDdhgsD79ro4gZCbsZBoSMM7WeWZADT8ZBzLDDwaIW7hMsR3pb5cmUm7na92IY7Fucw3sZCE2TwZDZD';
+    window.localStorage.access_token = token;
+    window.localStorage.expires = 0;
+    window.localStorage.token_ts = Date.now();
+  </script>
+
+  <script  src="js/utilities/templates.js"></script>
+  <script  src="js/fb/friends_list.js"></script>
+  <script  src="js/fb/contacts_shortcuts.js"></script>
+
+  <script src="js/fb/fbint.js"></script>
+  <script src="js/fb/fbint-auth.js"></script>
+
+  <script>
+    owdFbInt.ui.getFriends();
+  </script>
+
+  </body>
+</html>

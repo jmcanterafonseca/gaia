@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>Contacts</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="style/core/css/root.css">
+    <link rel="stylesheet" href="style/headers/style.css">
+    <link rel="stylesheet" href="style/lists/style.css">
+
+    <script src="js/activities.js"></script>
+    <script defer src="js/import.js"></script>
+
+    <style>
+      .icon.icon-fb
+     { background-image: url(style/fb/f_logo.png) !important; }
+    </style>
+
+    <script>
+
+      function add() {
+        window.console.log('Going to add');
+
+        var activity = new MozActivity({
+          name: 'new',
+          data: {
+            type: 'webcontacts/contact'
+          }
+        });
+      }
+
+      function importFacebook() {
+           var activity = new MozActivity({
+          name: 'import',
+          data: {
+            type: 'facebook/friend'
+          }
+        });
+
+        window.console.log('Activity Created');
+      }
+    </script>
+
+    <!-- Temporary -->
+    <script>
+      var actHandler = ActivityHandler.handle.bind(ActivityHandler);
+    window.navigator.mozSetMessageHandler('activity', actHandler);
+
+    document.addEventListener('mozvisibilitychange', function visibility(e) {
+      if (document.mozHidden) {
+        if (ActivityHandler.currentlyHandling)
+          ActivityHandler.postCancel();
+      }
+    });
+    </script>
+  </head>
+
+  <body role="application">
+    <section role="region">
+      <header aria-level="1">
+          <menu type="toolbar">
+            <button onclick="add()"><span class="icon icon-add">add</span></button>
+          </menu>
+           <h1>Contacts</h1>
+      </header>
+
+      <header aria-level="2">
+        <h2>Select an account to import contacts</h2>
+      </header>
+
+      <ul role="list menu">
+        <li role="menuitem">
+          <a href="#">
+            <em class="aside">
+              <span class="icon icon-sim"></span>
+            </em>
+            <dl>
+              <dt>SIM Card</dt>
+            </dl>
+          </a>
+        </li>
+
+        <li role="menuitem">
+          <a href="#" onclick="importFacebook()">
+            <em class="aside">
+              <span class="icon icon-fb"></span>
+            </em>
+            <dl>
+              <dt>Facebook</dt>
+            </dl>
+          </a>
+        </li>
+
+        <li role="menuitem">
+          <a href="#" onclick="importTwitter()">
+            <em class="aside">
+              <span class="icon icon-twt"></span>
+            </em>
+            <dl>
+              <dt>Twitter</dt>
+            </dl>
+          </a>
+        </li>
+
+      </ul>
+    </section>
+  </body>
+</html>

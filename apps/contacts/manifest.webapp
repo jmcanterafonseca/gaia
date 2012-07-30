@@ -70,13 +70,22 @@
       "filters": {
         "type": "webcontacts/contact"
        },
-      "disposition": "window"
+      "disposition": "window",
+      "href": "contacts.html"
     },
     "new": {
       "filters": {
         "type": "webcontacts/contact"
       },
-      "disposition": "window"
+      "disposition": "window",
+      "href": "contacts.html"
+    },
+    "import": {
+      "filters": {
+        "type": "facebook/friend"
+      },
+      "disposition": "window",
+      "href": "fb_import.html"
     }
   }
 }
