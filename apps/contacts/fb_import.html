@@ -36,7 +36,7 @@
     <section role="region" id="content">
 
       <header>
-        <a href="#" onclick="owdFbInt.ui.back()">
+        <a href="#" onclick="window.close()">
                                   <span class="icon icon-close">close</span></a>
         <menu type="toolbar">
           <button  onclick="owdFbInt.ui.importAll(event)">
@@ -67,7 +67,6 @@
               </h2>
 
               <ol id="contacts-list-#group#">
-
                 <li data-template data-uuid="#uid#" aria-disabled="false">
                   <div class="aside end" role="presentation">
                     <input type="checkbox" name="#uid#">
@@ -77,12 +76,12 @@
                   <img data-src='https://graph.facebook.com/#uid#/picture?type=square'>
 
                     <dl>
-                      <dt>#givenName# <strong>#familyName#</strong></dt>
+                      <dt><strong>#givenName#</strong> #familyName#</dt>
                       <dd>#cell1# #email1#</dd>
                     </dl>
                 </li>
-
               </ol>
+
             </li>
           </ol>
         </section> <!-- mainContent -->

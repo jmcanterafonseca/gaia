@@ -78,8 +78,25 @@ contacts.List = (function() {
     small.className = 'block-company';
     small.textContent = contact.org;
     body.appendChild(small);
+
+    if(contact.category && contact.category[0]) {
+      window.console.log('Contact Category: ',contact.category[0]);
+      if(contact.category[0] === 'facebook') {
+        window.console.log('It is a FB contact!');
+
+        var span = document.createElement('span');
+        span.classList.add('icon');
+        span.classList.add('icon-fb');
+
+        body.appendChild(span);
+      }
+    }
+
     link.appendChild(body);
     contactContainer.appendChild(link);
+
+
+
     return contactContainer;
   }
 

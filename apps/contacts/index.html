@@ -1,11 +1,56 @@
 <!DOCTYPE html>
 
-<script>
-  if(typeof window.localStorage.first_time === 'undefined' || true) {
-    window.localStorage.first_time = 'first_time';
-    document.location = 'import.html';
-  }
-  else {
-    document.location = 'contacts.html';
-  }
-</script>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Contacts App Entry</title>
+
+    <style>
+      iframe {
+        position:absolute;
+        top:0;
+        left:0;
+        width:100%;
+        height:100%;
+        z-index:100;
+        border: none;
+        margin:0;
+        padding:0;
+      }
+
+      body[data-state="import"] #contacts {
+        z-index:10;
+      }
+
+      body[data-state="import"] #importFB {
+        z-index:10;
+      }
+
+      body[data-state="contacts"] #import {
+        z-index:10;
+      }
+
+      body[data-state="contacts"] #importFB {
+        z-index:10;
+      }
+
+      body[data-state="importFB"] #import {
+        z-index:10;
+      }
+
+      body[data-state="importFB"] #contacts {
+        z-index:10;
+      }
+    </style>
+  </head>
+
+  <body>
+    <iframe id="contacts"></iframe>
+    <iframe id="import"></iframe>
+    <iframe id="importFB"></iframe>
+
+    <script src="js/init.js">
+    </script>
+  </body>
+
+</html>

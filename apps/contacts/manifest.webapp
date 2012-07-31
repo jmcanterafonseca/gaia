@@ -80,12 +80,19 @@
       "disposition": "window",
       "href": "contacts.html"
     },
-    "import": {
+    "importFB": {
       "filters": {
         "type": "facebook/friend"
       },
       "disposition": "window",
       "href": "fb_import.html"
+    },
+    "import": {
+      "filters": {
+        "type": "webcontacts/contact"
+      },
+      "disposition": "window",
+      "href": "import.html"
     }
   }
 }

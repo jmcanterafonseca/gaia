@@ -14,17 +14,15 @@ var ActivityHandler = {
   },
 
   handle: function ah_handle(activity) {
-
-    window.console.log('Activity Handler invoked');
-
     this._currentActivity = activity;
+
+     window.console.log('Activity Handler invoked: ',this.activityName);
 
     switch (this.activityName) {
       case 'new':
-        if(document.location !== 'contacts.html') {
-          document.location = 'contacts.html';
-          document.location.hash = 'view-contact-form';
-        }
+        window.console.log('Activity: New!!');
+
+        document.location.hash = 'view-contact-form';
         if (this._currentActivity.source.data.params) {
           var param, params = [];
           for (var i in this._currentActivity.source.data.params) {
