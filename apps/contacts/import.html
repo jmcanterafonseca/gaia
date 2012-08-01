@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="style/headers/style.css">
     <link rel="stylesheet" href="style/lists/style.css">
 
-    <script src="js/activities.js"></script>
     <script defer src="js/import.js"></script>
 
     <style>
@@ -30,8 +29,8 @@
       }
 
       function importFacebook() {
-           var activity = new MozActivity({
-          name: 'import',
+          var activity = new MozActivity({
+          name: 'importFB',
           data: {
             type: 'facebook/friend'
           }
@@ -41,18 +40,6 @@
       }
     </script>
 
-    <!-- Temporary -->
-    <script>
-      var actHandler = ActivityHandler.handle.bind(ActivityHandler);
-    window.navigator.mozSetMessageHandler('activity', actHandler);
-
-    document.addEventListener('mozvisibilitychange', function visibility(e) {
-      if (document.mozHidden) {
-        if (ActivityHandler.currentlyHandling)
-          ActivityHandler.postCancel();
-      }
-    });
-    </script>
   </head>
 
   <body role="application">

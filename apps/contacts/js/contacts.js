@@ -148,13 +148,12 @@ var Contacts = (function() {
   var contactsList = contacts.List;
 
   var checkUrl = function checkUrl() {
-    window.console.log('Hash change!');
-
     var hasParams = window.location.hash.split('?');
     var hash = hasParams[0];
     var sectionId = hash.substr(1, hash.length) || '';
     var cList = contacts.List;
-    var params = extractParams(hasParams[1]);
+    var params = hasParams.length > 1 ?
+      extractParams(hasParams[1]) : -1;
 
     switch (sectionId) {
       case 'view-contact-details':
@@ -174,8 +173,6 @@ var Contacts = (function() {
 
       case 'view-contact-form':
         if (params == -1 || !('id' in params)) {
-          // Adding new Contact
-          currentContact = {};
           showAdd(params);
         } else {
           // Editing existing contact
@@ -186,16 +183,18 @@ var Contacts = (function() {
               showEdit();
             }, function onError() {
               console.log('Error retrieving contact to be edited');
-              currentContact = {};
               showAdd();
             });
           }
         }
         break;
 
-      default:
-        loadList();
     }
+
+    if (!contactsList.loaded) {
+      loadList();
+    }
+
   }
 
   var extractParams = function extractParams(url) {
@@ -232,18 +231,50 @@ var Contacts = (function() {
     customTag = document.getElementById('custom-tag');
     favoriteMessage = document.getElementById('toggle-favorite').children[0];
     cover = document.getElementById('cover-img');
+    TAG_OPTIONS = {
+      'phone-type' : [
+        {value: _('mobile')},
+        {value: _('home')},
+        {value: _('work')},
+        {value: _('personal')},
+        {value: _('faxHome')},
+        {value: _('faxOffice')},
+        {value: _('faxOther')},
+        {value: _('another')}
+      ],
+      'email-type' : [
+        {value: _('personal')},
+        {value: _('home')},
+        {value: _('work')}
+      ],
+      'address-type' : [
+        {value: _('home')},
+        {value: _('work')}
+      ]
+    };
   };
 
-  window.addEventListener('load', function initContacts(evt) {
+  window.addEventListener('localized', function initContacts(evt) {
+    initLanguages();
     initContainers();
     initPullEffect(cover);
+    initContactsList();
     checkUrl();
     window.addEventListener('hashchange', checkUrl);
+    document.body.classList.remove('hide');
   });
 
-  var loadList = function loadList() {
+  var initContactsList = function initContactsList() {
     var list = document.getElementById('groups-list');
     contactsList.init(list);
+  }
+
+  var initLanguages = function initLanguages() {
+    document.documentElement.lang = navigator.mozL10n.language.code;
+    document.documentElement.dir = navigator.mozL10n.language.direction;
+  };
+
+  var loadList = function loadList() {
     contactsList.load();
 
     contactsList.handleClick(function handleClick(id) {
@@ -642,8 +673,9 @@ var Contacts = (function() {
   }
 
   var showAdd = function showAdd(params) {
-    window.console.log('Going to show add!');
-
+    if (!params || params == -1 || !('id' in params)) {
+      currentContact = {};
+    }
     resetForm();
     deleteContactButton.classList.add('hide');
     formTitle.innerHTML = _('addContact');
@@ -723,18 +755,25 @@ var Contacts = (function() {
     saveButton.setAttribute('disabled', 'disabled');
     var myContact = {
       id: document.getElementById('contact-form-id').value,
-      additionalName: ''
+      additionalName: '',
+      name: ''
     };
 
-    if (givenName.value && givenName.value.length > 0) {
-      myContact.givenName = [givenName.value];
+    var inputs = {
+      'givenName': givenName,
+      'familyName': familyName,
+      'org': company
+    };
+
+    for (field in inputs) {
+      var value = inputs[field].value;
+      if (value && value.length > 0) {
+        myContact[field] = [value];
+      } else {
+        myContact[field] = null;
+      }
     }
-    if (familyName.value && familyName.value.length > 0) {
-      myContact.familyName = [familyName.value];
-    }
-    if (company.value && company.value.length > 0) {
-      myContact.org = [company.value];
-    }
+
     if (currentContact.category) {
       myContact.category = currentContact.category;
     }
@@ -745,7 +784,7 @@ var Contacts = (function() {
       if (myContact.familyName) {
         name += myContact.familyName;
       }
-      myContact.name = name;
+      myContact.name = [name];
     }
 
     getPhones(myContact);
@@ -774,7 +813,6 @@ var Contacts = (function() {
     } else {
       contact = new mozContact();
       contact.init(myContact);
-
     }
 
     var request = navigator.mozContacts.save(contact);
@@ -787,13 +825,13 @@ var Contacts = (function() {
         myContact.id = savedContact.id;
         myContact.photo = savedContact.photo;
         myContact.category = savedContact.category;
+        contactsList.refresh(myContact);
         if (ActivityHandler.currentlyHandling) {
           ActivityHandler.postNewSuccess(myContact);
         } else {
-          contactsList.refresh(myContact);
           reloadContactDetails();
-          navigation.back();
         }
+        navigation.back();
       }, function onError() {
         saveButton.removeAttribute('disabled');
         console.error('Error reloading contact');
@@ -1022,41 +1060,64 @@ var Contacts = (function() {
   };
 })();
 
+var ActivityHandler = {
+  _currentActivity: null,
 
-// set the 'lang' and 'dir' attributes to <html> when the page is translated
-window.addEventListener('localized', function showPanel() {
-  document.documentElement.lang = navigator.mozL10n.language.code;
-  document.documentElement.dir = navigator.mozL10n.language.direction;
-  document.body.classList.remove('hide');
+  get currentlyHandling() {
+    return !!this._currentActivity;
+  },
 
-  TAG_OPTIONS = {
-    'phone-type' : [
-      {value: _('mobile')},
-      {value: _('home')},
-      {value: _('work')},
-      {value: _('personal')},
-      {value: _('faxHome')},
-      {value: _('faxOffice')},
-      {value: _('faxOther')},
-      {value: _('another')}
-    ],
-    'email-type' : [
-      {value: _('personal')},
-      {value: _('home')},
-      {value: _('work')}
-    ],
-    'address-type' : [
-      {value: _('home')},
-      {value: _('work')}
-    ]
-  };
-});
+  get activityName() {
+    if (!this._currentActivity) {
+      return null;
+    }
+
+    return this._currentActivity.source.name;
+  },
+
+  handle: function ah_handle(activity) {
+    this._currentActivity = activity;
+
+    switch (this.activityName) {
+      case 'new':
+        document.location.hash = 'view-contact-form';
+        if (this._currentActivity.source.data.params) {
+          var param, params = [];
+          for (var i in this._currentActivity.source.data.params) {
+            param = this._currentActivity.source.data.params[i];
+            params.push(i + '=' + param);
+          }
+          document.location.hash += '?' + params.join('&');
+        }
+        break;
+      case 'pick':
+        Contacts.navigation.home();
+        break;
+    }
+  },
+
+  postNewSuccess: function ah_postNewSuccess(contact) {
+    this._currentActivity.postResult({contact: contact});
+    this._currentActivity = null;
+  },
+
+  postPickSuccess: function ah_postPickSuccess(number) {
+    this._currentActivity.postResult({ number: number });
+    this._currentActivity = null;
+  },
+
+  postCancel: function ah_postCancel() {
+    this._currentActivity.postError('canceled');
+    this._currentActivity = null;
+  }
+};
+
 
 var actHandler = ActivityHandler.handle.bind(ActivityHandler);
 // window.navigator.mozSetMessageHandler('activity', actHandler);
 if(parent.currentActivity) {
   window.console.log('There is a current activity: ', parent.currentActivity.source.name);
-  actHandler(parent.currentActivity);
+  window.setTimeout(function() { actHandler(parent.currentActivity); },0);
 }
 
 document.addEventListener('mozvisibilitychange', function visibility(e) {

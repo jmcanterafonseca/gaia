@@ -70,29 +70,25 @@
       "filters": {
         "type": "webcontacts/contact"
        },
-      "disposition": "window",
-      "href": "contacts.html"
+      "disposition": "window"
     },
     "new": {
       "filters": {
         "type": "webcontacts/contact"
       },
-      "disposition": "window",
-      "href": "contacts.html"
+      "disposition": "window"
     },
     "importFB": {
       "filters": {
         "type": "facebook/friend"
       },
-      "disposition": "window",
-      "href": "fb_import.html"
+      "disposition": "window"
     },
     "import": {
       "filters": {
         "type": "webcontacts/contact"
       },
-      "disposition": "window",
-      "href": "import.html"
+      "disposition": "window"
     }
   }
 }

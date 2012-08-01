@@ -42,6 +42,10 @@
         z-index:10;
       }
     </style>
+<!--
+    <link rel="resource" type="application/l10n" href="locales/locales.ini">
+    <script type="text/javascript" src="shared/js/l10n.js"></script>
+-->
   </head>
 
   <body>
@@ -50,6 +54,14 @@
     <iframe id="importFB"></iframe>
 
     <script src="js/init.js">
+    </script>
+
+    <script>
+     window.addEventListener('localized', function l() {
+      window.console.log('Localized!!!');
+      window.currentLang = navigator.mozL10n.language;
+      window.console.log('Current Language: ',currentLang.code);
+     });
     </script>
   </body>
 
