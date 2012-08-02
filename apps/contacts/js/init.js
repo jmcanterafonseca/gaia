@@ -1,21 +1,21 @@
-var contacts = window.Contacts || {};
+var Contacts = window.Contacts || {};
+
+function activityFinished(name) {
+  Contacts.init.onActivityFinished(name);
+}
 
 if(typeof contacts.init === 'undefined') {
   (function(document) {
-    var i = contacts.init = {};
+    var i = Contacts.init = {};
 
-    var handled = false;
     window.currentActivity = null;
-
-    if(navigator.mozSetMessageHandler) {
-      navigator.mozSetMessageHandler('activity',activityHandler);
-    }
 
     window.setTimeout(function() { i.start() },0);
 
     i.start = function() {
-      if(handled === false) {
-        if(typeof window.localStorage.has_had_something === 'undefined') {
+      if (navigator.mozHasPendingMessage &&
+                              !navigator.mozHasPendingMessage('activity')) {
+        if (typeof window.localStorage.has_had_something === 'undefined') {
           var req = navigator.mozContacts.find({});
           req.onsuccess = function(e) {
             if(e.target.result.length > 0) {
@@ -31,6 +31,14 @@ if(typeof contacts.init === 'undefined') {
           contactsHome();
         }
       }
+
+      if (navigator.mozSetMessageHandler) {
+        navigator.mozSetMessageHandler('activity',activityHandler);
+      }
+    }
+
+    i.onActivityFinished = function(name) {
+      contactsHome();
     }
 
     function contactsHome() {
@@ -64,7 +72,6 @@ if(typeof contacts.init === 'undefined') {
       else {
         contactsHome();
       }
-      handled = true;
     } // activityHandler
   })(document);
 }

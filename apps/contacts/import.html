@@ -26,6 +26,14 @@
             type: 'webcontacts/contact'
           }
         });
+
+        activity.onsuccess = function(e) {
+          window.console.log('Activity terminated correctly');
+        }
+
+        activity.onerror = function(e) {
+          window.console.error('Activity failed!!');
+        }
       }
 
       function importFacebook() {

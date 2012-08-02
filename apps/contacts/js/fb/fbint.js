@@ -168,7 +168,7 @@ if (typeof window.owdFbInt === 'undefined') {
       contactsLoaded = true;
 
       if(friendsLoaded) {
-        disableExisting();
+        disableExisting(existingFbContacts);
       }
     }
 
@@ -180,7 +180,7 @@ if (typeof window.owdFbInt === 'undefined') {
       friendsLoaded = true;
 
       if(contactsLoaded) {
-        disableExisting();
+        disableExisting(existingFbContacts);
       }
     }
 
@@ -188,17 +188,26 @@ if (typeof window.owdFbInt === 'undefined') {
      *  Existing contacts are disabled
      *
      */
-    function disableExisting() {
+    function disableExisting(friends) {
       window.console.log('Going to disable existing contacts');
 
-      existingFbContacts.forEach(function(fbContact) {
-        var uid = JSON.parse(fbContact.category[2]).uid;
+      friends.forEach(function(fbContact) {
+        var uid;
+        if(fbContact.category) {
+          uid = JSON.parse(fbContact.category[2]).uid;
+        }
+        else {
+          uid = fbContact.uid;
+        }
 
         delete selectableFriends[uid];
 
         window.console.log('Existing FB Contact: ',uid);
 
         var ele = document.querySelector('[data-uuid="' + uid + '"]');
+
+        var input = ele.querySelector('input');
+        input.checked = true;
 
         ele.setAttribute('aria-disabled','true');
       });
@@ -433,14 +442,14 @@ if (typeof window.owdFbInt === 'undefined') {
         owdFbInt.importAll(function() {
           window.console.log('All contacts have been imported');
           document.body.dataset.state = '';
+          var list = [];
           // Once all contacts have been imported, they are unselected
-          UI.unSelectAll();
-          /*
-          var req = navigator.mozContacts.find({});
-          req.onsuccess = function(e) {
-            window.console.log('Number of contacts:' , e.target.result.length);
-          } */
+          Object.keys(selectedContacts).forEach(function(c) {
+            list.push(selectedContacts[c]);
+          });
 
+          disableExisting(list);
+          selectedContacts = {};
         });
       }
       else {
