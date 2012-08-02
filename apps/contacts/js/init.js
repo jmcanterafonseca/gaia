@@ -23,22 +23,12 @@ if(typeof contacts.init === 'undefined') {
               contactsHome();
             }
             else {
-              import
+              importScr();
             }
           }
         }
         else {
           contactsHome();
-        }
-
-
-          if() {
-            document.querySelector('#import').src = 'import.html';
-            document.body.dataset.state = 'import';
-          }
-          else {
-
-          }
         }
       }
     }
@@ -48,29 +38,33 @@ if(typeof contacts.init === 'undefined') {
       document.body.dataset.state = 'contacts';
     }
 
-    function import()
+    function importScr() {
+      document.querySelector('#import').src = 'import.html';
+      document.body.dataset.state = 'import';
+    }
+
+    function importFB() {
+      window.console.log('Import FB!!!');
+      document.querySelector('#importFB').src = 'fb_import.html';
+      document.body.dataset.state = 'importFB';
+    }
 
     function activityHandler(activity) {
-        window.currentActivity = activity;
-        var aname = activity.source.name;
+      window.currentActivity = activity;
+      var aname = activity.source.name;
 
-        window.console.log('Activity: ',aname);
+      window.console.log('Activity: ',aname);
 
-        if(aname === 'import') {
-          document.querySelector('#import').src = 'import.html';
-          document.body.dataset.state = 'import';
-        }
-        else if(aname === 'importFB') {
-          window.console.log('Import FB!!!');
-          document.querySelector('#importFB').src = 'fb_import.html';
-          document.body.dataset.state = 'importFB';
-        }
-        else {
-          var ifrc = document.querySelector('#contacts');
-          ifrc.src = 'contacts.html';
-          document.body.dataset.state = 'contacts';
-        }
-        handled = true;
-      } // activityHandler
+      if(aname === 'import') {
+        importScr();
+      }
+      else if(aname === 'importFB') {
+        importFB();
+      }
+      else {
+        contactsHome();
+      }
+      handled = true;
+    } // activityHandler
   })(document);
 }
