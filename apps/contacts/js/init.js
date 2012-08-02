@@ -4,7 +4,7 @@ function activityFinished(name) {
   Contacts.init.onActivityFinished(name);
 }
 
-if(typeof contacts.init === 'undefined') {
+if(typeof Contacts.init === 'undefined') {
   (function(document) {
     var i = Contacts.init = {};
 
