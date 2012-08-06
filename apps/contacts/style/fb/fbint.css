@@ -89,7 +89,7 @@ h2.block-title {
 #shortcuts {
   position: fixed;
   right: 0;
-  top:5.3rem;
+  top:5rem;
   bottom: 1rem;
   height:-moz-calc(100% - 6.6rem - 6.5rem);
   width: 4.5rem;
@@ -101,7 +101,7 @@ h2.block-title {
 
 
 #shortcuts ol li[data-letter] {
-  height:4%;
+  display:block;
 }
 
 #shortcuts ol {
@@ -113,8 +113,8 @@ h2.block-title {
 }
 
 #shortcuts li {
-  font-size: 1.1rem;
-  line-height: 1em;
+  font-size: 1.0rem;
+  line-height: 1.4em;
   text-align: center;
   text-transform: uppercase;
 
