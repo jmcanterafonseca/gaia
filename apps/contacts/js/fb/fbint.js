@@ -191,6 +191,9 @@ if (typeof window.owdFbInt === 'undefined') {
     function disableExisting(friends) {
       window.console.log('Going to disable existing contacts');
 
+      document.querySelector('#nfriends').value = myFriends.length
+                                                  - existingFbContacts.length;
+
       friends.forEach(function(fbContact) {
         var uid;
         if(fbContact.category) {
@@ -317,7 +320,7 @@ if (typeof window.owdFbInt === 'undefined') {
         // My friends partners
         friendsPartners = parseFriendsPartners(response.data[1].fql_result_set);
 
-         window.console.log('Friends partners Ready!');
+        window.console.log('Friends partners Ready!');
 
         contacts.List.load(myFriends,friendsReady);
 

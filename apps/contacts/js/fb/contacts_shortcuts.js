@@ -56,7 +56,8 @@
     previous = current;
 
     scrollable.scrollTop = groupContainer.offsetTop
-                              - document.querySelector('header').clientHeight;
+                          - document.querySelector('header').clientHeight
+                          - document.querySelector('p#mfriends').clientHeight;
 
   }
 
