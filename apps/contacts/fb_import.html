@@ -86,9 +86,10 @@
           </ol>
         </section> <!-- mainContent -->
 
-      <div style="height:6.5rem">
-        <menu class="bottom" type="toolbar">
-          <button id="selunsel" onclick="owdFbInt.ui.selectAll(event)">Select All</button>
+      <div id="options">
+        <menu  class="bottom" type="toolbar">
+          <button id="selunsel"
+                  onclick="owdFbInt.ui.selectAll(event)">Select All</button>
         </menu>
       </div>
 
@@ -100,8 +101,9 @@
         <header>
           <h1>Facebook</h1>
         </header>
-        <p>Please wait. We are retrieving your Facebook Friends.</p>
-        <p>This operation may take several minutes</p>
+        <p class="message">Hold on. We are connecting to obtain your friend list</p>
+        <hr>
+        <p class="submessage">This may take a couple of minutes</p>
         <div>
           <img src="style/fb/throbber.gif">
         </div>
