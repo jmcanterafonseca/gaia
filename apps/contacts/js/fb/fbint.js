@@ -37,7 +37,7 @@ if (typeof window.owdFbInt === 'undefined') {
     var friendsPartners;
 
     // Existing FB contacts
-    var existingFbContacts;
+    var existingFbContacts = [];
 
     var contactsLoaded = false, friendsLoaded = false;
 
@@ -80,6 +80,7 @@ if (typeof window.owdFbInt === 'undefined') {
       var nextBlock = BLOCK_SIZE + 3;
 
       var totalPhotoBytes = 0;
+
 
     /**
      *  Initialization function it tries to find an access token
@@ -176,7 +177,7 @@ if (typeof window.owdFbInt === 'undefined') {
      *  Invoked when friends are ready
      *
      */
-    function friendsReady() {
+    function friendsAvailable() {
       friendsLoaded = true;
 
       if(contactsLoaded) {
@@ -192,20 +193,13 @@ if (typeof window.owdFbInt === 'undefined') {
       window.console.log('Going to disable existing contacts');
 
       document.querySelector('#nfriends').value = myFriends.length
-                                                  - existingFbContacts.length;
+                                                            - friends.length;
 
       friends.forEach(function(fbContact) {
-        var uid;
-        if(fbContact.category) {
-          uid = JSON.parse(fbContact.category[2]).uid;
-        }
-        else {
-          uid = fbContact.uid;
-        }
+        var uid = new FacebookContact(fbContact).uid;
+        window.console.log('Existing FB Contact: ',uid);
 
         delete selectableFriends[uid];
-
-        window.console.log('Existing FB Contact: ',uid);
 
         var ele = document.querySelector('[data-uuid="' + uid + '"]');
 
@@ -322,7 +316,7 @@ if (typeof window.owdFbInt === 'undefined') {
 
         window.console.log('Friends partners Ready!');
 
-        contacts.List.load(myFriends,friendsReady);
+        contacts.List.load(myFriends,friendsAvailable);
 
         // contacts.List.handleClick(this.ui.selection);
 
@@ -815,22 +809,21 @@ if (typeof window.owdFbInt === 'undefined') {
                                   marriedTo, birthDate);
 
           if (navigator.mozContacts) {
+            cfdata.photo = [photo];
+
             var fbInfo = {
-                            uid: cfdata.uid,
                             marriedTo: marriedTo,
-                            studiedAt: studiedAt
+                            studiedAt: studiedAt,
+                            bday: birthDate,
+                            org: [worksAt]
             };
 
-            cfdata.category = ['facebook', 'fb_not_linked'];
-            cfdata.category[2] = JSON.stringify(fbInfo);
+            cfdata.fbInfo = fbInfo;
 
-            cfdata.photo = [photo];
-            cfdata.bday = [birthDate];
-            cfdata.org = [worksAt];
+            var fbContact = new FacebookContact();
+            fbContact.setData(cfdata);
+            var request = fbContact.save();
 
-            contact.init(cfdata);
-
-            var request = navigator.mozContacts.save(contact);
             request.onsuccess = function() {
               numResponses++;
               window.console.log('Contact added!!!', numResponses);
@@ -840,11 +833,11 @@ if (typeof window.owdFbInt === 'undefined') {
                   doneCB();
                 }
               }
-            } /// onsuccess
+            }; /// onsuccess
 
-            request.onerror = function(e) {
+            request.onerror = function() {
               numResponses++;
-              window.console.log('Contact Add error: ', e.target.name,
+              window.console.error('Contact Add error: ', request.error,
                                                               cfdata.uid);
 
               if (numResponses === totalContacts) {
@@ -920,7 +913,7 @@ if (typeof window.owdFbInt === 'undefined') {
       var tokenData = e.data;
 
       window.console.log('Token Data Ready',tokenData);
-
+      // The content of window.postMessage is parsed
       var parameters = JSON.parse(tokenData);
 
       if(parameters.access_token) {
