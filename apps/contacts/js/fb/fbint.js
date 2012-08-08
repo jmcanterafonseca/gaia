@@ -192,11 +192,17 @@ if (typeof window.owdFbInt === 'undefined') {
     function disableExisting(friends) {
       window.console.log('Going to disable existing contacts');
 
-      document.querySelector('#nfriends').value = myFriends.length
-                                                            - friends.length;
+      var newValue = myFriends.length - friends.length;
+
+      var eleNumImport = document.querySelector('#nfriends');
+      if(eleNumImport.value && eleNumImport.value.length > 0) {
+        var newValue = parseInt(eleNumImport.value) - friends.length;
+      }
+
+      eleNumImport.value = newValue;
 
       friends.forEach(function(fbContact) {
-        var uid = new FacebookContact(fbContact).uid;
+        var uid = new fb.Contact(fbContact).uid;
         window.console.log('Existing FB Contact: ',uid);
 
         delete selectableFriends[uid];
@@ -795,8 +801,6 @@ if (typeof window.owdFbInt === 'undefined') {
         getContactImg(cfdata.uid, function(photo) {
           // When photo is ready this code will be executed
 
-          window.console.log('Photo: ', photo);
-
           var worksAt = getWorksAt(cfdata);
           var studiedAt = getStudiedAt(cfdata);
           var marriedTo = getMarriedTo(cfdata);
@@ -805,22 +809,18 @@ if (typeof window.owdFbInt === 'undefined') {
             birthDate = getBirthDate(cfdata.birthday_date);
           }
 
-          window.console.log(cfdata.uid, worksAt, studiedAt,
-                                  marriedTo, birthDate);
-
           if (navigator.mozContacts) {
-            cfdata.photo = [photo];
-
             var fbInfo = {
                             marriedTo: marriedTo,
                             studiedAt: studiedAt,
                             bday: birthDate,
-                            org: [worksAt]
+                            org: [worksAt],
+                            photo: [photo]
             };
 
             cfdata.fbInfo = fbInfo;
 
-            var fbContact = new FacebookContact();
+            var fbContact = new fb.Contact();
             fbContact.setData(cfdata);
             var request = fbContact.save();
 

@@ -1,12 +1,14 @@
 'use strict';
 
-// Encapsulates all the logic to obtain the data for a FB contact
-function FacebookContact(deviceContact) {
-  var contactData;
+var fb = window.fb || {};
+fb.CATEGORY = 'facebook';
+fb.NOT_LINKED = 'not_linked';
 
+
+// Encapsulates all the logic to obtain the data for a FB contact
+fb.Contact = function (deviceContact) {
+  var contactData;
   var devContact = deviceContact;
-  var FB_CATEGORY = 'facebook';
-  var FB_NOT_LINKED = 'not_linked';
 
     /**
      *   Request auxiliary object to support asynchronous calls
@@ -28,7 +30,7 @@ function FacebookContact(deviceContact) {
     var out = data.uid;
     if(!out) {
       if(data.category) {
-        var idx = data.category.indexOf(FB_CATEGORY);
+        var idx = data.category.indexOf(fb.CATEGORY);
         if(idx !== -1) {
           out = data.category[idx + 2];
         }
@@ -50,11 +52,11 @@ function FacebookContact(deviceContact) {
       dcontact.category = [];
     }
 
-    if(dcontact.category.indexOf(FB_CATEGORY) === -1) {
+    if(dcontact.category.indexOf(fb.CATEGORY) === -1) {
       markAsFb(dcontact);
     }
 
-    var idx = dcontact.category.indexOf(FB_CATEGORY);
+    var idx = dcontact.category.indexOf(fb.CATEGORY);
 
     dcontact.category[idx + 2] = value;
   }
@@ -64,9 +66,9 @@ function FacebookContact(deviceContact) {
       dcontact.category = [];
     }
 
-    if(dcontact.category.indexOf(FB_CATEGORY) === -1) {
-      dcontact.category.push(FB_CATEGORY);
-      dcontact.category.push(FB_NOT_LINKED);
+    if(dcontact.category.indexOf(fb.CATEGORY) === -1) {
+      dcontact.category.push(fb.CATEGORY);
+      dcontact.category.push(fb.NOT_LINKED);
     }
   }
 
@@ -91,11 +93,8 @@ function FacebookContact(deviceContact) {
       // Info tbe saved on mozContacts
       var contactInfo = {};
 
-      contactInfo.name = contactData.name;
-      contactInfo.givenName = contactData.givenName;
-      contactInfo.familyName = contactData.familyName;
-      contactInfo.additionalName = contactData.additionalName;
-      contactInfo.photo = contactData.photo;
+      // Copying names to the mozContact
+      copyNames(contactData,contactInfo);
 
       doSetFacebookUid(contactInfo,contactData.uid);
 
@@ -112,11 +111,14 @@ function FacebookContact(deviceContact) {
           // now saving the FB-originated data to the "private area"
           window.console.log('About to saving on indexedDB',contactData.uid);
 
-          try {
-          var data = contactData.fbInfo;
+          var data = Object.create(contactData.fbInfo);
           data.tel = contactData.tel || [];
           data.email = contactData.email || [];
           data.uid =  contactData.uid;
+
+          // Names are also stored on indexedDB
+          // thus restoring the contact (if unlinked) will be trivial
+          copyNames(contactData,data);
 
           var fbReq = fb.contacts.save(data);
 
@@ -129,8 +131,6 @@ function FacebookContact(deviceContact) {
             window.console.error('OWDError: Saving on indexedDB');
             outReq.failed(fbReq.error);
           }
-           }
-      catch(e) { window.console.error('OWDError: ',e); }
         } // mozContactsReq.onsuccess
 
         mozContactsReq.onerror = function(e) {
@@ -143,12 +143,15 @@ function FacebookContact(deviceContact) {
      return outReq;
   }
 
+  function copyNames(source,destination) {
+    destination.name = source.name;
+    destination.givenName = source.givenName;
+    destination.familyName = source.familyName;
+    destination.additionalName = source.additionalName;
+  }
+
   this.getData = function() {
-    var out = {};
-    var keys = Object.keys(devContact);
-    keys.forEach(function(key) {
-      out[key] = devContact[key];
-    });
+    var out = Object.create(devContact);
 
     var outReq = new Request();
 
@@ -169,4 +172,9 @@ function FacebookContact(deviceContact) {
 
     return outReq;
   }
+}
+
+fb.isFbContact = function(devContact) {
+  return (devContact.category
+                        && devContact.category.indexOf(fb.CATEGORY) !== -1);
 }
