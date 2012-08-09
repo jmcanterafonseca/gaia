@@ -24,7 +24,6 @@ var PopupManager = {
 
   _showWait: function pm_showWait() {
     this.loadingIcon.classList.toggle('popup-loading');
-    window.console.log('OWD: Toggled!');
   },
 
   _hideWait: function pm_hideWait() {
