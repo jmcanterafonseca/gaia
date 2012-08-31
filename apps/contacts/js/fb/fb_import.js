@@ -364,16 +364,12 @@ if (typeof fb.importer === 'undefined') {
     }
 
     UI.end = function(e) {
-      window.alert('OWDError: Closed invoked');
-
       var msg = {
         type: 'window_close',
         data: ''
       };
 
       parent.postMessage(msg, '*');
-
-      window.alert('Message sent');
     }
 
     /**
