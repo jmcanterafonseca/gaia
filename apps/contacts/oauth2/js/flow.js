@@ -27,6 +27,9 @@ if (typeof fb.oauthflow === 'undefined') {
     // Access Token parameter
     var ACC_T = 'access_token';
 
+    // This white list is created future-proof wise as there could be more apps
+    // than contacts that could need the access token
+    // For the moment the message is only delivered to the 0 element
     var DOMAINS_WHITE_LIST = ['app://contacts.gaiamobile.org'];
 
     /**
