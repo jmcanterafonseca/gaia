@@ -207,9 +207,29 @@ contacts.List = (function() {
     };
   }
 
+  var addImportFbButton = function addImportFbButton() {
+    var container = groupsList.parentNode; // #groups-container
+    var button = document.createElement('button');
+    button.setAttribute('class', 'fbContacts action action-add');
+    button.textContent = 'Import Facebook Contacts';
+    container.appendChild(button);
+
+    // TODO: don't show this button if no SIM card is found...
+
+    button.onclick = Contacts.extFb.importFB;
+  }
+
   var removeImportSimButton = function removeImportSimButton() {
     var container = groupsList.parentNode; // #groups-container
     var button = container.querySelector('button.simContacts');
+    if (button) {
+      container.removeChild(button);
+    }
+  }
+
+  var removeImportFbButton = function removeImportSimButton() {
+    var container = groupsList.parentNode; // #groups-container
+    var button = container.querySelector('button.fbContacts');
     if (button) {
       container.removeChild(button);
     }
@@ -292,6 +312,7 @@ contacts.List = (function() {
     request.onsuccess = function findCallback() {
       if (request.result.length === 0) {
         addImportSimButton();
+        addImportFbButton();
       } else {
         var fbReq = fb.contacts.getAll();
         fbReq.onsuccess = function() {
@@ -357,6 +378,8 @@ contacts.List = (function() {
     var list = groupsList.querySelector('#contacts-list-' + group);
 
     removeImportSimButton();
+    removeImportFbButton();
+
     addToGroup(theContact, list);
 
     if (list.children.length === 1) {

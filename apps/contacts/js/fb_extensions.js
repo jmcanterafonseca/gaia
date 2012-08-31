@@ -13,10 +13,15 @@ if (typeof Contacts.extFb === 'undefined') {
       contactId = cid;
       if (linked === 'true') {
         linkProposal.src = 'fb_link.html' + '?contactId=' + contactId;
-        linkProposal.hidden = false;
+        linkProposal.classList.toggle('hide');
       } else {
         doUnlink(contactId);
       }
+    }
+
+    extFb.importFB = function() {
+      linkProposal.src = 'fb_import.html';
+      linkProposal.classList.toggle('hide');;
     }
 
     function doLink(uid) {
@@ -78,7 +83,7 @@ if (typeof Contacts.extFb === 'undefined') {
       switch (data.type) {
         case 'window_close':
           linkProposal.src = null;
-          linkProposal.hidden = true;
+          linkProposal.classList.toggle('hide');
         break;
 
         case 'item_selected':

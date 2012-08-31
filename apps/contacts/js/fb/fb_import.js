@@ -363,6 +363,19 @@ if (typeof fb.importer === 'undefined') {
       document.body.dataset.state = 'welcome';
     }
 
+    UI.end = function(e) {
+      window.alert('OWDError: Closed invoked');
+
+      var msg = {
+        type: 'window_close',
+        data: ''
+      };
+
+      parent.postMessage(msg, '*');
+
+      window.alert('Message sent');
+    }
+
     /**
      *  Invoked when the user unselects all her contacts
      *
