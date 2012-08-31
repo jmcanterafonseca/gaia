@@ -27,6 +27,8 @@ if (typeof fb.oauthflow === 'undefined') {
     // Access Token parameter
     var ACC_T = 'access_token';
 
+    var DOMAINS_WHITE_LIST = ['app://contacts.gaiamobile.org'];
+
     /**
      *  Initialization function it tries to find an access token
      *
@@ -45,7 +47,8 @@ if (typeof fb.oauthflow === 'undefined') {
           parameters[values[0]] = values[1];
         });
 
-        window.opener.postMessage(JSON.stringify(parameters), '*');
+        window.opener.postMessage(JSON.stringify(parameters),
+                                  DOMAINS_WHITE_LIST[0]);
 
         // Finally the window is closed
         window.close();
