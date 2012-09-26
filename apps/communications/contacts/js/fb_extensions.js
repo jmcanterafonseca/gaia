@@ -40,6 +40,18 @@ if (typeof Contacts.extFb === 'undefined') {
                                   'closingImport' : 'closing';
     }
 
+    function openURL(url) {
+      var activityDesc = {
+        name: 'view',
+        data: {
+          type: 'url',
+          url: url
+        }
+      };
+
+      var activity = new MozActivity(activityDesc);
+    }
+
     extFb.showProfile = function(cid) {
       var req = fb.utils.getContactData(cid);
 
@@ -49,20 +61,37 @@ if (typeof Contacts.extFb === 'undefined') {
         var uid = fbContact.uid;
         var profileUrl = 'http://m.facebook.com/' + uid;
 
-        var activityDesc = {
-          name: 'view',
-          data: {
-            type: 'url',
-            url: profileUrl
-          }
-        };
-
-        var activity = new MozActivity(activityDesc);
+        openURL(profileURL);
       }
 
       req.onerror = function() {
         window.console.error('Contacts FB Profile: Contact not found');
       }
+    }
+
+    extFb.sendPrivateMsg = function(cid) {
+      contactId = cid;
+
+      var req = fb.utils.getContactData(cid);
+
+      req.onsuccess = function() {
+        var fbContact = new fb.Contact(req.result);
+
+        var uid = fbContact.uid;
+        var target = 'http://m.facebook.com/chat/messages.php?id=' + uid;
+
+        openURL(target);
+      }
+
+      req.onerror = function() {
+        window.console.error('Contacts FB Profile: Contact not found');
+      }
+    }
+
+    extFb.wallPost = function(cid) {
+      contactId = cid;
+
+      open('fb_messaging.html?contactId=' + contactId);
     }
 
     function doLink(uid) {

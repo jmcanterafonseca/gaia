@@ -256,8 +256,11 @@ contacts.Details = (function() {
 
     if (!isFbContact) {
       var profileButton = social.querySelector('#profile_button');
+      var wallButton = social.querySelector('#wall_button');
       if (profileButton)
         profileButton.classList.add('hide');
+      if (wallButton)
+        wallButton.classList.add('hide');
     } else {
         var socialLabel = social.querySelector('#social-label');
         if (socialLabel)

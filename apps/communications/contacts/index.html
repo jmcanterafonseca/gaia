@@ -166,14 +166,31 @@
                 <h2 data-l10n-id="social-network" id="social-label">Social Network</h2>
                   <div class="item">
                     <div class="item-body-exp">
-                      <button id="link_button" class="fillflow-row action action-add"
-                              onclick="Contacts.extFb.startLink('#i#','#linked#')">
-                        #action#
-                      </button>
+
+                      <div>
+                        <button id="msg_button" data-l10n-id="msg-send"
+                                class="fillflow-row action action-add fillflow-twocols fillflow-left"
+                                onclick="Contacts.extFb.sendPrivateMsg('#i#')">
+                          Message
+                        </button>
+
+                        <button id="wall_button" data-l10n-id="wall-post"
+                                class="fillflow-row action action-add fillflow-twocols"
+                                onclick="Contacts.extFb.wallPost('#i#')">
+                          Wall Post
+                        </button>
+                      </div>
+
                       <button id="profile_button" data-l10n-id="show-profile"
                               class="fillflow-row action action-add"
                               onclick="Contacts.extFb.showProfile('#i#')">
                         Show Profile
+                      </button>
+
+
+                      <button id="link_button" class="fillflow-row action action-add"
+                              onclick="Contacts.extFb.startLink('#i#','#linked#')">
+                        #action#
                       </button>
                     </div>
                   </div>
