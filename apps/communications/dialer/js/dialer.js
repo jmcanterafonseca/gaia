@@ -118,10 +118,10 @@ var CallHandler = (function callHandler() {
 
   function handleFlightMode() {
     CustomDialog.show(
-      _('callAirplaneModeTitle'),
-      _('callAirplaneModeBody'),
+      _('callFlightModeTitle'),
+      _('callFlightModeBody'),
       {
-        title: _('callAirplaneModeBtnOk'),
+        title: _('callFlightModeBtnOk'),
         callback: function() {
           CustomDialog.hide();
 

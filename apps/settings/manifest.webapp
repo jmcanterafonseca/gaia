@@ -18,8 +18,7 @@
     "settings",
     "wifi-manage",
     "wifi",
-    "attention",
-    "time"
+    "attention"
   ],
   "activities": {
     "configure": {

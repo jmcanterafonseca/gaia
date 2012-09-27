@@ -17,7 +17,6 @@
     <!-- Localization -->
     <link rel="resource" type="application/l10n" href="locales/locales.ini"/>
     <script type="application/javascript" src="shared/js/l10n.js"></script>
-    <script type="application/javascript" src="shared/js/l10n_date.js"></script>
 
     <!-- Specific code -->
     <script type="application/javascript" defer src="js/utils.js"></script>
@@ -31,7 +30,6 @@
     <script type="application/javascript" defer src="js/battery.js"></script>
     <script type="application/javascript" defer src="js/storage.js"></script>
     <script type="application/javascript" defer src="js/app_storage.js"></script>
-    <script type="application/javascript" defer src="js/datetime.js"></script>
   </head>
   <body class="hidden skin-organic">
 
@@ -191,11 +189,7 @@
           Searching…
         </li>
         <!--
-          - filled by wifi.js: one list item per available network, e.g.:
-          -   <li class="wifi-signal3">
-          -     <small> WPA2 </small>
-          -     <a> Fake Mozilla </a>
-          -   </li>
+          - filled by wifi.js: one list item per available network
           -->
         <li data-state="ready">
           <label>
@@ -644,37 +638,7 @@
         </li>
     </section>
 
-    <!-- Personalization :: Date & Time -->
-    <section role="region" id="time">
-      <header>
-        <a href="#root"><span class="icon icon-back">back</span></a>
-        <h1 data-l10n-id="dateAndTime">
-          Date &amp; Time
-        </h1>
-      </header>
-      <ul>
-        <li id="time-nitz-automatic-update">
-          <label class="switch">
-            <input type="checkbox" name="time.nitz.automatic-update.enabled"/>
-            <span></span>
-          </label>
-          <a data-l10n-id="setTimeAutomatically">Set Automatically</a>
-        </li>
-      </ul>
-      <header>
-        <h2 data-l10n-id="setTimeManually">Set Manually</h2>
-      </header>
-      <ul id="time-manual" hidden>
-        <li id="setDate">
-          <a data-l10n-id="dateMessage">Date<span id="clock-date"></span></a>
-          <input type="date" id="date-picker"/>
-        </li>
-        <li id="setTime">
-          <a data-l10n-id="timeMessage">Time<span id="clock-time"></span></a>
-          <input type="time" id="time-picker"/>
-        </li>
-      </ul>
-    </section>
+    <!-- [TODO] Personalization :: Time & Date -->
 
     <!-- Personalization :: Language & Region -->
     <section role="region" id="languages" data-leaf>
@@ -1060,66 +1024,8 @@
       </ul>
     </section>
 
-    <!-- Device :: About :: Developer -->
-    <section role="region" id="developer" data-leaf>
-      <header>
-        <a href="#root"><span class="icon icon-back">back</span></a>
-        <h1 data-l10n-id="developer">
-          Developer
-        </h1>
-      </header>
-
-      <header>
-        <h2 data-l10n-id="debug">Debug</h2>
-      </header>
-      <ul>
-        <li>
-          <label>
-            <input type="checkbox" name="debug.grid.enabled"/>
-            <span></span>
-          </label>
-          <a data-l10n-id="grid">Grid</a>
-        </li>
-        <li>
-          <label>
-            <input type="checkbox" name="debug.fps.enabled"/>
-            <span></span>
-          </label>
-          <a data-l10n-id="fps-monitor">Show frames per second</a>
-        </li>
-        <li>
-          <label>
-            <input type="checkbox" name="debug.paint-flashing.enabled"/>
-            <span></span>
-          </label>
-          <a data-l10n-id="paint-flashing">Flash repainted area</a>
-        </li>
-        <li>
-          <label>
-            <input type="checkbox" name="debug.log-animations.enabled"/>
-            <span></span>
-          </label>
-          <a data-l10n-id="log-animations">Log slow animations</a>
-        </li>
-        <li>
-          <label>
-            <input type="checkbox" name="debug.dev-mode"/>
-            <span></span>
-          </label>
-          <a data-l10n-id="dev-mode">Developer Mode</a>
-        </li>
-        <li>
-          <label>
-            <input type="checkbox" name="debug.oop.disabled"/>
-            <span></span>
-          </label>
-          <a data-l10n-id="oop-disabled">Disable Out-Of-Process</a>
-        </li>
-       </ul>
-    </section>
-
     <!-- Device :: About -->
-    <section role="region" id="about">
+    <section role="region" id="about" data-leaf>
       <header>
         <a href="#root"><span class="icon icon-back">back</span></a>
         <h1 data-l10n-id="deviceInfo">
@@ -1134,12 +1040,6 @@
         <li>
           <small id="gaia-commit-hash"></small>
           <a id="gaia-commit-date"></a>
-        </li>
-        <li>
-          <label>
-            <button onclick="openDialog('developer');"
-              data-l10n-id="developer">Developer</button>
-          </label>
         </li>
       </ul>
     </section>
@@ -1273,6 +1173,64 @@
       </ul>
     </section>
 
+    <!-- Device :: Developer -->
+    <section role="region" id="developer" data-leaf>
+      <header>
+        <a href="#root"><span class="icon icon-back">back</span></a>
+        <h1 data-l10n-id="developer">
+          Developer
+        </h1>
+      </header>
+
+      <header>
+        <h2 data-l10n-id="debug">Debug</h2>
+      </header>
+      <ul>
+        <li>
+          <label>
+            <input type="checkbox" name="debug.grid.enabled"/>
+            <span></span>
+          </label>
+          <a data-l10n-id="grid">Grid</a>
+        </li>
+        <li>
+          <label>
+            <input type="checkbox" name="debug.fps.enabled"/>
+            <span></span>
+          </label>
+          <a data-l10n-id="fps-monitor">Show frames per second</a>
+        </li>
+        <li>
+          <label>
+            <input type="checkbox" name="debug.paint-flashing.enabled"/>
+            <span></span>
+          </label>
+          <a data-l10n-id="paint-flashing">Flash repainted area</a>
+        </li>
+        <li>
+          <label>
+            <input type="checkbox" name="debug.log-animations.enabled"/>
+            <span></span>
+          </label>
+          <a data-l10n-id="log-animations">Log slow animations</a>
+        </li>
+        <li>
+          <label>
+            <input type="checkbox" name="debug.dev-mode"/>
+            <span></span>
+          </label>
+          <a data-l10n-id="dev-mode">Developer Mode</a>
+        </li>
+        <li>
+          <label>
+            <input type="checkbox" name="debug.oop.disabled"/>
+            <span></span>
+          </label>
+          <a data-l10n-id="oop-disabled">Disable Out-Of-Process</a>
+        </li>
+       </ul>
+    </section>
+
     <!-- Device :: Accessibility -->
     <section role="region" id="accessibility" data-leaf hidden>
       <header>
@@ -1369,9 +1327,9 @@
         <li>
           <a href="#notifications" data-l10n-id="notifications">Notifications</a>
         </li>
-        <li>
+        <li hidden>
           <small id="time-desc"></small>
-          <a href="#time" data-l10n-id="dateAndTime">Date &amp; Time</a>
+          <a href="#time" data-l10n-id="timeAndDate">Time &amp; Date</a>
         </li>
         <li>
           <small id="language-desc"></small>
@@ -1437,6 +1395,9 @@
         <li id="media-storage-section">
           <small id="media-storage-desc"></small>
           <a href="#media-storage" data-l10n-id="mediaStorage">Media Storage</a>
+        </li>
+        <li>
+          <a href="#developer" data-l10n-id="developer">Developer</a>
         </li>
         <li hidden>
           <a href="#accessibility" data-l10n-id="accessibility">Accessibility</a>

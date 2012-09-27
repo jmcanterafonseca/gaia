@@ -95,9 +95,6 @@ var StatusBar = {
 
     // Listen to 'bluetoothconnectionchange' from bluetooth.js
     window.addEventListener('bluetoothconnectionchange', this);
-    
-    // Listen to 'moztimechange'
-    window.addEventListener('moztimechange', this);
 
     this.setActive(true);
   },
@@ -125,10 +122,6 @@ var StatusBar = {
 
       case 'bluetoothconnectionchange':
         this.update.bluetooth.call(this);
-        
-      case 'moztimechange':
-        this.update.time.call(this);
-        break;
 
       case 'mozChromeEvent':
         switch (evt.detail.type) {

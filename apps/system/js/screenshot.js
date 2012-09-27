@@ -61,7 +61,7 @@
       }
       else if (stats.state === 'available') {
         if (stats.freeBytes < MAX_SCREENSHOT_SIZE) {
-          notify('screenshotFailed', null, 'screenshotSDCardLow');
+          notify('screenshotFailed', null, 'screenshotSDCardFull');
         }
         else {
           callback(storage);

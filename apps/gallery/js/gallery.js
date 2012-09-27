@@ -231,12 +231,12 @@ function init() {
     if (why === MediaDB.NOCARD)
       showOverlay('nocard');
     else if (why === MediaDB.UNMOUNTED)
-      showOverlay('pluggedin');
+      showOverlay('cardinuse');
   }
 
   photodb.onready = function() {
-    // Hide the nocard or pluggedin overlay if it is displayed
-    if (currentOverlay === 'nocard' || currentOverlay === 'pluggedin')
+    // Hide the nocard or cardinuse overlay if it is displayed
+    if (currentOverlay === 'nocard' || currentOverlay === 'cardinuse')
       showOverlay(null);
 
     createThumbnailList();  // Display thumbnails for the images we know about
@@ -318,7 +318,7 @@ function imageDeleted(filename) {
   // If there are no more photos show the "no pix" overlay
   if (images.length === 0) {
     setView(thumbnailListView);
-    showOverlay('emptygallery');
+    showOverlay('nopix');
   }
 }
 
@@ -336,7 +336,7 @@ function imageCreated(fileinfo) {
   var insertPosition;
 
   // If we were showing the 'no pictures' overlay, hide it
-  if (currentOverlay === 'emptygallery')
+  if (currentOverlay === 'nopix')
     showOverlay(null);
 
   // If this new image is newer than the first one, it goes first
@@ -1943,8 +1943,8 @@ var currentOverlay;  // The id of the current overlay or null if none.
 // Supported ids include:
 //
 //   nocard: no sdcard is installed in the phone
-//   pluggedin: the sdcard is being used by USB mass storage
-//   emptygallery: no pictures found
+//   cardinuse: the sdcard is being used by USB mass storage
+//   nopix: no pictures found
 //
 // Localization is done using the specified id with "-title" and "-text"
 // suffixes.
