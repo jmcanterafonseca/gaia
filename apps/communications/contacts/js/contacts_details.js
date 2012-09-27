@@ -255,12 +255,18 @@ contacts.Details = (function() {
     });
 
     if (!isFbContact) {
-      var profileButton = social.querySelector('#profile_button');
-      var wallButton = social.querySelector('#wall_button');
-      if (profileButton)
-        profileButton.classList.add('hide');
-      if (wallButton)
-        wallButton.classList.add('hide');
+      var buttonsToHide = [
+        '#profile_button',
+        '#wall_button',
+        '#msg_button'
+      ];
+
+      buttonsToHide.forEach(function check(selid) {
+        var button = social.querySelector(selid);
+        if(button) {
+          button.classList.add('hide');
+        }
+      });
     } else {
         var socialLabel = social.querySelector('#social-label');
         if (socialLabel)
