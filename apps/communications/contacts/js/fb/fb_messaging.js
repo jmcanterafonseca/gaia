@@ -1,6 +1,6 @@
 var fb = window.fb || {};
 
-if(typeof fb.msg === 'undefined') {
+if (typeof fb.msg === 'undefined') {
   (function(document) {
     var Msg = fb.msg = {};
     var to;
@@ -12,13 +12,13 @@ if(typeof fb.msg === 'undefined') {
     Msg.CID_PARAM = 'contactid';
 
     // Only needed if we decide to craft our own UI
-    Msg.wallPost = function(uid,msg) {
+    Msg.wallPost = function(uid, msg) {
       to = uid || to;
       message = msg || message;
       fb.oauth.getAccessToken(doWallPost, 'wallPost');
     }
 
-    Msg.sendPrivate = function(uid,msg) {
+    Msg.sendPrivate = function(uid, msg) {
       // TODO: To be implemented (if we decide to craft our custom UI)
     }
 
@@ -29,8 +29,11 @@ if(typeof fb.msg === 'undefined') {
 
       msgWallService = msgWallService.replace(/#/, to);
 
-      var params = [fb.ACC_T + '=' + token,
-                    'message=' + message, 'callback=fb.msg.ui.wallPosted'];
+      var params = [
+        'access_token' + '=' + token,
+        'message' + '=' + message,
+        'callback' + '=' + 'fb.msg.ui.wallPosted'
+      ];
 
       var q = params.join('&');
 
@@ -42,7 +45,7 @@ if(typeof fb.msg === 'undefined') {
 
     var UI = Msg.ui = {};
 
-    function getFbContactUid(contactId,callback) {
+    function getFbContactUid(contactId, callback) {
        var req = fb.utils.getContactData(contactId);
 
       req.onsuccess = function() {
@@ -58,8 +61,8 @@ if(typeof fb.msg === 'undefined') {
 
     function openMsgDialog(dialogURI, uid) {
       var params = [
-        'app_id'       + '=' + appId,
-        'to'           + '=' + uid,
+        'app_id' + '=' + appId,
+        'to' + '=' + uid,
         'redirect_uri' + '=' + encodeURIComponent(redirectURI)
       ];
 
@@ -69,10 +72,10 @@ if(typeof fb.msg === 'undefined') {
 
     // Use the FB Dialogs functionality for posting to the wall
     UI.wallPost = function(contactId) {
-      getFbContactUid(contactId,function ui_wallPost(uid) {
-        if(uid) {
+      getFbContactUid(contactId, function ui_wallPost(uid) {
+        if (uid) {
           var dialogURI = 'https://m.facebook.com/dialog/feed?';
-          openMsgDialog(dialogURI,uid);
+          openMsgDialog(dialogURI, uid);
         }
       });
     }
@@ -81,8 +84,8 @@ if(typeof fb.msg === 'undefined') {
     // TODO: Check with Facebook why the send message dialog seems not to be
     // working on mobile
     UI.sendPrivateMsg = function(contactId) {
-      getFbContactUid(contactId,function ui_sendMsg(uid) {
-        if(uid) {
+      getFbContactUid(contactId, function ui_sendMsg(uid) {
+        if (uid) {
            window.open('https://m.facebook.com/chat/messages.php?id=' + uid);
         }
       });
