@@ -5,19 +5,25 @@ if(typeof fb.msg === 'undefined') {
     var Msg = fb.msg = {};
     var to;
     var message;
+    var params = fb.oauthflow.params;
+    var appId = params['applicationId'];
+    var redirectURI = params['redirectMsg'];
 
     Msg.CID_PARAM = 'contactid';
 
+    // Only needed if we decide to craft our own UI
     Msg.wallPost = function(uid,msg) {
-      to = uid;
-      message = msg;
+      to = uid || to;
+      message = msg || message;
       fb.oauth.getAccessToken(doWallPost, 'wallPost');
     }
 
     Msg.sendPrivate = function(uid,msg) {
-      // TODO: To be implented
+      // TODO: To be implemented (if we decide to craft our custom UI)
     }
 
+    // This code is for posting to user's wall. Only will be necessary if
+    // we decide to craft our own UI for posting to the wall
     function doWallPost(token) {
       var msgWallService = 'https://graph.facebook.com/#/feed?method=POST';
 
@@ -36,13 +42,50 @@ if(typeof fb.msg === 'undefined') {
 
     var UI = Msg.ui = {};
 
-    UI.wallPost = function() {
-      var text = document.querySelector('#post-text').value;
+    function getFbContactUid(contactId,callback) {
+       var req = fb.utils.getContactData(contactId);
 
-      if(text && text.length > 0) {
-        document.body.dataset.state = 'waiting';
-        Msg.wallPost(to,text);
+      req.onsuccess = function() {
+        var fbContact = new fb.Contact(req.result);
+        callback(fbContact.uid);
       }
+
+      req.onerror = function() {
+        window.console.error('Contacts: Contact not found!');
+        callback(null);
+      }
+    }
+
+    function openMsgDialog(dialogURI, uid) {
+      var params = [
+        'app_id'       + '=' + appId,
+        'to'           + '=' + uid,
+        'redirect_uri' + '=' + encodeURIComponent(redirectURI)
+      ];
+
+      var target = dialogURI + params.join('&');
+      window.open(target);
+    }
+
+    // Use the FB Dialogs functionality for posting to the wall
+    UI.wallPost = function(contactId) {
+      getFbContactUid(contactId,function ui_wallPost(uid) {
+        if(uid) {
+          var dialogURI = 'https://m.facebook.com/dialog/feed?';
+          openMsgDialog(dialogURI,uid);
+        }
+      });
+    }
+
+    // Use a Web view from Facebook for sending private messages
+    // TODO: Check with Facebook why the send message dialog seems not to be
+    // working on mobile
+    UI.sendPrivateMsg = function(contactId) {
+      getFbContactUid(contactId,function ui_sendMsg(uid) {
+        if(uid) {
+           window.open('https://m.facebook.com/chat/messages.php?id=' + uid);
+        }
+      });
     }
 
     UI.wallPosted = function(result) {
@@ -50,31 +93,5 @@ if(typeof fb.msg === 'undefined') {
       window.console.log(JSON.stringify(result));
     }
 
-    UI.end = function() {
-       var msg = {
-        type: 'window_close',
-        data: ''
-      };
-
-      parent.postMessage(msg, fb.CONTACTS_APP_ORIGIN);
-    }
-
-    UI.init = function (cid) {
-      var req = fb.utils.getContactData(cid);
-
-      req.onsuccess = function() {
-        var fbContact = new fb.Contact(req.result);
-        to = fbContact.uid;
-
-        document.querySelector('#to-name').textContent = req.result.name;
-      }
-
-      req.onerror = function() {
-        window.console.error('Contacts FB Post Wall: Contact not found');
-      }
-    }
-
   })(document);
 }
-
-

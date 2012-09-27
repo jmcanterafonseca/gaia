@@ -42,18 +42,6 @@ if (typeof Contacts.extFb === 'undefined') {
 
     function openURL(url) {
       window.open(url);
-
-      return;
-
-      var activityDesc = {
-        name: 'view',
-        data: {
-          type: 'url',
-          url: url
-        }
-      };
-
-      var activity = new MozActivity(activityDesc);
     }
 
     extFb.showProfile = function(cid) {
@@ -65,45 +53,7 @@ if (typeof Contacts.extFb === 'undefined') {
         var uid = fbContact.uid;
         var profileUrl = 'http://m.facebook.com/' + uid;
 
-        openURL(profileURL);
-      }
-
-      req.onerror = function() {
-        window.console.error('Contacts FB Profile: Contact not found');
-      }
-    }
-
-    extFb.sendPrivateMsg = function(cid) {
-      contactId = cid;
-
-      var req = fb.utils.getContactData(cid);
-
-      req.onsuccess = function() {
-        var fbContact = new fb.Contact(req.result);
-        var uid = fbContact.uid;
-        var access_token;
-
-        window.asyncStorage.getItem('tokenData',function(d) {
-          if(d) {
-            access_token = d.access_token;
-          }
-          var dialogURI = 'http://m.facebook.com/dialog/feed?';
-          var params = [
-            'app_id=' + '323630664378726',
-            'to=' + uid,
-            'redirect_uri=' + encodeURIComponent('http://intense-tundra-4122.herokuapp.com/fbowd/dialogs_end.html')
-          ];
-
-          if(access_token) {
-            params.push(fb.ACC_T + '=' + access_token);
-          }
-
-          var target = dialogURI + params.join('&');
-
-          window.console.log('OWDError: ', target);
-
-          openURL(target);
-        });
+        openURL(profileUrl);
       }
 
       req.onerror = function() {
@@ -113,8 +63,12 @@ if (typeof Contacts.extFb === 'undefined') {
 
     extFb.wallPost = function(cid) {
       contactId = cid;
+      fb.msg.ui.wallPost(contactId);
+    }
 
-      open('fb_messaging.html?contactId=' + contactId);
+    extFb.sendPrivateMsg = function(cid) {
+      contactId = cid;
+      fb.msg.ui.sendPrivateMsg(contactId);
     }
 
     function doLink(uid) {
