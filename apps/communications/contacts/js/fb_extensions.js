@@ -41,6 +41,10 @@ if (typeof Contacts.extFb === 'undefined') {
     }
 
     function openURL(url) {
+      window.open(url);
+
+      return;
+
       var activityDesc = {
         name: 'view',
         data: {
@@ -76,11 +80,30 @@ if (typeof Contacts.extFb === 'undefined') {
 
       req.onsuccess = function() {
         var fbContact = new fb.Contact(req.result);
-
         var uid = fbContact.uid;
-        var target = 'http://m.facebook.com/chat/messages.php?id=' + uid;
+        var access_token;
 
-        openURL(target);
+        window.asyncStorage.getItem('tokenData',function(d) {
+          if(d) {
+            access_token = d.access_token;
+          }
+          var dialogURI = 'http://m.facebook.com/dialog/feed?';
+          var params = [
+            'app_id=' + '323630664378726',
+            'to=' + uid,
+            'redirect_uri=' + encodeURIComponent('http://intense-tundra-4122.herokuapp.com/fbowd/dialogs_end.html')
+          ];
+
+          if(access_token) {
+            params.push(fb.ACC_T + '=' + access_token);
+          }
+
+          var target = dialogURI + params.join('&');
+
+          window.console.log('OWDError: ', target);
+
+          openURL(target);
+        });
       }
 
       req.onerror = function() {
