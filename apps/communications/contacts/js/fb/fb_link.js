@@ -57,6 +57,11 @@ if (!fb.link) {
                                       contact.name[0].length > 0) {
         // First the name condition is put there
         NAME_COND[2] = contact.name[0].toLowerCase();
+        filter.push(NAME_COND.join(''));
+
+        filter.push(' OR ');
+
+        NAME_COND[2] = normalizeText(contact.name[0]).toLowerCase();
       }
       else {
          // The condition will be false by definition
@@ -94,6 +99,11 @@ if (!fb.link) {
                                contact.givenName[0].length > 0) {
         // First the name condition is put there
         FIRST_NAME_COND[2] = contact.givenName[0].toLowerCase();
+        filter.push(FIRST_NAME_COND.join(''));
+
+        filter.push(' OR ');
+
+        FIRST_NAME_COND[2] = normalizeText(contact.givenName[0]).toLowerCase();
       }
       else {
          // The condition will be false by definition
@@ -107,6 +117,11 @@ if (!fb.link) {
                                 contact.familyName[0].length > 0) {
         // First the name condition is put there
         LAST_NAME_COND[2] = contact.familyName[0].toLowerCase();
+        filter.push(LAST_NAME_COND.join(''));
+
+        filter.push(' OR ');
+
+        LAST_NAME_COND[2] = normalizeText(contact.familyName[0]).toLowerCase();
       }
       else {
          // The condition will be false by definition
