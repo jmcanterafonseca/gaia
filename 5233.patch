@@ -1,0 +1,916 @@
+From bc3ed2634b2f9e2920f1df89ae8e51d6a6f52199 Mon Sep 17 00:00:00 2001
+From: crdlc <crdlc@tid.es>
+Date: Wed, 26 Sep 2012 10:43:51 +0200
+Subject: [PATCH 1/2] isolated contacts search
+
+---
+ apps/communications/contacts/index.html          |    6 +-
+ apps/communications/contacts/js/contacts_list.js |   82 +-----------------
+ apps/communications/contacts/js/search.js        |   96 +++++++++++++++++++++
+ apps/communications/contacts/style/contacts.css  |   98 ----------------------
+ apps/communications/contacts/style/search.css    |   97 +++++++++++++++++++++
+ 5 files changed, 198 insertions(+), 181 deletions(-)
+ create mode 100644 apps/communications/contacts/js/search.js
+ create mode 100644 apps/communications/contacts/style/search.css
+
+diff --git a/apps/communications/contacts/index.html b/apps/communications/contacts/index.html
+index 8f577e6..f54ac8c 100644
+--- a/apps/communications/contacts/index.html
++++ b/apps/communications/contacts/index.html
+@@ -9,6 +9,7 @@
+ 
+     <link href="/contacts/style/app.css" rel="stylesheet">
+     <link href="/contacts/style/contacts.css" rel="stylesheet">
++    <link href="/contacts/style/search.css" rel="stylesheet">
+     <link href="/contacts/style/custom_dialog.css" rel="stylesheet">
+     <link href="/contacts/style/input_cancel_button.css" rel="stylesheet">
+     <link href="/contacts/style/fixed_header.css" rel="stylesheet">
+@@ -37,6 +38,7 @@
+ 
+     <script defer type="text/javascript" src="/contacts/js/navigation.js"></script>
+     <script defer type="text/javascript" src="/contacts/js/contacts_list.js"></script>
++    <script defer type="text/javascript" src="/contacts/js/search.js"></script>
+     <script defer type="text/javascript" src="/contacts/js/contacts_details.js"></script>
+     <script defer type="text/javascript" src="/contacts/js/contacts_form.js"></script>
+     <script defer type="text/javascript" src="/contacts/js/contacts_shortcuts.js"></script>
+@@ -105,8 +107,8 @@ <h1 data-l10n-id="contacts">Contacts</h1>
+         <section id="search-view" class="view">
+            <form id="searchview-container" class="search">
+               <label for="search-contact">
+-                <input data-cancelable required type="search" name="search" class="textfield" onfocus='return contacts.List.enterSearchMode();' placeholder="Search" id="search-contact" onkeyup="contacts.List.search()" data-l10n-id="search-contact" />
+-                <button id='cancel-search' onclick='return contacts.List.exitSearchMode()' data-l10n-id="cancel">Cancel</button>
++                <input data-cancelable required type="search" name="search" class="textfield" onfocus='return contacts.Search.enterSearchMode();' placeholder="Search" id="search-contact" onkeyup="contacts.Search.search()" data-l10n-id="search-contact" />
++                <button id='cancel-search' onclick='return contacts.Search.exitSearchMode()' data-l10n-id="cancel">Cancel</button>
+               </label>
+             </form>
+         </section>
+diff --git a/apps/communications/contacts/js/contacts_list.js b/apps/communications/contacts/js/contacts_list.js
+index 1932ece..2dc7537 100644
+--- a/apps/communications/contacts/js/contacts_list.js
++++ b/apps/communications/contacts/js/contacts_list.js
+@@ -7,13 +7,9 @@ contacts.List = (function() {
+       loading,
+       groupsList,
+       favoriteGroup,
+-      inSearchMode = false,
+       loaded = false,
+       cancel,
+       conctactsListView,
+-      searchView,
+-      searchBox,
+-      searchNoResult,
+       fastScroll,
+       scrollable,
+       settingsView;
+@@ -23,9 +19,6 @@ contacts.List = (function() {
+ 
+     cancel = document.getElementById('cancel-search'),
+     conctactsListView = document.getElementById('view-contacts-list'),
+-    searchView = document.getElementById('search-view'),
+-    searchBox = document.getElementById('search-contact'),
+-    searchNoResult = document.getElementById('no-result'),
+     fastScroll = document.querySelector('.view-jumper'),
+     scrollable = document.querySelector('#groups-container');
+     settingsView = document.querySelector('#view-settings .view-body-inner');
+@@ -49,6 +42,7 @@ contacts.List = (function() {
+     FixedHeader.init('#groups-container', '#fixed-container', selector);
+ 
+     initAlphaScroll();
++    contacts.Search.init(conctactsListView, favoriteGroup);
+   }
+ 
+   var initAlphaScroll = function initAlphaScroll() {
+@@ -593,77 +587,6 @@ contacts.List = (function() {
+     }
+   }
+ 
+-  //Search mode instructions
+-  var exitSearchMode = function exitSearchMode() {
+-    searchNoResult.classList.add('hide');
+-    conctactsListView.classList.remove('searching');
+-    searchBox.value = '';
+-    inSearchMode = false;
+-    // Show elements that were hidden for the search
+-    if (favoriteGroup) {
+-      favoriteGroup.classList.remove('hide');
+-    }
+-
+-    // Bring back to visibilitiy the contacts
+-    var allContacts = getContactsDom();
+-    for (var i = 0; i < allContacts.length; i++) {
+-      var contact = allContacts[i];
+-      contact.classList.remove('search');
+-      contact.classList.remove('hide');
+-    }
+-    return false;
+-  };
+-
+-  var enterSearchMode = function searchMode() {
+-    if (!inSearchMode) {
+-      conctactsListView.classList.add('searching');
+-      cleanContactsList();
+-      inSearchMode = true;
+-    }
+-    return false;
+-  };
+-
+-  var search = function performSearch() {
+-
+-    var pattern = new RegExp(normalizeText(searchBox.value), 'i');
+-    var count = 0;
+-
+-    var allContacts = getContactsDom();
+-    for (var i = 0; i < allContacts.length; i++) {
+-      var contact = allContacts[i];
+-      contact.classList.add('search');
+-      var text = contact.querySelector('.item-body-exp').dataset['search'];
+-      if (!pattern.test(text)) {
+-        contact.classList.add('hide');
+-      } else {
+-        contact.classList.remove('hide');
+-        count++;
+-      }
+-    }
+-
+-    if (count == 0) {
+-      searchNoResult.classList.remove('hide');
+-    } else {
+-      searchNoResult.classList.add('hide');
+-    }
+-  };
+-
+-  var cleanContactsList = function cleanContactsList() {
+-    if (favoriteGroup) {
+-      favoriteGroup.classList.add('hide');
+-    }
+-  };
+-
+-  var getContactsDom = function contactsDom() {
+-    var selector = ".block-item:not([data-uuid='#id#']";
+-    return document.querySelectorAll(selector);
+-  }
+-
+-  // When the cancel button inside the input is clicked
+-  document.addEventListener('cancelInput', function() {
+-    search();
+-  });
+-
+   return {
+     'init': init,
+     'load': load,
+@@ -671,9 +594,6 @@ contacts.List = (function() {
+     'getContactById': getContactById,
+     'handleClick': handleClick,
+     'remove': remove,
+-    'search': search,
+-    'enterSearchMode': enterSearchMode,
+-    'exitSearchMode': exitSearchMode,
+     'loaded': loaded,
+     'clearClickHandlers': clearClickHandlers
+   };
+diff --git a/apps/communications/contacts/js/search.js b/apps/communications/contacts/js/search.js
+new file mode 100644
+index 0000000..5107fef
+--- /dev/null
++++ b/apps/communications/contacts/js/search.js
+@@ -0,0 +1,96 @@
++﻿'use strict';
++
++var contacts = window.contacts || {};
++
++contacts.Search = (function() {
++  var favoriteGroup,
++      inSearchMode = false,
++      conctactsListView,
++      searchBox,
++      searchNoResult;
++
++  var init = function load(_conctactsListView, _groupFavorites) {
++    conctactsListView = _conctactsListView;
++    favoriteGroup = _groupFavorites;
++    searchBox = document.getElementById('search-contact');
++    searchNoResult = document.getElementById('no-result');
++  }
++
++  //Search mode instructions
++  var exitSearchMode = function exitSearchMode() {
++    searchNoResult.classList.add('hide');
++    conctactsListView.classList.remove('searching');
++    searchBox.value = '';
++    inSearchMode = false;
++    // Show elements that were hidden for the search
++    if (favoriteGroup) {
++      favoriteGroup.classList.remove('hide');
++    }
++
++    // Bring back to visibilitiy the contacts
++    var allContacts = getContactsDom();
++    for (var i = 0; i < allContacts.length; i++) {
++      var contact = allContacts[i];
++      contact.classList.remove('search');
++      contact.classList.remove('hide');
++    }
++    return false;
++  };
++
++  var enterSearchMode = function searchMode() {
++    if (!inSearchMode) {
++      conctactsListView.classList.add('searching');
++      cleanContactsList();
++      inSearchMode = true;
++    }
++    return false;
++  };
++
++  var search = function performSearch() {
++
++    var pattern = new RegExp(normalizeText(searchBox.value), 'i');
++    var count = 0;
++
++    var allContacts = getContactsDom();
++    for (var i = 0; i < allContacts.length; i++) {
++      var contact = allContacts[i];
++      contact.classList.add('search');
++      var text = contact.querySelector('.item-body-exp').dataset['search'];
++      if (!pattern.test(text)) {
++        contact.classList.add('hide');
++      } else {
++        contact.classList.remove('hide');
++        count++;
++      }
++    }
++
++    if (count == 0) {
++      searchNoResult.classList.remove('hide');
++    } else {
++      searchNoResult.classList.add('hide');
++    }
++  };
++
++  var cleanContactsList = function cleanContactsList() {
++    if (favoriteGroup) {
++      favoriteGroup.classList.add('hide');
++    }
++  };
++
++  var getContactsDom = function contactsDom() {
++    var selector = ".block-item:not([data-uuid='#id#']";
++    return document.querySelectorAll(selector);
++  }
++
++  // When the cancel button inside the input is clicked
++  document.addEventListener('cancelInput', function() {
++    search();
++  });
++
++  return {
++    'init': init,
++    'search': search,
++    'enterSearchMode': enterSearchMode,
++    'exitSearchMode': exitSearchMode
++  };
++})();
+diff --git a/apps/communications/contacts/style/contacts.css b/apps/communications/contacts/style/contacts.css
+index 881d8e9..9d9483a 100644
+--- a/apps/communications/contacts/style/contacts.css
++++ b/apps/communications/contacts/style/contacts.css
+@@ -149,104 +149,6 @@ hr {
+   height: 2rem;
+ }
+ 
+-/* Search */
+-
+-#groups-list {
+-  padding-top: 2.5rem;
+-}
+-
+-.search-hide {
+-  display: none;
+-}
+-
+-/* Common search styles */
+-form.search {
+-  background: url(gphx/bitmap/default/search/searchbar_1x35.png) repeat-x scroll left bottom transparent;
+-  position: absolute;
+-  width: 100%;
+-  -moz-box-sizing: border-box;
+-  top: 0;
+-  left: 0;
+-  color: #000;
+-  font-family: 'Open Sans', Sans-serif;
+-  font-size: 1.2rem;
+-  text-align: left;
+-  pointer-events: auto;
+-}
+-
+-form.search label {
+-  display: block;
+-  padding: 0.5rem 3.3rem 0.5rem 2.5rem;
+-}
+-
+-form.search input {
+-  height: 2.5rem;
+-  pointer-events: none;
+-}
+-
+-form.search button {
+-  line-height: 2.5rem;
+-  padding: 0;
+-  margin-top: -0.5rem;
+-  width: 8rem;
+-  height: 3.5rem;
+-  font-family: 'Open Sans', Sans-serif;
+-  font-weight: 600;
+-  font-size: 1.2rem;
+-  color: #707070;
+-  float: right;
+-}
+-
+-/* Search view */
+-#search-view {
+-  pointer-events: none;
+-  transform: translateX(100%);
+-  z-index: 10;
+-}
+-
+-#view-contacts-list.searching #search-view {
+-  transform: translateX(0);
+-}
+-
+-#search-view form.search label {
+-  padding: 0.5rem 0 0.5rem 2.5rem;
+-}
+-
+-#search-view form.search input {
+-  pointer-events: auto;
+-  width: 21.5rem;
+-  box-shadow: none;
+-}
+-
+-/* Searching state */
+-#view-contacts-list.searching > header {
+-  transform: scale(0);
+-  pointer-events: none;
+-}
+-
+-#view-contacts-list.searching .fixed-title {
+-  transform: scale(0) !important;
+-}
+-
+-#view-contacts-list.searching .view-jumper {
+-  transform: scale(0);
+-}
+-
+-#view-contacts-list.searching #groups-list h2 {
+-  display: none;
+-}
+-
+-#view-contacts-list.searching .view-body-inner {
+-  height: calc(100% + 5rem);
+-  margin-top: -5rem;
+-}
+-
+-#no-result {
+-  margin-top: -moz-calc((100% - 0.5rem) / 2);
+-  text-align: center;
+-  margin-left: -0.8rem;
+-}
+-
+ /* "import contacts" button and throbber */
+ .importContacts {
+   font-size: 1.6rem;
+diff --git a/apps/communications/contacts/style/search.css b/apps/communications/contacts/style/search.css
+new file mode 100644
+index 0000000..f2de2b3
+--- /dev/null
++++ b/apps/communications/contacts/style/search.css
+@@ -0,0 +1,97 @@
++/* Search */
++
++#groups-list {
++  padding-top: 2.5rem;
++}
++
++.search-hide {
++  display: none;
++}
++
++/* Common search styles */
++form.search {
++  background: url(gphx/bitmap/default/search/searchbar_1x35.png) repeat-x scroll left bottom transparent;
++  position: absolute;
++  width: 100%;
++  -moz-box-sizing: border-box;
++  top: 0;
++  left: 0;
++  color: #000;
++  font-family: 'Open Sans', Sans-serif;
++  font-size: 1.2rem;
++  text-align: left;
++  pointer-events: auto;
++}
++
++form.search label {
++  display: block;
++  padding: 0.5rem 3.3rem 0.5rem 2.5rem;
++}
++
++form.search input {
++  height: 2.5rem;
++  pointer-events: none;
++}
++
++form.search button {
++  line-height: 2.5rem;
++  padding: 0;
++  margin-top: -0.5rem;
++  width: 8rem;
++  height: 3.5rem;
++  font-family: 'Open Sans', Sans-serif;
++  font-weight: 600;
++  font-size: 1.2rem;
++  color: #707070;
++  float: right;
++}
++
++/* Search view */
++#search-view {
++  pointer-events: none;
++  transform: translateX(100%);
++  z-index: 10;
++}
++
++#view-contacts-list.searching #search-view {
++  transform: translateX(0);
++}
++
++#search-view form.search label {
++  padding: 0.5rem 0 0.5rem 2.5rem;
++}
++
++#search-view form.search input {
++  pointer-events: auto;
++  width: 21.5rem;
++  box-shadow: none;
++}
++
++/* Searching state */
++#view-contacts-list.searching > header {
++  transform: scale(0);
++  pointer-events: none;
++}
++
++#view-contacts-list.searching .fixed-title {
++  transform: scale(0) !important;
++}
++
++#view-contacts-list.searching .view-jumper {
++  transform: scale(0);
++}
++
++#view-contacts-list.searching #groups-list h2 {
++  display: none;
++}
++
++#view-contacts-list.searching .view-body-inner {
++  height: calc(100% + 5rem);
++  margin-top: -5rem;
++}
++
++#no-result {
++  margin-top: -moz-calc((100% - 0.5rem) / 2);
++  text-align: center;
++  margin-left: -0.8rem;
++}
+-- 
+1.7.10
+
+
+From 4a83b2d02f26a08bcbdb9069604478986901687e Mon Sep 17 00:00:00 2001
+From: crdlc <crdlc@tid.es>
+Date: Wed, 26 Sep 2012 17:45:58 +0200
+Subject: [PATCH 2/2] added search to facebook import
+
+---
+ apps/communications/contacts/fb_import.html        |   37 +++++++++++-----
+ apps/communications/contacts/js/fb/fb_import.js    |    5 +--
+ apps/communications/contacts/js/fb/friends_list.js |   12 ++++--
+ apps/communications/contacts/js/fixed_header.js    |    2 +-
+ apps/communications/contacts/js/search.js          |    3 +-
+ apps/communications/contacts/style/fb/facebook.css |   35 +++++++++++----
+ .../communications/contacts/style/fixed_header.css |    3 +-
+ apps/communications/contacts/style/search.css      |   45 ++++++++++++++++----
+ 8 files changed, 105 insertions(+), 37 deletions(-)
+
+diff --git a/apps/communications/contacts/fb_import.html b/apps/communications/contacts/fb_import.html
+index fb70ce5..65f37e1 100644
+--- a/apps/communications/contacts/fb_import.html
++++ b/apps/communications/contacts/fb_import.html
+@@ -14,10 +14,12 @@
+     <link rel="stylesheet" href="style/fb/headers/style.css">
+     <link rel="stylesheet" href="style/fb/facebook.css">
+     <link rel="stylesheet" href="style/fixed_header.css">
++    <link rel="stylesheet" href="style/search.css">
+ 
+     <link rel="resource" type="application/l10n" href="/contacts/locales/fb/locales.ini">
+     <script type="text/javascript" src="/shared/js/l10n.js"></script>
+ 
++    <script defer type="text/javascript" src="js/utilities/normalizer.js"></script>
+     <script defer type="text/javascript" src="js/utilities/templates.js"></script>
+     <script defer type="text/javascript" src="js/fb/fb_utils.js"></script>
+     <script defer type="text/javascript" src="js/fb/friends_list.js"></script>
+@@ -25,6 +27,7 @@
+ 
+     <script defer type="text/javascript" src="/shared/js/async_storage.js"></script>
+     <script defer type="text/javascript" src="js/fb/fb_oauth.js"></script>
++    <script defer type="text/javascript" src="js/search.js"></script>
+     <script defer type="text/javascript" src="js/fb/fb_import.js"></script>
+ 
+     <script defer type="text/javascript" src="oauth2/js/flow.js"></script>
+@@ -40,7 +43,7 @@
+ 
+   <body role="application">
+ 
+-    <section role="region" id="content">
++    <section role="region" id="content" class="facebook">
+ 
+       <header>
+         <a href="#" onclick="fb.importer.ui.end(event)">
+@@ -54,6 +57,11 @@
+         <h1 data-l10n-id="fbFriends">Facebook Friends</h1>
+       </header>
+ 
++      <section class="friends-msg">
++        <output id="num-friends" hidden></output>
++        <p id="friends-msg"></p>
++      </section>
++
+       <section id="main">
+         <div id="shortcuts">
+           <abbr id="current" title="Contacts by "></abbr>
+@@ -66,14 +74,14 @@ <h1 data-l10n-id="fbFriends">Facebook Friends</h1>
+           </ol>
+         </div>
+ 
+-        <div>
+-          <output id="num-friends" hidden></output>
+-          <p id="friends-msg">
+-          </p>
+-        </div>
+-
+         <!-- Contacts List Section -->
+         <section id='mainContent' data-state="selection">
++          <form id="search-container" class="search">
++            <label for="search-contact">
++              <input type="search" name="search" class="textfield" placeholder="Search" data-l10n-id="search-contact" />
++            </label>
++          </form>
++          <p id="no-result" class="hide" data-l10n-id="noResults">No contacts found</p>
+           <ol id="groups-list" class="unbordered">
+             <li id="group-#group#" data-template>
+               <h2 class="block-title">
+@@ -81,7 +89,7 @@ <h2 class="block-title">
+               </h2>
+ 
+               <ol id="contacts-list-#group#">
+-                <li data-template data-uuid="#uid#" aria-disabled="false">
++                <li data-template data-uuid="#uid#" data-search="#search#" aria-disabled="false" class="block-item">
+                   <div class="aside begin" role="presentation">
+                     <input type="checkbox" name="#uid#">
+                     <span></span>
+@@ -100,7 +108,7 @@ <h2 class="block-title">
+           </ol>
+         </section> <!-- mainContent -->
+ 
+-        <menu data-items="1">
++        <menu id="select-all-wrapper" data-items="1">
+           <button id="select-all" onclick="fb.importer.ui.selectAll(event)" data-l10n-id="selectAll">
+             Select All
+           </button>
+@@ -108,8 +116,17 @@ <h2 class="block-title">
+ 
+       </section> <!-- main -->
+ 
++      <section id='fixed-container' class='fixed-title-fb'></section>
++
++      <section id="search-view" class="view">
++        <form id="searchview-container" class="search">
++           <label for="search-contact">
++             <input data-cancelable required type="search" name="search" class="textfield" onfocus='return contacts.Search.enterSearchMode();' placeholder="Search" id="search-contact" onkeyup="contacts.Search.search()" data-l10n-id="search-contact" />
++             <button id='cancel-search' onclick='return contacts.Search.exitSearchMode()' data-l10n-id="cancel">Cancel</button>
++           </label>
++         </form>
++      </section>
+     </section> <!-- role="region" -->
+-    <section id='fixed-container' class='fixed-title-fb'></section>
+ 
+     <section id="curtain" role="region">
+       <header>
+diff --git a/apps/communications/contacts/js/fb/fb_import.js b/apps/communications/contacts/js/fb/fb_import.js
+index 9be38c1..33b8f1b 100644
+--- a/apps/communications/contacts/js/fb/fb_import.js
++++ b/apps/communications/contacts/js/fb/fb_import.js
+@@ -91,6 +91,7 @@ if (typeof fb.importer === 'undefined') {
+       };
+ 
+       utils.alphaScroll.init(params);
++      contacts.Search.init(document.getElementById('content'));
+     }
+ 
+     UI.end = function(event) {
+@@ -104,9 +105,7 @@ if (typeof fb.importer === 'undefined') {
+     }
+ 
+     function scrollToCb(groupContainer) {
+-      scrollableElement.scrollTop = groupContainer.offsetTop -
+-                                    headerElement.clientHeight -
+-                                    friendsMsgElement.clientHeight;
++      scrollableElement.scrollTop = groupContainer.offsetTop;
+     }
+ 
+     UI.getFriends = function() {
+diff --git a/apps/communications/contacts/js/fb/friends_list.js b/apps/communications/contacts/js/fb/friends_list.js
+index 5a899a2..dbfb28b 100644
+--- a/apps/communications/contacts/js/fb/friends_list.js
++++ b/apps/communications/contacts/js/fb/friends_list.js
+@@ -42,6 +42,14 @@ contacts.List = (function() {
+       var friends = groups[group];
+       // For each friend in the group
+       friends.forEach(function(friend) {
++        var searchInfo = [];
++        var searchable = ['givenName', 'familyName', 'org'];
++        searchable.forEach(function(field) {
++          if (friend[field] && friend[field][0]) {
++            searchInfo.push(friend[field][0]);
++          }
++        });
++        friend.search = normalizeText(searchInfo.join(' '));
+         // New friend appended
+         utils.templates.append(ele, friend);
+         // We check wether this friend was in the AB or not before
+@@ -49,9 +57,7 @@ contacts.List = (function() {
+     });
+ 
+     groupsList.removeChild(groupsList.children[0]); // Deleting template
+-    FixedHeader.init('#mainContent', '#fixed-container', 'h2.block-title',
+-                     true);
+-    FixedHeader.start();
++    FixedHeader.init('#mainContent', '#fixed-container', 'h2.block-title');
+ 
+     if (typeof cb === 'function') {
+       window.setTimeout(function() { cb(); }, 0);
+diff --git a/apps/communications/contacts/js/fixed_header.js b/apps/communications/contacts/js/fixed_header.js
+index 689ba7e..1f2c258 100644
+--- a/apps/communications/contacts/js/fixed_header.js
++++ b/apps/communications/contacts/js/fixed_header.js
+@@ -32,7 +32,7 @@ var FixedHeader = (function FixedHeader() {
+     var currentScroll = view.scrollTop;
+     for (var i = headings.length - 1; i >= 0; i--) {
+       var currentHeader = headings[i];
+-      var headingPosition = currentHeader.offsetTop - view.offsetTop;
++      var headingPosition = currentHeader.offsetTop;
+       var offset = headingPosition - currentScroll;
+       var currentHeight = currentHeader.offsetHeight;
+       var differentHeaders = currentlyFixed != currentHeader;
+diff --git a/apps/communications/contacts/js/search.js b/apps/communications/contacts/js/search.js
+index 5107fef..0f767d8 100644
+--- a/apps/communications/contacts/js/search.js
++++ b/apps/communications/contacts/js/search.js
+@@ -55,7 +55,8 @@ contacts.Search = (function() {
+     for (var i = 0; i < allContacts.length; i++) {
+       var contact = allContacts[i];
+       contact.classList.add('search');
+-      var text = contact.querySelector('.item-body-exp').dataset['search'];
++      var body = contact.querySelector('.item-body-exp');
++      var text = body ? body.dataset['search'] : contact.dataset['search'];
+       if (!pattern.test(text)) {
+         contact.classList.add('hide');
+       } else {
+diff --git a/apps/communications/contacts/style/fb/facebook.css b/apps/communications/contacts/style/fb/facebook.css
+index 313c0e0..0061290 100644
+--- a/apps/communications/contacts/style/fb/facebook.css
++++ b/apps/communications/contacts/style/fb/facebook.css
+@@ -1,9 +1,21 @@
+-*[data-template] {
++.hide, *[data-template] {
+   display: none !important;
+ }
+ 
+ html, body {
+   overflow: hidden;
++  margin: 0;
++  padding: 0;
++}
++
++.view {
++  position: fixed;
++  left: 0;
++  top: -2px;
++  width: 100%;
++  height: 100%;
++  margin: 0;
++  padding: 0;
+ }
+ 
+ #curtain {
+@@ -30,10 +42,18 @@ html, body {
+   margin: 2.5rem auto 1.5rem;
+ }
+ 
++.friends-msg {
++  position: absolute;
++  top: 5.3rem;
++  height: 2rem !important;
++  width: 100%;
++  z-index: 1;
++  background-color: #fff;
++}
++
+ p#friends-msg {
+   font-size: 1.5rem;
+   margin-left: 3rem;
+-  height: 2rem !important;
+ }
+ 
+ #curtain > p.submessage {
+@@ -52,8 +72,6 @@ p#friends-msg {
+   margin-top: 1rem;
+ }
+ 
+-
+-
+ body[data-state='waiting'] #curtain {
+   display: block;
+ }
+@@ -62,14 +80,15 @@ body[data-state='waiting'] #content {
+   display: none;
+ }
+ 
+-
+ h2.block-title {
+   border-bottom: 1px solid #4D77CF; color: #4D77CF;
+   margin: 0;
+ }
+ 
+ #main {
+-  height: -moz-calc(100% - 5.3rem);
++  position: absolute;
++  top: 7.3rem;
++  height: -moz-calc(100% - 7.3rem);
+ }
+ 
+ #mainContent {
+@@ -80,11 +99,10 @@ h2.block-title {
+ 
+   -moz-box-sizing: border-box;
+ 
+-  background: #f4f4f4;
+   color: #333;
+   text-align: left;
+ 
+-  height: -moz-calc(100% - 8.5rem);
++  height: -moz-calc(100% - 6.5rem);
+ }
+ 
+ #groups-list {
+@@ -105,7 +123,6 @@ h2.block-title {
+   z-index:100;
+ }
+ 
+-
+ #shortcuts ol li[data-letter] {
+   display:block;
+ }
+diff --git a/apps/communications/contacts/style/fixed_header.css b/apps/communications/contacts/style/fixed_header.css
+index 6884bf4..cc5fae6 100644
+--- a/apps/communications/contacts/style/fixed_header.css
++++ b/apps/communications/contacts/style/fixed_header.css
+@@ -20,9 +20,10 @@
+   top: 7.2rem;
+   left: 2.5rem;
+   width: -moz-calc(100% - 4.2rem);
+-  z-index: 1;
++  z-index: 0;
+   border-bottom: 1px solid #4D77CF;
+   background: #f4f4f4;
++  transform: translateY(-100%);
+   color: #4D77CF;
+   font-size: 1.5rem;
+   text-align: left;
+diff --git a/apps/communications/contacts/style/search.css b/apps/communications/contacts/style/search.css
+index f2de2b3..ca2b800 100644
+--- a/apps/communications/contacts/style/search.css
++++ b/apps/communications/contacts/style/search.css
+@@ -4,8 +4,8 @@
+   padding-top: 2.5rem;
+ }
+ 
+-.search-hide {
+-  display: none;
++.facebook #groups-list {
++  padding-top: 0;
+ }
+ 
+ /* Common search styles */
+@@ -23,6 +23,10 @@ form.search {
+   pointer-events: auto;
+ }
+ 
++.facebook form.search {
++  position: relative;
++}
++
+ form.search label {
+   display: block;
+   padding: 0.5rem 3.3rem 0.5rem 2.5rem;
+@@ -31,19 +35,26 @@ form.search label {
+ form.search input {
+   height: 2.5rem;
+   pointer-events: none;
++  width: 21.5rem;
+ }
+ 
+ form.search button {
+   line-height: 2.5rem;
+-  padding: 0;
++  padding: 0 .5rem 0 0;
+   margin-top: -0.5rem;
+-  width: 8rem;
++  width: 7rem;
+   height: 3.5rem;
+   font-family: 'Open Sans', Sans-serif;
+   font-weight: 600;
+   font-size: 1.2rem;
+   color: #707070;
+   float: right;
++  vertical-align: middle;
++  background: none;
++  border: none;
++  outline: none;
++  white-space: nowrap;
++  cursor: pointer;
+ }
+ 
+ /* Search view */
+@@ -53,7 +64,8 @@ form.search button {
+   z-index: 10;
+ }
+ 
+-#view-contacts-list.searching #search-view {
++#view-contacts-list.searching #search-view,
++#content.searching #search-view {
+   transform: translateX(0);
+ }
+ 
+@@ -68,20 +80,24 @@ form.search button {
+ }
+ 
+ /* Searching state */
+-#view-contacts-list.searching > header {
++#view-contacts-list.searching > header,
++#content.searching > header {
+   transform: scale(0);
+   pointer-events: none;
+ }
+ 
+-#view-contacts-list.searching .fixed-title {
++#view-contacts-list.searching .fixed-title,
++#content.searching .fixed-title {
+   transform: scale(0) !important;
+ }
+ 
+-#view-contacts-list.searching .view-jumper {
++#view-contacts-list.searching .view-jumper,
++#content.searching #shortcuts {
+   transform: scale(0);
+ }
+ 
+-#view-contacts-list.searching #groups-list h2 {
++#view-contacts-list.searching #groups-list h2,
++#content.searching #groups-list h2 {
+   display: none;
+ }
+ 
+@@ -90,8 +106,19 @@ form.search button {
+   margin-top: -5rem;
+ }
+ 
++#content.searching #mainContent {
++  height: calc(100% + 7.3rem);
++  margin-top: -7.5rem;
++}
++
++#content.searching #select-all-wrapper, #content.searching .friends-msg,
++#content.searching .fixed-title-fb {
++  display: none;
++}
++
+ #no-result {
+   margin-top: -moz-calc((100% - 0.5rem) / 2);
+   text-align: center;
+   margin-left: -0.8rem;
++  font-size: 1.4rem;
+ }
+-- 
+1.7.10
+

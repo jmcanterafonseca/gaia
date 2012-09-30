@@ -1,0 +1,109 @@
+From bf809c4e56e8a398f1ee1c84ebe5cb46fc92edc9 Mon Sep 17 00:00:00 2001
+From: crdlc <crdlc@tid.es>
+Date: Mon, 24 Sep 2012 10:46:55 +0200
+Subject: [PATCH] Added transition to open the FB link functionality
+
+---
+ apps/communications/contacts/index.html            |    2 +-
+ apps/communications/contacts/js/fb_extensions.js   |   24 ++++++++++++++------
+ .../contacts/style/fb_extensions.css               |   12 +++++++++-
+ 3 files changed, 29 insertions(+), 9 deletions(-)
+
+diff --git a/apps/communications/contacts/index.html b/apps/communications/contacts/index.html
+index d94d315..2b43fde 100644
+--- a/apps/communications/contacts/index.html
++++ b/apps/communications/contacts/index.html
+@@ -59,7 +59,7 @@
+ 
+     <div id="app" class="views" data-state="active">
+ 
+-       <iframe id="fb-extensions" hidden></iframe>
++       <iframe id="fb-extensions"></iframe>
+ 
+       <!-- Contacts List Section -->
+       <section id='view-contacts-list' role="region" data-mirror="mirror-contacts-list" data-state="active" class="view view-noscroll view-contacts-list">
+diff --git a/apps/communications/contacts/js/fb_extensions.js b/apps/communications/contacts/js/fb_extensions.js
+index 5b2db15..0359937 100644
+--- a/apps/communications/contacts/js/fb_extensions.js
++++ b/apps/communications/contacts/js/fb_extensions.js
+@@ -12,16 +12,27 @@ if (typeof Contacts.extFb === 'undefined') {
+     extFb.startLink = function(cid, linked) {
+       contactId = cid;
+       if (linked === 'true') {
+-        extensionFrame.src = 'fb_link.html' + '?contactId=' + contactId;
+-        extensionFrame.hidden = false;
++        open('fb_link.html' + '?contactId=' + contactId);
+       } else {
+         doUnlink(contactId);
+       }
+     }
+ 
+     extFb.importFB = function() {
+-      extensionFrame.src = 'fb_import.html';
+-      extensionFrame.hidden = false;
++      open('fb_import.html');
++    }
++
++    function open(uri) {
++      extensionFrame.src = uri;
++      extensionFrame.className = 'opening';
++    }
++
++    function close() {
++      extensionFrame.addEventListener('transitionend', function closed() {
++        extensionFrame.removeEventListener('transitionend', closed);
++        extensionFrame.src = null;
++      });
++      extensionFrame.className = 'closing';
+     }
+ 
+     function doLink(uid) {
+@@ -41,7 +52,7 @@ if (typeof Contacts.extFb === 'undefined') {
+         });
+ 
+         req.onsuccess = function success() {
+-          extensionFrame.hidden = true;
++          close();
+ 
+           contacts.List.refresh(contactId);
+           if (originalFbContact) {
+@@ -82,8 +93,7 @@ if (typeof Contacts.extFb === 'undefined') {
+ 
+       switch (data.type) {
+         case 'window_close':
+-          extensionFrame.src = null;
+-          extensionFrame.hidden = true;
++          close();
+         break;
+ 
+         case 'item_selected':
+diff --git a/apps/communications/contacts/style/fb_extensions.css b/apps/communications/contacts/style/fb_extensions.css
+index e5e9608..d53a3fa 100644
+--- a/apps/communications/contacts/style/fb_extensions.css
++++ b/apps/communications/contacts/style/fb_extensions.css
+@@ -1,6 +1,6 @@
+ iframe#fb-extensions {
+   position: absolute;
+-  top: 0;
++  top: 100%;
+   left: 0;
+   z-index: 1000;
+   width: 100%;
+@@ -8,4 +8,14 @@ iframe#fb-extensions {
+   border: 0;
+   margin: 0;
+   padding: 0;
++  -moz-transition: -moz-transform .8s ease;
++  background-color: #26272c;
++}
++
++#fb-extensions.opening {
++  -moz-transform: translateY(-100%);
++}
++
++#fb-extensions.closing {
++  -moz-transform: translateY(0);
+ }
+-- 
+1.7.10
+

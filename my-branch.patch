@@ -1,0 +1,162 @@
+diff --git a/apps/communications/contacts/config.json b/apps/communications/contacts/config.json
+new file mode 100644
+index 0000000..66ee6d7
+--- /dev/null
++++ b/apps/communications/contacts/config.json
+@@ -0,0 +1,3 @@
++{
++  "facebookEnabled": true
++}
+diff --git a/apps/communications/contacts/index.html b/apps/communications/contacts/index.html
+index 8083a3e..2160dbd 100644
+--- a/apps/communications/contacts/index.html
++++ b/apps/communications/contacts/index.html
+@@ -19,6 +19,10 @@
+ 
+     <!-- Loading FB indexedDB related stuff -->
+     <script src="/contacts/js/fb/fb_data.js"></script>
++    <script src="/contacts/js/utilities/config.js"></script>
++
++    <!-- For initializing FB integration -->
++    <script src="/contacts/js/fb/fb_init.js"></script>
+ 
+     <link rel="resource" type="application/l10n" href="/contacts/locales/locales.ini"/>
+     <link rel="resource" type="application/l10n" href="/shared/locales/date.ini"/>
+diff --git a/apps/communications/contacts/js/contacts.js b/apps/communications/contacts/js/contacts.js
+index ef3b64f..953c135 100644
+--- a/apps/communications/contacts/js/contacts.js
++++ b/apps/communications/contacts/js/contacts.js
+@@ -1105,7 +1105,7 @@ var Contacts = (function() {
+   };
+ })();
+ 
+-fb.contacts.init(function() {
++fb.init(function() {
+   if (window.navigator.mozSetMessageHandler && window.self == window.top) {
+     var actHandler = ActivityHandler.handle.bind(ActivityHandler);
+     window.navigator.mozSetMessageHandler('activity', actHandler);
+@@ -1121,4 +1121,3 @@ fb.contacts.init(function() {
+     Contacts.checkCancelableActivity();
+   });
+ });
+-
+diff --git a/apps/communications/contacts/js/contacts_details.js b/apps/communications/contacts/js/contacts_details.js
+index e304541..7df01e0 100644
+--- a/apps/communications/contacts/js/contacts_details.js
++++ b/apps/communications/contacts/js/contacts_details.js
+@@ -157,7 +157,11 @@ contacts.Details = (function() {
+     renderFavorite();
+     renderOrg();
+     renderBday();
+-    renderSocial();
++
++    if(fb.isEnabled) {
++      renderSocial();
++    }
++
+     renderPhones();
+     renderEmails();
+     renderAddresses();
+diff --git a/apps/communications/contacts/js/fb/fb_init.js b/apps/communications/contacts/js/fb/fb_init.js
+new file mode 100644
+index 0000000..349a9e3
+--- /dev/null
++++ b/apps/communications/contacts/js/fb/fb_init.js
+@@ -0,0 +1,39 @@
++var fb = window.fb || {};
++
++if(typeof fb.init === 'undefined') {
++  (function() {
++
++    fb.isEnabled = false;
++
++    fb.init = function(callback) {
++      var req = utilities.config.load('/contacts/config.json');
++      var cb = callback;
++
++      req.onload = function(configData) {
++        if(configData.facebookEnabled === true) {
++          fb.isEnabled = true;
++        }
++
++        // The FB Contacts DB Cache is initialized regardless FB is enabled
++        // or not. That's because we would like to avoid to add extra conditions
++        // throughout the code, thus keeping it as simple as possible
++        initalizeDB(cb);
++      }
++
++      req.onerror = function(code) {
++        window.console.error('Contacts: Error while checking if FB is enabled',
++                             code);
++
++        // The FB Contacts DB Cache is initialized regardless FB is enabled
++        // or not. That's because we would like to avoid to add extra conditions
++        // throughout the code, thus keeping it as simple as possible
++        initalizeDB(cb);
++      }
++    }
++
++    function initalizeDB(cb) {
++      fb.contacts.init(cb);
++    }
++
++  })();
++}
+diff --git a/apps/communications/contacts/js/utilities/config.js b/apps/communications/contacts/js/utilities/config.js
+new file mode 100644
+index 0000000..02040bf
+--- /dev/null
++++ b/apps/communications/contacts/js/utilities/config.js
+@@ -0,0 +1,52 @@
++var utilities = window.utilities || {};
++
++if(typeof utilities.config === 'undefined') {
++  (function() {
++    var config = utilities.config = {};
++
++    config.load = function (resource) {
++
++      var outReq = new LoadRequest();
++
++      window.setTimeout(function do_load() {
++        var xhr = new XMLHttpRequest();
++        xhr.overrideMimeType('application/json');
++        xhr.open('GET', resource, true);
++
++        xhr.onreadystatechange = function() {
++          // We will get a 0 status if the app is in app://
++          if (xhr.readyState === 4 && (xhr.status === 200 ||
++                                       xhr.status === 0)) {
++
++            window.console.log('OWDError: ' , xhr.readyState, xhr.status,xhr.responseText.length, xhr.responseText);
++            var response = xhr.responseText;
++            var configuration = JSON.parse(response);
++            outReq.completed(configuration);
++          }
++          else {
++             outReq.failed(xhr.status);
++          }
++        } // onreadystatechange
++
++        xhr.send(null);
++
++      },0);
++
++      return outReq;
++    }
++
++    function LoadRequest() {
++      this.completed = function (configData) {
++        if(typeof this.onload === 'function') {
++          this.onload(configData);
++        }
++      }
++
++      this.failed = function(code) {
++        if(typeof this.onerror === 'function') {
++          this.onerror(code);
++        }
++      }
++    }
++  })();
++}
