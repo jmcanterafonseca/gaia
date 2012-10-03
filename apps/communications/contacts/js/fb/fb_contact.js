@@ -443,7 +443,7 @@ fb.Contact = function(deviceContact, cid) {
     var req = navigator.mozContacts.save(dContact);
 
     req.onsuccess = function(e) {
-      if(!type === 'hard') {
+      if (!type === 'hard') {
         // Then the original FB imported contact is restored
         var fbDataReq = fb.contacts.get(uid);
 

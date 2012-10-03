@@ -152,15 +152,15 @@ if (!fb.utils) {
       Utils.getCachedAccessToken(function(access_token) {
         var out = false;
 
-        if(access_token) {
+        if (access_token) {
           out = true;
         }
 
-        if(typeof callback === 'function') {
+        if (typeof callback === 'function') {
           callback(out);
         }
 
-      })
+      });
     };
 
 
@@ -172,7 +172,8 @@ if (!fb.utils) {
       Utils.getCachedNumFbFriends(localCb);
 
       function auxCallback(response) {
-        if (response.data && response.data[0] && response.data[0].friend_count) {
+        if (response.data && response.data[0] &&
+            response.data[0].friend_count) {
           remoteCb(response.data[0].friend_count);
         }
       }
@@ -206,7 +207,7 @@ if (!fb.utils) {
           // And now success notification is sent
           outReq.done(cleaner);
           // The cleaning activity should be starting immediately
-          window.setTimeout(cleaner.start,0);
+          window.setTimeout(cleaner.start, 0);
         }
 
         req.onerror = function() {
@@ -246,7 +247,8 @@ if (!fb.utils) {
             callback.success(xhr.response);
         }
         else {
-          window.console.error('FB: Error executing query. Status: ', xhr.status);
+          window.console.error('FB: Error executing query. Status: ',
+                               xhr.status);
           if (callback && typeof callback.error === 'function')
             callback.error();
         }
@@ -283,12 +285,12 @@ if (!fb.utils) {
             var logoutUrl = logoutService + logoutParams;
 
             var m_listen = function(e) {
-              if(e.data === 'closed') {
+              if (e.data === 'closed') {
                 window.asyncStorage.removeItem(STORAGE_KEY);
                 outReq.done();
               }
               e.stopImmediatePropagation();
-              window.removeEventListener('message',m_listen);
+              window.removeEventListener('message', m_listen);
             }
 
             window.addEventListener('message', m_listen);
@@ -360,7 +362,7 @@ if (!fb.utils) {
             ev.target = this;
             window.setTimeout(function() {
               this.onsuccess(ev);
-            }.bind(this),0);
+            }.bind(this), 0);
           }
         }
 
@@ -371,7 +373,7 @@ if (!fb.utils) {
             ev.target = this;
             window.setTimeout(function() {
               this.onerror(ev);
-            }.bind(this),0);
+            }.bind(this), 0);
           }
         }
       }
@@ -383,11 +385,11 @@ if (!fb.utils) {
       var self = this;
 
       this.start = function() {
-        if(self.lcontacts.length > 0) {
+        if (self.lcontacts.length > 0) {
           cleanContact(self.lcontacts[0]);
         }
         else if (typeof self.onsuccess === 'function') {
-                window.setTimeout(self.onsuccess,0);
+                window.setTimeout(self.onsuccess, 0);
         }
       }
 
@@ -411,7 +413,7 @@ if (!fb.utils) {
       function cleanContact(contact) {
         var fbContact = new fb.Contact(contact);
 
-        if(fb.isFbLinked(contact)) {
+        if (fb.isFbLinked(contact)) {
           var req = fbContact.unlink('hard');
           req.onsuccess = successHandler;
           req.onerror = errorHandler;
@@ -431,7 +433,7 @@ if (!fb.utils) {
         else {
               // End has been reached
               if (typeof self.onsuccess === 'function') {
-                window.setTimeout(self.onsuccess,0);
+                window.setTimeout(self.onsuccess, 0);
               }
         }
       } // function

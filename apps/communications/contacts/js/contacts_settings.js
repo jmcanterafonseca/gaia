@@ -74,7 +74,7 @@ contacts.Settings = (function() {
       fbGetTotals();
     }
     else {
-      if(labelLink) {
+      if (labelLink) {
         fbImportLink.textContent = _('importFb');
         fbImportLink.parentNode.removeChild(labelLink);
         labelLink = null;
@@ -113,7 +113,7 @@ contacts.Settings = (function() {
     var theTotal = total || '';
     var span;
 
-    if(!document.getElementById('fbTotalsResult')) {
+    if (!document.getElementById('fbTotalsResult')) {
       var li = document.createElement('li');
       li.id = 'fbTotalsResult';
       li.classList.add('result');
@@ -145,7 +145,7 @@ contacts.Settings = (function() {
 
   // Insert the dom necessary to unlink your FB contacts
   var fbAddUnlinkOption = function fbUnlinkOption() {
-    if(!labelLink) {
+    if (!labelLink) {
       labelLink = document.createElement('label');
       labelLink.classList.add('switch');
       labelLink.innerHTML = '<input type="checkbox" checked="true" ' +
@@ -163,7 +163,7 @@ contacts.Settings = (function() {
     Contacts.extFb.importFB();
   };
 
-   var addMessage = function addMessage(message,after) {
+   var addMessage = function addMessage(message, after) {
       var li = document.createElement('li');
       li.id = 'taskResult';
       li.classList.add('result');
@@ -253,11 +253,11 @@ contacts.Settings = (function() {
 
       },
       function onimport(num) {
-        addMessage(_('simContacts-imported', {n: num}),after);
+        addMessage(_('simContacts-imported', {n: num}), after);
         Contacts.hideOverlay();
       },
       function onerror() {
-        addMessage(_('simContacts-error'),after);
+        addMessage(_('simContacts-error'), after);
         Contacts.hideOverlay();
       });
   };

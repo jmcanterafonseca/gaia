@@ -365,7 +365,7 @@ if (typeof fb.importer === 'undefined') {
      */
     UI.importAll = function(e) {
       if (Object.keys(selectedContacts).length > 0) {
-        
+
         Importer.importAll(function() {
 
           document.body.dataset.state = '';
