@@ -13,6 +13,7 @@ if (!fb.utils) {
     var CACHE_FRIENDS_KEY = 'numFacebookFriends';
 
     var REDIRECT_LOGOUT_URI = fb.oauthflow.params['redirectLogout'];
+    var STORAGE_KEY = 'tokenData';
 
     Utils.getContactData = function(cid) {
       var outReq = new Utils.Request();
@@ -72,9 +73,9 @@ if (!fb.utils) {
 
       window.setTimeout(function get_all_fb_contacts() {
         var filter = {
-        filterValue: fb.CATEGORY,
-        filterOp: 'contains',
-        filterBy: ['category']
+          filterValue: fb.CATEGORY,
+          filterOp: 'contains',
+          filterBy: ['category']
         };
 
         var req = navigator.mozContacts.find(filter);
@@ -118,7 +119,7 @@ if (!fb.utils) {
     };
 
     Utils.getCachedAccessToken = function(callback) {
-      window.asyncStorage.getItem('tokenData', function(data) {
+      window.asyncStorage.getItem(STORAGE_KEY, function(data) {
         var out = null;
 
         if (data) {
@@ -145,24 +146,23 @@ if (!fb.utils) {
       window.asyncStorage.setItem(CACHE_FRIENDS_KEY, value);
     };
 
+
     Utils.getImportChecked = function(callback) {
-      window.asyncStorage.getItem(IMPORT_INFO_KEY, function(data) {
+      // If we have an access token Import should be checked
+      Utils.getCachedAccessToken(function(access_token) {
         var out = false;
-        if (data) {
-          out = data.value || false;
+
+        if(access_token) {
+          out = true;
         }
-        if (typeof callback === 'function') {
+
+        if(typeof callback === 'function') {
           callback(out);
         }
-      });
+
+      })
     };
 
-    // Value true or false
-    Utils.setImportChecked = function(value) {
-      window.asyncStorage.setItem(IMPORT_INFO_KEY, {
-        value: value
-      });
-    };
 
     // Obtains the number locally (cached) and tries to get them remotely
     Utils.numFbFriendsData = function(callback) {
@@ -190,7 +190,7 @@ if (!fb.utils) {
       });
     };
 
-    // Clears all Fb data (use with caution!)
+    // Clears all Fb data (use with caution!!)
     Utils.clearFbData = function() {
       // First step all Contacts which are FB Friends are obtained
       // then those not linked are directly removed
@@ -203,10 +203,10 @@ if (!fb.utils) {
 
         req.onsuccess = function() {
           var cleaner = new FbContactsCleaner(req.result);
-          // The cleaning activity should be starting immediately
-          window.setTimeout(cleaner.start,0);
           // And now success notification is sent
           outReq.done(cleaner);
+          // The cleaning activity should be starting immediately
+          window.setTimeout(cleaner.start,0);
         }
 
         req.onerror = function() {
@@ -268,32 +268,85 @@ if (!fb.utils) {
     }
 
     Utils.logout = function() {
-    window.asyncStorage.getItem(STORAGE_KEY,
-                         function getAccessToken(tokenData) {
-      if (tokenData && tokenData.access_token) {
-        var logoutService = 'https://www.facebook.com/logout.php?';
-        var params = [
-          'next' + '=' + encodeURIComponent(REDIRECT_LOGOUT_URI),
-          'access_token' + '=' + tokenData.access_token
-        ];
+      var outReq = new Utils.Request();
 
-        var logoutParams = params.join('&');
-        var logoutUrl = logoutService + logoutParams;
+      window.setTimeout(function do_logout() {
+        Utils.getCachedAccessToken(function getAccessToken(access_token) {
+          if (access_token) {
+            var logoutService = 'https://www.facebook.com/logout.php?';
+            var params = [
+              'next' + '=' + encodeURIComponent(REDIRECT_LOGOUT_URI),
+              'access_token' + '=' + access_token
+            ];
 
-        /* Alternative mechanism. Not sure if it would work
-        var ele = document.createElement('iframe');
-        ele.style.width = 0;
-        ele.style.height = 0;
-        document.body.appendChild(ele);
-        ele.src = logoutUrl
-        */
+            var logoutParams = params.join('&');
+            var logoutUrl = logoutService + logoutParams;
 
-        window.asyncStorage.removeItem(STORAGE_KEY,function() {
-          window.open(logoutUrl);
-        });
-      }
-  });
-      }
+            var m_listen = function(e) {
+              if(e.data === 'closed') {
+                window.asyncStorage.removeItem(STORAGE_KEY);
+                outReq.done();
+              }
+
+              window.removeEventListener('message',m_listen);
+            }
+
+            window.addEventListener('message', m_listen);
+
+            window.open(logoutUrl);
+
+            /** XHR System seems not to follow redirects. Need to check with Moz
+             * and see wether we can rescue this code later
+             *
+            var xhr = new XMLHttpRequest({
+              mozSystem:true
+            });
+
+            xhr.open('GET', logoutUrl, true);
+            xhr.responseType = 'json';
+
+            xhr.timeout = TIMEOUT_QUERY;
+
+            xhr.onload = function(e) {
+              if (xhr.status === 200 || xhr.status === 0) {
+                if(xhr.response.success) {
+                  window.asyncStorage.removeItem(STORAGE_KEY);
+                  outReq.done();
+                }
+                else {
+                  window.console.error('FB: Logout unexpected redirect');
+                  outReq.failed('Unexpected redirect');
+                }
+              }
+              else {
+                window.console.error('FB: Error executing logout. Status: ',
+                                     xhr.status);
+                outReq.failed(xhr.status.toString());
+              }
+            }
+
+            xhr.ontimeout = function(e) {
+              window.console.error('FB: Timeout!!! while logging out');
+              outReq.failed('Timeout');
+            }
+
+            xhr.onerror = function(e) {
+              window.console.error('FB: Error while logging out',
+                                  JSON.stringify(e));
+              outReq.failed(e.name);
+            }
+
+            xhr.send();  **/
+          } // if
+          else {
+            outReq.done();
+          }
+        }); // cachedToken
+      }, 0); // setTimeout
+
+      return outReq;
+
+    } // logout
 
      /**
        *   Request auxiliary object to support asynchronous calls
@@ -330,12 +383,21 @@ if (!fb.utils) {
       var self = this;
 
       this.start = function() {
-        cleanContact(self.lcontacts[0]);
+        if(self.lcontacts.length > 0) {
+          cleanContact(self.lcontacts[0]);
+        }
+        else if (typeof self.onsuccess === 'function') {
+                window.setTimeout(self.onsuccess,0);
+        }
       }
 
       function successHandler() {
-        if (typeof self.onsaved === 'function') {
-          self.oncleaned(next + 1);
+        if (typeof self.oncleaned === 'function') {
+          // Avoiding race condition so the cleaned element is cached
+          var cleaned = next + 1;
+          window.setTimeout(function() {
+            self.oncleaned(cleaned);
+          },0);
         }
         continuee();
       }
@@ -350,7 +412,7 @@ if (!fb.utils) {
         var fbContact = new fb.Contact(contact);
 
         if(fb.isFbLinked(contact)) {
-          var req = fbContact.unlink();
+          var req = fbContact.unlink('hard');
           req.onsuccess = successHandler;
           req.onerror = errorHandler;
         }
@@ -369,9 +431,7 @@ if (!fb.utils) {
         else {
               // End has been reached
               if (typeof self.onsuccess === 'function') {
-                window.setTimeout(function() {
-                   self.onsuccess();
-                },0);
+                window.setTimeout(self.onsuccess,0);
               }
         }
       } // function
