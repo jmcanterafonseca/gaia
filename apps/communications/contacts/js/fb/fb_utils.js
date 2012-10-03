@@ -287,7 +287,7 @@ if (!fb.utils) {
                 window.asyncStorage.removeItem(STORAGE_KEY);
                 outReq.done();
               }
-
+              e.stopImmediatePropagation();
               window.removeEventListener('message',m_listen);
             }
 

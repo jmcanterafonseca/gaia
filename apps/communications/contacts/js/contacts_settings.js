@@ -108,22 +108,32 @@ contacts.Settings = (function() {
   };
 
   var fbUpdateTotals = function fbUpdateTotals(imported, total) {
-    cleanFbContactsMessage();
 
-    var li = document.createElement('li');
-    li.id = 'fbTotalsResult';
-    li.classList.add('result');
-    var span = document.createElement('span');
-    span.innerHTML = _('facebook-stats', {
+    // If the total is not available then an empty string is showed
+    var theTotal = total || '';
+    var span;
+
+    if(!document.getElementById('fbTotalsResult')) {
+      var li = document.createElement('li');
+      li.id = 'fbTotalsResult';
+      li.classList.add('result');
+      span = document.createElement('span');
+      li.appendChild(span);
+
+      li.onclick = Contacts.extFb.importFB;
+
+      var after = document.getElementById('settingsFb');
+      after.parentNode.insertBefore(li, after.nextSibling);
+    }
+    else {
+      span = document.querySelector('#fbTotalsResult span');
+    }
+
+    span.textContent = _('facebook-stats', {
       'imported': imported,
-      'total': total
+      'total': theTotal
     });
-    li.appendChild(span);
 
-    li.onclick = Contacts.extFb.importFB;
-
-    var after = document.getElementById('settingsFb');
-    after.parentNode.insertBefore(li, after.nextSibling);
   };
 
   var cleanFbContactsMessage = function cleanFbContactsMessage() {
@@ -165,6 +175,29 @@ contacts.Settings = (function() {
     }
 
   var onFbUnlink = function onFbUnlink(evt) {
+    evt.preventDefault();
+    evt.stopPropagation();
+
+    var msg = _('cleanFbConfirmMsg');
+    var yesObject = {
+      title: _('remove'),
+      callback: function() {
+        CustomDialog.hide();
+        doFbUnlink();
+      }
+    };
+
+    var noObject = {
+      title: _('cancel'),
+      callback: function onCancel() {
+        CustomDialog.hide();
+      }
+    };
+
+    CustomDialog.show(null, msg, noObject, yesObject);
+  }
+
+  function doFbUnlink() {
     Contacts.showOverlay(_('cleaningFbData'));
 
     var req = fb.utils.clearFbData();
