@@ -95,7 +95,7 @@ if (typeof Contacts.extFb === 'undefined') {
       var extras = {};
       extras['fb_is_linked'] = linked;
 
-      for(var nodeName in elements) {
+      for (var nodeName in elements) {
         var node = socialNode.querySelector(nodeName);
         var variables = elements[nodeName].elems;
         variables.forEach(function appendData(data) {

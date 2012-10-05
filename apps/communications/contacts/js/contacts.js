@@ -622,7 +622,7 @@ var Contacts = (function() {
         }
       }
     }
-    } catch(e) { console.log('---->' + e)}
+    } catch (e) { console.log('---->' + e)}
   };
 
   return {

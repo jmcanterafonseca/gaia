@@ -1,6 +1,6 @@
 var utils = window.utils || {};
 
-if(!utils.listeners) {
+if (!utils.listeners) {
   (function(document) {
     var Listeners = utils.listeners = {};
 
@@ -25,7 +25,7 @@ if(!utils.listeners) {
           } // nodes
         } // Handlers
       }
-      catch(e) {
+      catch (e) {
         window.console.error('---->' + e);
       }
     } // Add function
