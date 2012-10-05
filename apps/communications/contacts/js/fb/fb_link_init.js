@@ -2,6 +2,12 @@
 
 var cid = window.location.search.substring(fb.link.CID_PARAM.length + 2);
 
+utils.listeners.add({
+  '#link-close': fb.link.ui.end,
+  '#view-all': fb.link.ui.viewAllFriends,
+  '#friends-list': fb.link.ui.selected
+});
+
 // Module fb.contacts is initialized just in case we need it
 fb.contacts.init(function fb_init() {
   fb.link.getProposal(cid);
