@@ -11,9 +11,23 @@ if (!fb.utils) {
 
     var IMPORT_INFO_KEY = 'importInfo';
     var CACHE_FRIENDS_KEY = 'numFacebookFriends';
+    var LAST_UPDATED_KEY = 'lastUpdatedTime';
 
     var REDIRECT_LOGOUT_URI = fb.oauthflow.params['redirectLogout'];
     var STORAGE_KEY = 'tokenData';
+
+      // For controlling data synchronization
+    Utils.setLastUpdate = function(value) {
+      window.asyncStorage.setItem(LAST_UPDATED_KEY,value);
+    }
+
+    Utils.getLastUpdate = function(callback) {
+      window.asyncStorage.getItem(LAST_UPDATED_KEY,function(value) {
+        var out = value || Date.now();
+        callback(out);
+      });
+    }
+
 
     Utils.getContactData = function(cid) {
       var outReq = new Utils.Request();

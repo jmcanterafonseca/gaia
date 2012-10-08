@@ -751,6 +751,7 @@ if (typeof fb.importer === 'undefined') {
           },0);
         }
         else {
+          fb.utils.setLastUpdate(Date.now());
           importedCB();
         }
       };
