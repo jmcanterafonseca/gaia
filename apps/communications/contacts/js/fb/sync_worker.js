@@ -1,5 +1,7 @@
 'use strict';
 
+importScripts('fb_query.js');
+
 (function(wutils) {
 
   var uids,
@@ -55,58 +57,6 @@
     return JSON.stringify(outQueries);
   }
 
-  function runQuery(query,callback,access_token) {
-    wutils.postMessage({
-      type: 'trace',
-      data: query
-    });
-
-    var queryService = 'https://graph.facebook.com/fql?q=';
-    queryService += encodeURIComponent(query);
-
-    var params = ['access_token' + '=' + access_token,
-                    'format=json'];
-
-    var queryParams = params.join('&');
-
-    var remote = queryService + '&' + queryParams;
-
-    var xhr = new XMLHttpRequest({
-      mozSystem: true
-    });
-
-    xhr.open('GET', remote, true);
-    xhr.responseType = 'json';
-
-    xhr.timeout = 30000;
-
-    xhr.onload = function(e) {
-      if (xhr.status === 200 || xhr.status === 0) {
-        if (callback && typeof callback.success === 'function')
-          callback.success(xhr.response);
-      }
-      else {
-        postError('FB: Error executing query. Status: ' + xhr.status);
-        if (callback && typeof callback.error === 'function')
-          callback.error();
-      }
-    }
-
-    xhr.ontimeout = function(e) {
-      window.console.error('FB: Timeout!!! while executing query', query);
-      if (callback && typeof callback.timeout === 'function')
-        callback.timeout();
-    }
-
-    xhr.onerror = function(e) {
-      window.console.error('FB: Error while executing query', e);
-      if (callback && typeof callback.error === 'function')
-        callback.error();
-    }
-
-    xhr.send();
-  }
-
   // Launch a multiple query to obtain friends to be updated and deleted
   function getFriendsToBeUpdated(ts, uids, access_token) {
     var query = buildQueries(ts, uids);
@@ -114,7 +64,9 @@
       success: friendsReady
     };
 
-    runQuery(query, callbacks, access_token);
+    self.console.log(query);
+
+    fb.utils.runQuery(query, callbacks, access_token);
   }
 
   // Callback executed when data is ready
@@ -149,8 +101,8 @@
         wutils.postMessage('Ack!!!' + uids.length);
       },0);
 
-      getFriendsToBeUpdated(timestamp,uids,access_token);
+      getFriendsToBeUpdated(timestamp,Object.keys(uids),access_token);
     }
   }
 
-})(this);
+})(self);
