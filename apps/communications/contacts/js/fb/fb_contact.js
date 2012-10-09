@@ -151,7 +151,7 @@ fb.Contact = function(deviceContact, cid) {
     if (contactData && navigator.mozContacts) {
       window.setTimeout(function save_do() {
         var contactObj = new mozContact();
-        // Info tbe saved on mozContacts
+        // Info to be saved on mozContacts
         var contactInfo = {};
 
         // Copying names to the mozContact
@@ -164,7 +164,7 @@ fb.Contact = function(deviceContact, cid) {
         var mozContactsReq = navigator.mozContacts.save(contactObj);
 
         mozContactsReq.onsuccess = function(e) {
-          // now saving the FB-originated data to the "private area"
+          // now saving the FB-originated data to the "private cache area"
           var data = Object.create(contactData.fbInfo);
 
           data.tel = contactData.tel || [];

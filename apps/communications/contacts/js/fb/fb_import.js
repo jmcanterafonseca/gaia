@@ -8,6 +8,8 @@ if (typeof fb.importer === 'undefined') {
     var Importer = fb.importer = {};
     var UI = Importer.ui = {};
 
+    var access_token;
+
     // Friends selected to be sync to the address book
     var selectedContacts = {};
 
@@ -31,7 +33,7 @@ if (typeof fb.importer === 'undefined') {
 
     // Query that retrieves the information about friends
     var FRIENDS_QUERY = [
-      'SELECT uid, name, first_name, last_name,' ,
+      'SELECT uid, name, first_name, last_name, pic_big, ' ,
       'middle_name, birthday_date, email,' ,
       'relationship_status, significant_other_id, work,' ,
       'education, cell, other_phone, current_location' ,
@@ -119,6 +121,7 @@ if (typeof fb.importer === 'undefined') {
      *
      */
     function tokenReady(at) {
+      access_token = at;
       Importer.getFriends(at);
     }
 
@@ -171,6 +174,7 @@ if (typeof fb.importer === 'undefined') {
 
         delete selectableFriends[uid];
 
+        window.console.log('UID: ', uid);
         var ele = document.querySelector('[data-uuid="' + uid + '"]');
 
         var input = ele.querySelector('input');
@@ -285,6 +289,8 @@ if (typeof fb.importer === 'undefined') {
     Importer.friendsReady = function(response) {
       if (typeof response.error === 'undefined') {
         var lmyFriends = response.data[0].fql_result_set;
+
+        window.console.log(JSON.stringify(lmyFriends));
 
         // Now caching the number
         fb.utils.setCachedNumFriends(lmyFriends.length);
@@ -486,7 +492,9 @@ if (typeof fb.importer === 'undefined') {
      *
      */
     function getContactImg(uid, cb) {
-      var imgSrc = 'http://graph.facebook.com/' + uid + '/picture?type=large';
+      // Access token is necessary just in case the image is not public
+      var imgSrc = 'http://graph.facebook.com/' + uid + '/picture?type=large' +
+                    '&access_token=' + access_token;
 
       var xhr = new XMLHttpRequest({
         mozSystem: true
@@ -680,7 +688,7 @@ if (typeof fb.importer === 'undefined') {
 
         var cfdata = mcontacts[f];
 
-        getContactImg(cfdata.uid, function(photo) {
+        getContactImg(cfdata.uid, function save_friend_info(photo) {
           // When photo is ready this code will be executed
 
           var worksAt = getWorksAt(cfdata);
@@ -701,10 +709,19 @@ if (typeof fb.importer === 'undefined') {
           // Check whether we were able to get the photo or not
           if (photo) {
             fbInfo.photo = [photo];
+            if(cfdata.pic_big) {
+              // The URL is stored to know whether photo changed or not
+              fbInfo.url = [
+                {
+                  type: ['fb_profile', 'photo'],
+                  value: cfdata.pic_big
+                }
+              ]
+            }
           }
 
+          // Facebook info is set and then contact is saved
           cfdata.fbInfo = fbInfo;
-
           var fbContact = new fb.Contact();
           fbContact.setData(cfdata);
           var request = fbContact.save();

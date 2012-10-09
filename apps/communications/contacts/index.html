@@ -16,6 +16,8 @@
 
     <link href="/contacts/style/fb_extensions.css" rel="stylesheet">
 
+    <script src="/contacts/js/fb/fb_sync.js"></script>
+
     <script src="/contacts/js/activities.js"></script>
 
     <!-- Loading FB indexedDB related stuff -->
@@ -470,6 +472,9 @@
                 </label>
                 -->
                 <a data-l10n-id="importFb">Import from Facebook</a>
+              </li>
+              <li>
+                <a onclick="alert('clicked'); fb.sync.start()">Synchronize</a>
               </li>
             </ul>
           </div>
