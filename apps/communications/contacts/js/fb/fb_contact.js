@@ -5,6 +5,10 @@ fb.CATEGORY = 'facebook';
 fb.NOT_LINKED = 'not_linked';
 fb.LINKED = 'fb_linked';
 
+// Types of URLs for FB Information
+fb.PROFILE_PHOTO_URI = 'fb_profile_photo';
+fb.FRIEND_URI = 'fb_friend';
+
 fb.CONTACTS_APP_ORIGIN = 'app://communications.gaiamobile.org';
 
 // Encapsulates all the logic to obtain the data for a FB contact
@@ -14,32 +18,11 @@ fb.Contact = function(deviceContact, cid) {
   var contactid = cid;
 
   function doGetFacebookUid(data) {
-    var out = data.uid;
-    if (!out) {
-      if (fb.isFbLinked(data)) {
-        out = getLinkedTo(data);
-      }
-      else if (data.category) {
-        var idx = data.category.indexOf(fb.CATEGORY);
-        if (idx !== -1) {
-          out = data.category[idx + 2];
-        }
-      }
-    }
-    return out;
+    return fb.getFriendUid(data);
   }
 
   function getLinkedTo(c) {
-    var out;
-
-    if (c.category) {
-      var idx = c.category.indexOf(fb.LINKED);
-      if (idx !== -1) {
-        out = c.category[idx + 1];
-      }
-    }
-
-    return out;
+    return fb.getLinkedTo(c);
   }
 
   function getFacebookUid() {
@@ -156,6 +139,8 @@ fb.Contact = function(deviceContact, cid) {
 
         // Copying names to the mozContact
         copyNames(contactData, contactInfo);
+        // URL (photo, etc) is stored also with the Device contact
+        contactInfo.url = contactData.url;
 
         doSetFacebookUid(contactInfo, contactData.uid);
 
@@ -374,6 +359,8 @@ fb.Contact = function(deviceContact, cid) {
   function doLink(contactdata, fbFriend, out) {
     if (contactdata) {
       if (fbFriend.uid) {
+        // When marking as linked is needed to store a reference to the profile
+        // picture URL
         markAsLinked(contactdata, fbFriend.uid);
       }
       else if (fbFriend.mozContact) {
@@ -534,3 +521,54 @@ fb.isFbLinked = function(devContact) {
   return (devContact.category &&
                         devContact.category.indexOf(fb.LINKED) !== -1);
 };
+
+
+fb.getFriendUid = function(devContact) {
+  var out = devContact.uid;
+
+  if (!out) {
+    if (fb.isFbLinked(devContact)) {
+      out = fb.getLinkedTo(devContact);
+    }
+    else if (devContact.category) {
+      var idx = devContact.category.indexOf(fb.CATEGORY);
+      if (idx !== -1) {
+        out = devContact.category[idx + 2];
+      }
+    }
+  }
+
+  return out;
+}
+
+
+fb.getLinkedTo = function(devContact) {
+  var out;
+
+  if (devContact.category) {
+    var idx = devContact.category.indexOf(fb.LINKED);
+    if (idx !== -1) {
+      out = devContact.category[idx + 1];
+    }
+  }
+
+  return out;
+}
+
+
+fb.getFriendPictureUrl = function(devContact) {
+  var out;
+
+  var urls = devContact.url;
+
+  if(urls) {
+    for(var c = 0; c < urls.length; c++) {
+      if(aurl.type.indexOf(fb.PROFILE_PHOTO_URI) !== -1) {
+        out = aurl.value;
+        break;
+      }
+    }
+  }
+  
+  return out;
+}

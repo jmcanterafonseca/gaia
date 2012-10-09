@@ -7,6 +7,8 @@ if(!fb.sync) {
     var Sync = fb.sync = {};
 
     var theWorker;
+    // Facebook contacts currently under update process
+    var fbContactsById;
 
     function workerMessage(m) {
       if(m.type === 'friendUpdates') {
@@ -21,6 +23,25 @@ if(!fb.sync) {
       }
       else if(m.type === 'trace') {
         window.console.log(m.data);
+      }
+      else if(m.type === 'friendRemoved') {
+        removeFbFriend(m.data.contactId);
+      }
+      else if(m.type === 'friendUpdated') {
+        updateFbFriend(m.data);
+      }
+    }
+
+    function removeFbFriend(contactId) {
+      var removedFriend = fbContactsById[contactId];
+      var fbContact = new fb.Contact(removedFriend);
+
+      if(fb.isFbLinked(fbContact)) {
+        // No care about what happens
+        fbContact.unlink('hard');
+      }
+      else {
+        fbContact.remove();
       }
     }
 
@@ -40,13 +61,21 @@ if(!fb.sync) {
 
       req.onsuccess = function() {
         var uids = {};
-        if(!req.result.length > 0) {
+        var fbContacts = req.result;
+
+        if(fbContacts.length === 0) {
           return;
         }
 
-        req.result.forEach(function(contact) {
-          var fbContact = new fb.Contact(contact);
-          uids[fbContact.uid] = contact.id;
+        // Contacts by id are cached for later update
+        fbContactsById = {};
+        fbContacts.forEach(function(contact) {
+          fbContactsById[contact.id] = contact;
+
+          uids[fb.getFriendUid(contact)] = {
+            contactId: contact.id,
+            photoUri: fb.getFriendPictureUrl(contact)
+          }
         });
 
         fb.utils.getLastUpdate(function run_worker(ts) {
@@ -70,21 +99,9 @@ if(!fb.sync) {
     }
 
     // Updates the FB data from a friend
-    function updateFbData(data) {
-
-    }
-
-    // Removes a FB Friend
-    function removeFbFriend(data) {
-      var req = fb.utils.getContactData(data.cid);
-
-      req.onsuccess = function() {
-        var fbContact = new fb.Contact(req.result);
-      }
-
-      req.onerror = function() {
-
-      }
+    function updateFbFriend(data) {
+      // Photo URL has to be updated
+      // Then the new data saved to the cache
     }
 
   })();

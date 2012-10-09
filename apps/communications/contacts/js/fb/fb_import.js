@@ -174,13 +174,15 @@ if (typeof fb.importer === 'undefined') {
 
         delete selectableFriends[uid];
 
-        window.console.log('UID: ', uid);
         var ele = document.querySelector('[data-uuid="' + uid + '"]');
+        // This check is needed as there might be existing FB Contacts that
+        // are no longer friends
+        if(ele) {
+          var input = ele.querySelector('input');
+          input.checked = true;
 
-        var input = ele.querySelector('input');
-        input.checked = true;
-
-        ele.setAttribute('aria-disabled', 'true');
+          ele.setAttribute('aria-disabled', 'true');
+        }
       });
     }
 
@@ -263,7 +265,10 @@ if (typeof fb.importer === 'undefined') {
 
       var query1 = aquery1.join('');
 
-      var queries = {query1: query1, query2: REL_MULTIQ};
+      var queries = {
+        query1: query1,
+        query2: REL_MULTIQ
+      };
 
       return JSON.stringify(queries);
     }
@@ -289,8 +294,6 @@ if (typeof fb.importer === 'undefined') {
     Importer.friendsReady = function(response) {
       if (typeof response.error === 'undefined') {
         var lmyFriends = response.data[0].fql_result_set;
-
-        window.console.log(JSON.stringify(lmyFriends));
 
         // Now caching the number
         fb.utils.setCachedNumFriends(lmyFriends.length);
@@ -493,7 +496,8 @@ if (typeof fb.importer === 'undefined') {
      */
     function getContactImg(uid, cb) {
       // Access token is necessary just in case the image is not public
-      var imgSrc = 'http://graph.facebook.com/' + uid + '/picture?type=large' +
+      // When passing an access token to FB https must be used
+      var imgSrc = 'https://graph.facebook.com/' + uid + '/picture?type=large' +
                     '&access_token=' + access_token;
 
       var xhr = new XMLHttpRequest({
@@ -710,10 +714,10 @@ if (typeof fb.importer === 'undefined') {
           if (photo) {
             fbInfo.photo = [photo];
             if(cfdata.pic_big) {
-              // The URL is stored to know whether photo changed or not
+              // The URL is stored for synchronization purposes
               fbInfo.url = [
                 {
-                  type: ['fb_profile', 'photo'],
+                  type: [fb.PROFILE_PHOTO_URI],
                   value: cfdata.pic_big
                 }
               ]

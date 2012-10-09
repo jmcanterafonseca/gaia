@@ -72,10 +72,9 @@ importScripts('fb_query.js');
   // Callback executed when data is ready
   function friendsReady(response) {
     if(typeof response.error === 'undefined') {
-      wutils.postMessage({
-        type: 'friendUpdates',
-        data: response.data
-      });
+      syncUpdatedFriends(response.data[0].fql_result_set);
+
+      syncRemovedFriends(response.data[1].fql_result_set);
     }
     else {
       postError(response.error);
@@ -86,6 +85,59 @@ importScripts('fb_query.js');
     wutils.postMessage({
       type: 'error',
       data: e
+    });
+  }
+
+  function syncRemovedFriends(removedFriends) {
+    // Simply an iteration over the collection is done and a message passed
+    removedFriends.forEach(function(aremoved) {
+      wutils.postMessage({
+        type: 'friendRemoved',
+        data: {
+          uid: aremoved.target_id,
+          cid: uids[aremoved.target_id].contactId
+        }
+      });
+    });
+  }
+
+  function syncUpdatedFriends(updatedFriends) {
+    // Friends which image has to be updated
+    var friendsImgToBeUpdated = {};
+
+    updatedFriends.forEach(function(afriend) {
+      if(afriend.pic_big !== uids[afriend.uid].photoUrl) {
+        // Photo changed
+        friendsImgToBeUpdated[afriend.uid] = afriend;
+      }
+      else {
+        wutils.postMessage({
+          type: 'friendUpdated',
+          data: afriend
+        });
+      }
+
+      // Now it is time to download the images needed
+      var imgSync = new ImgSynchronizer(Object.keys(friendsImgToBeUpdated),
+                                        access_token);
+
+      imgSync.start();
+
+      // Once an image is ready friend update is notified
+      imgSync.onimageready = function(uid,blob) {
+        if(blob) {
+          friendsImgToBeUpdated[uid].photo = [blob];
+        }
+        else {
+          self.console.error('Img for UID', uid ,' could not be retrieved ');
+        }
+
+        wutils.postMessage({
+          type: 'friendUpdated',
+          data: friendsImgToBeUpdated[uid]
+        });
+      }
+      
     });
   }
 
@@ -102,6 +154,42 @@ importScripts('fb_query.js');
       },0);
 
       getFriendsToBeUpdated(timestamp,Object.keys(uids),access_token);
+    }
+  }
+
+  function ImgRetrieval(friends) {
+    var next = 0;
+
+    this.friends = friends;
+
+    this.start = function() {
+      retrieveImg(this.friends[next]);
+    }
+
+    function imgRetrieved(blob) {
+      if(typeof this.onimageready === 'function') {
+        var uid = this.friends[next];
+
+        window.setTimeout(function() {
+          this.onimageready(uid,blob);
+        },0);
+      }
+
+      // And lets go for the next
+      next++;
+      if(next < this.friends.length) {
+        retrieveImg(this.friends[next]);
+      }
+    }
+
+    function retrieveImg(uid) {
+      var callbacks = {
+        success: imgRetrieved.bind(this),
+        timeout: null,
+        error: null
+      };
+
+      fb.utils.getFriendPicture(uid,callbacks);
     }
   }
 

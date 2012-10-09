@@ -81,3 +81,50 @@ fb.utils.runQuery = function(query, callback, access_token) {
 
   xhr.send();
 }
+
+/**
+  *  Obtains a img DOM Element with the Contact's img
+  *
+  */
+fb.utils.getFriendPicture = function(uid, callbacks) {
+   // Access token is necessary just in case the image is not public
+   // When passing an access token to FB https must be used
+  var imgSrc = 'https://graph.facebook.com/' + uid + '/picture?type=large' +
+                 '&access_token=' + access_token;
+
+  var xhr = new XMLHttpRequest({
+    mozSystem: true
+   });
+   xhr.open('GET', imgSrc, true);
+   xhr.responseType = 'blob';
+
+  xhr.timeout = fb.operationsTimeout || 30000;
+
+  xhr.onload = function(e) {
+    if (xhr.status === 200 || xhr.status === 0) {
+      var mblob = e.target.response;
+      if(typeof callbacks.success === 'function')
+       callbacks.success(mblob);
+    }
+  }
+
+  xhr.ontimeout = function(e) {
+    self.console.error('FB: Timeout!!! while retrieving img for uid',
+                                                                       uid);
+
+     // This callback has been added mainly for unit testing purposes
+    if (typeof callbacks.timeout === 'function') {
+      callbacks.timeout();
+    }
+
+    if(typeof callbacks.success === 'function')
+      callbacks.success(null);
+  }
+
+  xhr.onerror = function(e) {
+    self.console.error('FB: Error while retrieving the img', e);
+    callbacks.success(null);
+  }
+
+  xhr.send();
+}
