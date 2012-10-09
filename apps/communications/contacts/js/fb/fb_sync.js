@@ -99,9 +99,23 @@ if(!fb.sync) {
     }
 
     // Updates the FB data from a friend
-    function updateFbFriend(data) {
-      // Photo URL has to be updated
-      // Then the new data saved to the cache
+    function updateFbFriend(cfdata) {
+      fb.friend2mozContact(cfdata);
+
+      cfdata.fbInfo = {};
+      cfdata.fbInfo.photo = data.photo;
+      delete cfdata.photo;
+
+      cfdata.fbInfo.org = fb.getWorksAt(data);
+      var birthDate = null;
+      if (cfdata.birthday_date && cfdata.birthday_date.length > 0) {
+        birthDate = getBirthDate(cfdata.birthday_date);
+      }
+      cfdata.fbInfo.bday = birthDate;
+
+       // Then the new data saved to the cache
+      var fbContact = new fb.Contact(contactsById[cfdata.uid]);
+      fbContact.update(data);
     }
 
   })();

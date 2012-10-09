@@ -338,35 +338,8 @@ if (typeof fb.importer === 'undefined') {
     }
 
     function fillData(f) {
-      // givenName is put as name but it should be f.first_name
-      f.familyName = [f.last_name];
-      f.additionalName = [f.middle_name];
-      f.givenName = [f.first_name + ' ' + f.middle_name];
-
-      var privateType = 'personal';
-
-      if (f.email) {
-        f.email1 = f.email;
-        f.email = [{type: [privateType], value: f.email}];
-      }
-      else { f.email1 = ''; }
-
-      var nextidx = 0;
-      if (f.cell) {
-        f.tel = [{type: [privateType], value: f.cell}];
-        nextidx = 1;
-      }
-
-      if (f.other_phone) {
-        if (!f.tel) {
-          f.tel = [];
-        }
-        f.tel[nextidx] = {type: [privateType], value: f.other_phone};
-      }
-
-      f.uid = f.uid.toString();
+      fb.friend2mozContact(f);
     }
-
 
     /**
      *  This function is invoked when the user starts the process of importing
@@ -591,21 +564,6 @@ if (typeof fb.importer === 'undefined') {
       }
 
       /**
-       * Auxiliary function to know where a contact works
-       *
-       */
-      function getWorksAt(fbdata) {
-        var ret = '';
-        if (fbdata.work && fbdata.work.length > 0) {
-          // It is assumed that first is the latest
-          ret = fbdata.work[0].employer.name;
-        }
-
-        return ret;
-      }
-
-
-      /**
        *  Auxiliary function to know where a contact studied
        *
        */
@@ -646,36 +604,6 @@ if (typeof fb.importer === 'undefined') {
         return ret;
       }
 
-      /**
-       *  Facebook dates are MM/DD/YYYY
-       *
-       *  Returns the birth date
-       *
-       */
-      function getBirthDate(sbday) {
-        var ret = new Date();
-
-        var imonth = sbday.indexOf('/');
-        var smonth = sbday.substring(0, imonth);
-
-        var iyear = sbday.lastIndexOf('/');
-        if (iyear === imonth) {
-          iyear = sbday.length;
-        }
-        var sday = sbday.substring(imonth + 1, iyear);
-
-        var syear = sbday.substring(iyear + 1, sbday.length);
-
-        ret.setDate(parseInt(sday));
-        ret.setMonth(parseInt(smonth) - 1, parseInt(sday));
-
-        if (syear && syear.length > 0) {
-          ret.setYear(parseInt(syear));
-        }
-
-        return ret;
-      }
-
     /**
      *  Persists a group of contacts
      *
@@ -695,12 +623,12 @@ if (typeof fb.importer === 'undefined') {
         getContactImg(cfdata.uid, function save_friend_info(photo) {
           // When photo is ready this code will be executed
 
-          var worksAt = getWorksAt(cfdata);
+          var worksAt = fb.getWorksAt(cfdata);
           var studiedAt = getStudiedAt(cfdata);
           var marriedTo = getMarriedTo(cfdata);
           var birthDate = null;
           if (cfdata.birthday_date && cfdata.birthday_date.length > 0) {
-            birthDate = getBirthDate(cfdata.birthday_date);
+            birthDate = fb.getBirthDate(cfdata.birthday_date);
           }
 
           var fbInfo = {
