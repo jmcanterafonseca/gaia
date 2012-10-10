@@ -131,7 +131,10 @@ fb.Contact = function(deviceContact, cid) {
         // Copying names to the mozContact
         copyNames(contactData, contactInfo);
         // URL (photo, etc) is stored also with the Device contact
-        contactInfo.url = contactData.url;
+        if(contactData.fbInfo.url) {
+          contactInfo.url = contactData.fbInfo.url;
+          delete contactData.fbInfo.url;
+        }
 
         doSetFacebookUid(contactInfo, contactData.uid);
 
@@ -203,7 +206,7 @@ fb.Contact = function(deviceContact, cid) {
   this.update = function(contactData) {
 
     // Auxiliary function to do all the work for saving to the FB cache
-    function auxdoUpdate(contactData, outReq) {
+    function auxDoUpdate(contactData, outReq) {
       // If the photo was not updated it is needed to save it
       if(!contactData.fbInfo.photo) {
         var dataReq = fb.contacts.get(contactData.uid);
@@ -215,7 +218,6 @@ fb.Contact = function(deviceContact, cid) {
           window.console.error('Error while retrieving existing photo for ',
                                contactData.uid, dataReq.error);
           outReq.failed(dataReq.error);
-
         }
       }
       else {
@@ -244,31 +246,32 @@ fb.Contact = function(deviceContact, cid) {
       // First an update to the mozContacts DB could be needed
       var updateMozContacts = false;
 
-      if(!fb.isFbLinked(dcontact)) {
-        copyNames(contactData,dcontact);
+      if(!fb.isFbLinked(devContact)) {
+        copyNames(contactData,devContact);
         updateMozContacts = true;
       }
 
       // Check whether the photo has changed
-      if(contactData.photo) {
-        dcontact.url = contactData.url;
+      if(contactData.fbInfo.photo) {
+        devContact.url = contactData.fbInfo.url;
+        delete contactData.fbInfo.url;
         updateMozContacts = true;
       }
 
       if(updateMozContacts) {
-        var mozContactsReq = navigator.mozContacts.save(dcontacts);
+        var mozContactsReq = navigator.mozContacts.save(devContact);
         mozContactsReq.onsuccess = function(e) {
-          auxdoUpdate(contactData, outReq);
+          auxDoUpdate(contactData, outReq);
         }
 
         mozContactsReq.onerror = function(e) {
-          window.console.error('FB: Error while saving mozContact: ',dcontact.id,
-                               e.target.error);
+          window.console.error('FB: Error while saving mozContact: ',
+                               devContact.id, e.target.error);
           outReq.failed(e.target.error);
         }
       }
       else {
-        auxdoUpdate(contactData, outReq);
+        auxDoUpdate(contactData, outReq);
       }
 
     },0);
@@ -596,4 +599,3 @@ fb.Contact = function(deviceContact, cid) {
   }
 
 }; // fb.Contact
-

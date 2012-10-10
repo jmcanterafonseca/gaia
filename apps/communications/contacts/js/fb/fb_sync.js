@@ -28,19 +28,26 @@ if(!fb.sync) {
         removeFbFriend(m.data.contactId);
       }
       else if(m.type === 'friendUpdated') {
-        updateFbFriend(m.data);
+        updateFbFriend(m.data.contactId, m.data.updatedFbData);
       }
     }
 
     function removeFbFriend(contactId) {
+      window.console.log('Removing Friend: ', contactId);
+
       var removedFriend = fbContactsById[contactId];
+
+      window.console.log(JSON.stringify(removedFriend.category));
+
       var fbContact = new fb.Contact(removedFriend);
 
-      if(fb.isFbLinked(fbContact)) {
+      if(fb.isFbLinked(removedFriend)) {
+        window.console.log('Friend is linked ', contactId);
         // No care about what happens
         fbContact.unlink('hard');
       }
       else {
+        window.console.log('Friend is not linked ', contactId);
         fbContact.remove();
       }
     }
@@ -49,7 +56,6 @@ if(!fb.sync) {
       if(!theWorker) {
         theWorker = new Worker('/contacts/js/fb/sync_worker.js');
         theWorker.onmessage = function(e) {
-          window.console.log('Message from the worker',e.data);
           workerMessage(e.data);
         }
       }
@@ -99,29 +105,25 @@ if(!fb.sync) {
     }
 
     // Updates the FB data from a friend
-    function updateFbFriend(cfdata) {
+    function updateFbFriend(contactId, cfdata) {
       fb.friend2mozContact(cfdata);
 
-      cfdata.fbInfo = {};
-      if(cfdata.photo) {
-        cfdata.fbInfo.photo = data.photo;
-        delete cfdata.photo;
-      }
-     
-      cfdata.fbInfo.org = fb.getWorksAt(data);
+      cfdata.fbInfo = cfdata.fbInfo || {};
+
+      cfdata.fbInfo.org = [fb.getWorksAt(cfdata)];
       var birthDate = null;
       if (cfdata.birthday_date && cfdata.birthday_date.length > 0) {
-        birthDate = getBirthDate(cfdata.birthday_date);
+        birthDate = fb.getBirthDate(cfdata.birthday_date);
       }
       cfdata.fbInfo.bday = birthDate;
 
        // Then the new data saved to the cache
-      var fbContact = new fb.Contact(contactsById[cfdata.uid]);
-      var fbReq = fbContact.update(data);
+      var fbContact = new fb.Contact(fbContactsById[contactId]);
+      var fbReq = fbContact.update(cfdata);
 
       // Nothing special
       fbReq.onsuccess = function() {
-
+        window.console.log('Friend updated correctly', cfdata.uid);
       }
 
       // Error. mark the contact as pending to be synchronized

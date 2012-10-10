@@ -239,7 +239,7 @@ if (!fb.utils) {
       var queryService = 'https://graph.facebook.com/fql?q=';
       queryService += encodeURIComponent(query);
 
-      var params = [fb.ACC_T + '=' + access_token,
+      var params = ['access_token' + '=' + access_token,
                       'format=json'];
 
       var queryParams = params.join('&');

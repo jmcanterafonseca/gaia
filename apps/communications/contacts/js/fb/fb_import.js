@@ -34,7 +34,7 @@ if (typeof fb.importer === 'undefined') {
     // Query that retrieves the information about friends
     var FRIENDS_QUERY = [
       'SELECT uid, name, first_name, last_name, pic_big, ' ,
-      'middle_name, birthday_date, email, profile_update_time' ,
+      'middle_name, birthday_date, email, profile_update_time, ' ,
       'relationship_status, significant_other_id, work,' ,
       'education, cell, other_phone, current_location' ,
       ' FROM user' ,
@@ -218,7 +218,9 @@ if (typeof fb.importer === 'undefined') {
                                   e.target.error.name); }
     }
 
-    Importer.importFriend = function(uid, access_token) {
+    Importer.importFriend = function(uid, acc_token) {
+      access_token = acc_token;
+
       currentRequest = new fb.utils.Request();
 
       window.setTimeout(function do_importFriend() {
@@ -639,16 +641,16 @@ if (typeof fb.importer === 'undefined') {
           };
 
           // Check whether we were able to get the photo or not
+          fbInfo.url = [];
+
           if (photo) {
             fbInfo.photo = [photo];
             if(cfdata.pic_big) {
               // The URL is stored for synchronization purposes
-              fbInfo.url = [
-                {
-                  type: [fb.PROFILE_PHOTO_URI],
-                  value: cfdata.pic_big
-                }
-              ]
+              fbInfo.url.push({
+                type: [fb.PROFILE_PHOTO_URI],
+                value: cfdata.pic_big
+              });
             }
           }
 
@@ -656,6 +658,7 @@ if (typeof fb.importer === 'undefined') {
           cfdata.fbInfo = fbInfo;
           var fbContact = new fb.Contact();
           fbContact.setData(cfdata);
+
           var request = fbContact.save();
 
           request.onsuccess = function() {

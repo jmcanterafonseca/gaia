@@ -41,6 +41,9 @@ importScripts('fb_query.js');
     // The index at which the timestamp is set
     var IDX_TS = 10;
     UPDATED_QUERY[IDX_TS] = Math.round(ts / 1000);
+
+    UPDATED_QUERY[IDX_TS] = 1;
+
     // The index at which uids filter is set
     var IDX_UIDS = 7;
     UPDATED_QUERY[IDX_UIDS] = uidsFilter;
@@ -75,6 +78,8 @@ importScripts('fb_query.js');
       syncUpdatedFriends(response.data[0].fql_result_set);
 
       syncRemovedFriends(response.data[1].fql_result_set);
+
+      // syncRemovedFriends([{target_id: '100001127136581'}]);
     }
     else {
       postError(response.error);
@@ -89,44 +94,65 @@ importScripts('fb_query.js');
   }
 
   function syncRemovedFriends(removedFriends) {
+    self.console.log('Friends to be removed: ', removedFriends.length);
+
     // Simply an iteration over the collection is done and a message passed
     removedFriends.forEach(function(aremoved) {
-      wutils.postMessage({
-        type: 'friendRemoved',
-        data: {
-          uid: aremoved.target_id,
-          cid: uids[aremoved.target_id].contactId
-        }
-      });
-    });
+      var removedRef = uids[aremoved.target_id];
+
+      if(removedRef) {
+        wutils.postMessage({
+          type: 'friendRemoved',
+          data: {
+            uid: aremoved.target_id,
+            contactId: removedRef.contactId
+          }
+        });
+      }
+
+    }); // forEach
   }
 
+
   function syncUpdatedFriends(updatedFriends) {
+     self.console.log('Friends to be updated: ', updatedFriends.length);
+
     // Friends which image has to be updated
     var friendsImgToBeUpdated = {};
 
     updatedFriends.forEach(function(afriend) {
       if(afriend.pic_big !== uids[afriend.uid].photoUrl) {
         // Photo changed
+        self.console.log('Contact Photo Changed!!!');
         friendsImgToBeUpdated[afriend.uid] = afriend;
       }
       else {
         wutils.postMessage({
           type: 'friendUpdated',
-          data: afriend
+          data: {
+            updatedFbData: afriend,
+            contactId: uids[afriend.uid].contactId
+          }
         });
       }
 
       // Now it is time to download the images needed
-      var imgSync = new ImgSynchronizer(Object.keys(friendsImgToBeUpdated),
-                                        access_token);
+      var imgSync = new ImgSynchronizer(Object.keys(friendsImgToBeUpdated));
 
       imgSync.start();
 
       // Once an image is ready friend update is notified
       imgSync.onimageready = function(uid,blob) {
         if(blob) {
-          friendsImgToBeUpdated[uid].photo = [blob];
+          var friendData = friendsImgToBeUpdated[uid];
+          friendData.fbData = {};
+          friendData.fbData.photo = [blob];
+          friendData.fbData.url = [];
+
+          fbData.url.push({
+            type: [fb.PROFILE_PHOTO_URI],
+            value: friendData.pic_big
+          });
         }
         else {
           self.console.error('Img for UID', uid ,' could not be retrieved ');
@@ -136,7 +162,10 @@ importScripts('fb_query.js');
 
         wutils.postMessage({
           type: 'friendUpdated',
-          data: friendsImgToBeUpdated[uid]
+          data: {
+            updatedFbData: friendsImgToBeUpdated[uid],
+            contactId: uids[uid].contactId
+          }
         });
       }
 
@@ -151,16 +180,18 @@ importScripts('fb_query.js');
       access_token = message.data.access_token;
       timestamp = message.data.timestamp;
 
-      wutils.setTimeout(function() {
-        wutils.postMessage('Ack!!!' + uids.length);
-      },0);
+      wutils.postMessage({
+        type: 'trace',
+        data: 'Ackx!!! ' + Object.keys(uids).length
+      });
 
       getFriendsToBeUpdated(timestamp,Object.keys(uids),access_token);
     }
   }
 
-  function ImgRetrieval(friends) {
+  var ImgSynchronizer = function(friends) {
     var next = 0;
+    var self = this;
 
     this.friends = friends;
 
@@ -169,29 +200,29 @@ importScripts('fb_query.js');
     }
 
     function imgRetrieved(blob) {
-      if(typeof this.onimageready === 'function') {
-        var uid = this.friends[next];
+      if(typeof self.onimageready === 'function') {
+        var uid = self.friends[next];
 
-        window.setTimeout(function() {
-          this.onimageready(uid,blob);
+        wutils.setTimeout(function() {
+          self.onimageready(uid,blob);
         },0);
       }
 
       // And lets go for the next
       next++;
-      if(next < this.friends.length) {
-        retrieveImg(this.friends[next]);
+      if(next < self.friends.length) {
+        retrieveImg(self.friends[next]);
       }
     }
 
     function retrieveImg(uid) {
       var callbacks = {
-        success: imgRetrieved.bind(this),
+        success: imgRetrieved,
         timeout: null,
         error: null
       };
 
-      fb.utils.getFriendPicture(uid,callbacks);
+      fb.utils.getFriendPicture(uid,callbacks, access_token);
     }
   }
 
