@@ -42,7 +42,7 @@ importScripts('fb_query.js');
     var IDX_TS = 10;
     UPDATED_QUERY[IDX_TS] = Math.round(ts / 1000);
 
-    UPDATED_QUERY[IDX_TS] = 1;
+    // UPDATED_QUERY[IDX_TS] = 1;
 
     // The index at which uids filter is set
     var IDX_UIDS = 7;
@@ -123,11 +123,11 @@ importScripts('fb_query.js');
     updatedFriends.forEach(function(afriend) {
       if(afriend.pic_big !== uids[afriend.uid].photoUrl) {
         // Photo changed
-        self.console.log('Contact Photo Changed!!!');
+        self.console.log('Contact Photo Changed!!! for ', afriend.uid);
         friendsImgToBeUpdated[afriend.uid] = afriend;
       }
       else {
-        self.console.log('Contact Photo unchanged');
+        self.console.log('Contact Photo unchanged for ', afriend.uid);
         wutils.postMessage({
           type: 'friendUpdated',
           data: {
