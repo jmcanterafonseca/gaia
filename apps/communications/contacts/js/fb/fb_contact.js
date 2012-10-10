@@ -1,15 +1,6 @@
 'use strict';
 
 var fb = window.fb || {};
-fb.CATEGORY = 'facebook';
-fb.NOT_LINKED = 'not_linked';
-fb.LINKED = 'fb_linked';
-
-// Types of URLs for FB Information
-fb.PROFILE_PHOTO_URI = 'fb_profile_photo';
-fb.FRIEND_URI = 'fb_friend';
-
-fb.CONTACTS_APP_ORIGIN = 'app://communications.gaiamobile.org';
 
 // Encapsulates all the logic to obtain the data for a FB contact
 fb.Contact = function(deviceContact, cid) {
@@ -211,15 +202,36 @@ fb.Contact = function(deviceContact, cid) {
   // Updates a FB Contact
   this.update = function(contactData) {
 
-    // Auxiliary function to persist to the FB cache
-    function auxCachePersist(outReq) {
+    // Auxiliary function to do all the work for saving to the FB cache
+    function auxdoUpdate(contactData, outReq) {
+      // If the photo was not updated it is needed to save it
+      if(!contactData.fbInfo.photo) {
+        var dataReq = fb.contacts.get(contactData.uid);
+        dataReq.onsuccess = function() {
+          contactData.fbInfo.photo = dataReq.result.photo;
+          auxCachePersist(contactData, outReq);
+        }
+        dataReq.onerror = function() {
+          window.console.error('Error while retrieving existing photo for ',
+                               contactData.uid, dataReq.error);
+          outReq.failed(dataReq.error);
+
+        }
+      }
+      else {
+        auxCachePersist(contactData, outReq);
+      }
+    }
+
+    // Persist the data to the FB Cache
+    function auxCachePersist(contactData, outReq) {
       var fbReq = persistToFbCache(contactData);
 
       fbReq.onsuccess = function() {
         outReq.done(fbReq.result);
       }
       fbReq.onerror = function() {
-        window.console.error('FB: Error while saving to FB cache',
+        window.console.error('FB: Error while saving to FB cache: ',
                              contactData.uid, fbReq.error);
         outReq.failed(fbReq.error);
       }
@@ -246,7 +258,7 @@ fb.Contact = function(deviceContact, cid) {
       if(updateMozContacts) {
         var mozContactsReq = navigator.mozContacts.save(dcontacts);
         mozContactsReq.onsuccess = function(e) {
-          auxCachePersist(outReq);
+          auxdoUpdate(contactData, outReq);
         }
 
         mozContactsReq.onerror = function(e) {
@@ -256,7 +268,7 @@ fb.Contact = function(deviceContact, cid) {
         }
       }
       else {
-        auxCachePersist(outReq);
+        auxdoUpdate(contactData, outReq);
       }
 
     },0);
@@ -585,164 +597,3 @@ fb.Contact = function(deviceContact, cid) {
 
 }; // fb.Contact
 
-// Some convenience functions follow
-
-fb.isFbContact = function(devContact) {
-  return (devContact.category &&
-                        devContact.category.indexOf(fb.CATEGORY) !== -1);
-};
-
-
-fb.isFbLinked = function(devContact) {
-  return (devContact.category &&
-                        devContact.category.indexOf(fb.LINKED) !== -1);
-};
-
-
-fb.getFriendUid = function(devContact) {
-  var out = devContact.uid;
-
-  if (!out) {
-    if (fb.isFbLinked(devContact)) {
-      out = fb.getLinkedTo(devContact);
-    }
-    else if (devContact.category) {
-      var idx = devContact.category.indexOf(fb.CATEGORY);
-      if (idx !== -1) {
-        out = devContact.category[idx + 2];
-      }
-    }
-  }
-
-  return out;
-}
-
-
-fb.getLinkedTo = function(devContact) {
-  var out;
-
-  if (devContact.category) {
-    var idx = devContact.category.indexOf(fb.LINKED);
-    if (idx !== -1) {
-      out = devContact.category[idx + 1];
-    }
-  }
-
-  return out;
-}
-
-
-fb.getFriendPictureUrl = function(devContact) {
-  var out;
-
-  var urls = devContact.url;
-
-  if(urls) {
-    for(var c = 0; c < urls.length; c++) {
-      if(aurl.type.indexOf(fb.PROFILE_PHOTO_URI) !== -1) {
-        out = aurl.value;
-        break;
-      }
-    }
-  }
-
-  return out;
-}
-
-// Adapts data to the mozContact format names
-fb.friend2mozContact = function(f) {
-// givenName is put as name but it should be f.first_name
-  f.familyName = [f.last_name];
-  f.additionalName = [f.middle_name];
-  f.givenName = [f.first_name + ' ' + f.middle_name];
-
-  delete f.last_name;
-  delete f.middle_name;
-  delete f.first_name;
-
-  var privateType = 'personal';
-
-  if (f.email) {
-    f.email1 = f.email;
-    f.email = [{
-                  type: [privateType],
-                  value: f.email
-    }];
-  }
-  else {
-    f.email1 = '';
-  }
-
-  var nextidx = 0;
-  if (f.cell) {
-
-    f.tel = [{
-      type: [privateType],
-      value: f.cell
-    }];
-
-    nextidx = 1;
-  }
-
-  if (f.other_phone) {
-    if (!f.tel) {
-      f.tel = [];
-    }
-
-    f.tel[nextidx] = {
-      type: [privateType],
-      value: f.other_phone
-    };
-
-  }
-
-  delete f.other_phone;
-  delete f.cell;
-
-  f.uid = f.uid.toString();
-}
-
-
-/**
-  * Auxiliary function to know where a contact works
-  *
-*/
-fb.getWorksAt = function(fbdata) {
-  var out = '';
-  if (fbdata.work && fbdata.work.length > 0) {
-    // It is assumed that first is the latest
-    out = fbdata.work[0].employer.name;
-  }
-
-  return out;
-}
-
- /**
-  *  Facebook dates are MM/DD/YYYY
-  *
-  *  Returns the birth date
-  *
-  */
-fb.getBirthDate = function getBirthDate(sbday) {
-  var out = new Date();
-
-  var imonth = sbday.indexOf('/');
-  var smonth = sbday.substring(0, imonth);
-
-  var iyear = sbday.lastIndexOf('/');
-  if (iyear === imonth) {
-    iyear = sbday.length;
-  }
-  var sday = sbday.substring(imonth + 1, iyear);
-
-  var syear = sbday.substring(iyear + 1, sbday.length);
-
-  out.setDate(parseInt(sday));
-  out.setMonth(parseInt(smonth) - 1, parseInt(sday));
-
-  if (syear && syear.length > 0) {
-    out.setYear(parseInt(syear));
-  }
-
-  return out;
-}

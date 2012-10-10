@@ -130,6 +130,8 @@ importScripts('fb_query.js');
         }
         else {
           self.console.error('Img for UID', uid ,' could not be retrieved ');
+          // This friend has to be marked in a special state just to be
+          // synced later on
         }
 
         wutils.postMessage({
@@ -137,7 +139,7 @@ importScripts('fb_query.js');
           data: friendsImgToBeUpdated[uid]
         });
       }
-      
+
     });
   }
 

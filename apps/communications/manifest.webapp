@@ -31,6 +31,7 @@
     "mobileconnection",
     "attention",
     "settings",
+    "systemXHR",
     "desktop-notification"
   ],
   "icons": {

@@ -34,7 +34,7 @@ if (typeof fb.importer === 'undefined') {
     // Query that retrieves the information about friends
     var FRIENDS_QUERY = [
       'SELECT uid, name, first_name, last_name, pic_big, ' ,
-      'middle_name, birthday_date, email,' ,
+      'middle_name, birthday_date, email, profile_update_time' ,
       'relationship_status, significant_other_id, work,' ,
       'education, cell, other_phone, current_location' ,
       ' FROM user' ,

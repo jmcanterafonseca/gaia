@@ -103,9 +103,11 @@ if(!fb.sync) {
       fb.friend2mozContact(cfdata);
 
       cfdata.fbInfo = {};
-      cfdata.fbInfo.photo = data.photo;
-      delete cfdata.photo;
-
+      if(cfdata.photo) {
+        cfdata.fbInfo.photo = data.photo;
+        delete cfdata.photo;
+      }
+     
       cfdata.fbInfo.org = fb.getWorksAt(data);
       var birthDate = null;
       if (cfdata.birthday_date && cfdata.birthday_date.length > 0) {
@@ -115,7 +117,17 @@ if(!fb.sync) {
 
        // Then the new data saved to the cache
       var fbContact = new fb.Contact(contactsById[cfdata.uid]);
-      fbContact.update(data);
+      var fbReq = fbContact.update(data);
+
+      // Nothing special
+      fbReq.onsuccess = function() {
+
+      }
+
+      // Error. mark the contact as pending to be synchronized
+      fbReq.onerror = function() {
+        window.console.error('FB: Error while saving contact data',cfdata.uid);
+      }
     }
 
   })();

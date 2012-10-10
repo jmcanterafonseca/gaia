@@ -60,7 +60,7 @@ fb.utils.runQuery = function(query, callback, access_token) {
         callback.success(xhr.response);
     }
     else {
-      self.console.error('FB: Error executing query. Status: ',
+      self.console.error('FB: Error executing query. ', query, ' Status: ',
                            xhr.status);
       if (callback && typeof callback.error === 'function')
         callback.error();
@@ -74,7 +74,8 @@ fb.utils.runQuery = function(query, callback, access_token) {
   }
 
   xhr.onerror = function(e) {
-    self.console.error('FB: Error while executing query', e);
+    self.console.error('FB: Error while executing query: ', query,
+                             ': ', e);
     if (callback && typeof callback.error === 'function')
       callback.error();
   }

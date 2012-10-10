@@ -275,7 +275,8 @@ if (!fb.utils) {
       }
 
       xhr.onerror = function(e) {
-        window.console.error('FB: Error while executing query', e);
+        window.console.error('FB: Error while executing query: ', query,
+                             ': ', e);
         if (callback && typeof callback.error === 'function')
           callback.error();
       }
