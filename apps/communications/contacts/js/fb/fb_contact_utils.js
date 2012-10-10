@@ -65,6 +65,7 @@ fb.getFriendPictureUrl = function(devContact) {
 
   if(urls) {
     for(var c = 0; c < urls.length; c++) {
+      var aurl = urls[c];
       if(aurl.type.indexOf(fb.PROFILE_PHOTO_URI) !== -1) {
         out = aurl.value;
         break;
@@ -172,4 +173,3 @@ fb.getBirthDate = function getBirthDate(sbday) {
 
   return out;
 }
-

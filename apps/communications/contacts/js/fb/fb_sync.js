@@ -80,8 +80,10 @@ if(!fb.sync) {
 
           uids[fb.getFriendUid(contact)] = {
             contactId: contact.id,
-            photoUri: fb.getFriendPictureUrl(contact)
+            photoUrl: fb.getFriendPictureUrl(contact)
           }
+
+          window.alert(uids[fb.getFriendUid(contact)].photoUrl);
         });
 
         fb.utils.getLastUpdate(function run_worker(ts) {

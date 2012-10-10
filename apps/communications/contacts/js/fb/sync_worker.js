@@ -127,6 +127,7 @@ importScripts('fb_query.js');
         friendsImgToBeUpdated[afriend.uid] = afriend;
       }
       else {
+        self.console.log('Contact Photo unchanged');
         wutils.postMessage({
           type: 'friendUpdated',
           data: {
@@ -145,11 +146,11 @@ importScripts('fb_query.js');
       imgSync.onimageready = function(uid,blob) {
         if(blob) {
           var friendData = friendsImgToBeUpdated[uid];
-          friendData.fbData = {};
-          friendData.fbData.photo = [blob];
-          friendData.fbData.url = [];
+          friendData.fbInfo = {};
+          friendData.fbInfo.photo = [blob];
+          friendData.fbInfo.url = [];
 
-          fbData.url.push({
+          friendData.fbInfo.url.push({
             type: [fb.PROFILE_PHOTO_URI],
             value: friendData.pic_big
           });
