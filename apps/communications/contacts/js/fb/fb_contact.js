@@ -133,7 +133,6 @@ fb.Contact = function(deviceContact, cid) {
         // URL (photo, etc) is stored also with the Device contact
         if(contactData.fbInfo.url) {
           contactInfo.url = contactData.fbInfo.url;
-          delete contactData.fbInfo.url;
         }
 
         doSetFacebookUid(contactInfo, contactData.uid);
@@ -256,7 +255,6 @@ fb.Contact = function(deviceContact, cid) {
         devContact.url = contactData.fbInfo.url;
         alert(devContact.url[0].value);
 
-        delete contactData.fbInfo.url;
         updateMozContacts = true;
       }
 
@@ -540,6 +538,7 @@ fb.Contact = function(deviceContact, cid) {
 
           var data = {};
           copyNames(imported, data);
+          data.url = imported.url;
           doSetFacebookUid(data, uid);
 
           var mcontact = new mozContact();

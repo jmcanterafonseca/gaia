@@ -81,7 +81,7 @@ importScripts('fb_query.js', 'fb_contact_utils.js');
   function friendsReady(response) {
     var updateList = response.data[0].fql_result_set;
     var removeList = response.data[1].fql_result_set;
-    removeList = [{target_id: '100001127136581'}];
+    // removeList = [{target_id: '100001127136581'}];
 
     if(typeof response.error === 'undefined') {
       wutils.postMessage({
