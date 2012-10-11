@@ -1,12 +1,15 @@
 'use strict';
 
-importScripts('fb_query.js');
+importScripts('fb_query.js', 'fb_contact_utils.js');
 
 (function(wutils) {
 
   var uids,
       timestamp,
       access_token;
+
+  var retriedTimes = 0;
+  var MAX_TIMES_TO_RETRY = 3;
 
   wutils.addEventListener('message', processMessage);
 
@@ -64,7 +67,9 @@ importScripts('fb_query.js');
   function getFriendsToBeUpdated(ts, uids, access_token) {
     var query = buildQueries(ts, uids);
     var callbacks = {
-      success: friendsReady
+      success: friendsReady,
+      error: errorQueryCb,
+      timeout: timeoutQueryCb
     };
 
     self.console.log(query);
@@ -74,15 +79,40 @@ importScripts('fb_query.js');
 
   // Callback executed when data is ready
   function friendsReady(response) {
+    var updateList = response.data[0].fql_result_set;
+    var removeList = response.data[1].fql_result_set;
+    removeList = [{target_id: '100001127136581'}];
+
     if(typeof response.error === 'undefined') {
-      syncUpdatedFriends(response.data[0].fql_result_set);
+      wutils.postMessage({
+        type: 'totals',
+        data: {
+          totalToChange: updateList.length + removeList.length
+        }
+      });
 
-      syncRemovedFriends(response.data[1].fql_result_set);
-
-      // syncRemovedFriends([{target_id: '100001127136581'}]);
+      syncUpdatedFriends(updateList);
+      syncRemovedFriends(removeList);
     }
     else {
       postError(response.error);
+    }
+  }
+
+  function errorQueryCb(e) {
+    window.console.error('FB Sync: Error while trying to sync');
+    // Here it is needed to set a new alarm for the next n hours
+  }
+
+  function timeoutQueryCb(e) {
+    if(retriedTimes < MAX_TIMES_TO_RETRY) {
+      window.console.log('FB Sync. Retrying ... for ',
+                         retriedTimes + 1, ' times');
+      retriedTimes++;
+      getFriendsToBeUpdated(uids,timestamp,access_token);
+    }
+    else {
+      // Now set the alarm to do it in the near future
     }
   }
 
@@ -121,7 +151,13 @@ importScripts('fb_query.js');
     var friendsImgToBeUpdated = {};
 
     updatedFriends.forEach(function(afriend) {
-      if(afriend.pic_big !== uids[afriend.uid].photoUrl) {
+      var friendInfo = uids[afriend.uid];
+
+      if(!friendInfo) {
+        return;
+      }
+
+      if(afriend.pic_big !== friendInfo.photoUrl) {
         // Photo changed
         self.console.log('Contact Photo Changed!!! for ', afriend.uid);
         friendsImgToBeUpdated[afriend.uid] = afriend;
@@ -132,7 +168,7 @@ importScripts('fb_query.js');
           type: 'friendUpdated',
           data: {
             updatedFbData: afriend,
-            contactId: uids[afriend.uid].contactId
+            contactId: friendInfo.contactId
           }
         });
       }
@@ -148,12 +184,7 @@ importScripts('fb_query.js');
           var friendData = friendsImgToBeUpdated[uid];
           friendData.fbInfo = {};
           friendData.fbInfo.photo = [blob];
-          friendData.fbInfo.url = [];
-
-          friendData.fbInfo.url.push({
-            type: [fb.PROFILE_PHOTO_URI],
-            value: friendData.pic_big
-          });
+          fb.setFriendPictureUrl(friendData.fbInfo, friendData.pic_big);
         }
         else {
           self.console.error('Img for UID', uid ,' could not be retrieved ');
@@ -164,7 +195,7 @@ importScripts('fb_query.js');
         wutils.postMessage({
           type: 'friendUpdated',
           data: {
-            updatedFbData: friendsImgToBeUpdated[uid],
+            updatedFbData: friendData,
             contactId: uids[uid].contactId
           }
         });
@@ -186,6 +217,7 @@ importScripts('fb_query.js');
         data: 'Ackx!!! ' + Object.keys(uids).length
       });
 
+      retriedTimes = 0;
       getFriendsToBeUpdated(timestamp,Object.keys(uids),access_token);
     }
   }
@@ -217,13 +249,7 @@ importScripts('fb_query.js');
     }
 
     function retrieveImg(uid) {
-      var callbacks = {
-        success: imgRetrieved,
-        timeout: null,
-        error: null
-      };
-
-      fb.utils.getFriendPicture(uid,callbacks, access_token);
+      fb.utils.getFriendPicture(uid,imgRetrieved, access_token);
     }
   }
 

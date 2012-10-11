@@ -254,6 +254,8 @@ fb.Contact = function(deviceContact, cid) {
       // Check whether the photo has changed
       if(contactData.fbInfo.photo) {
         devContact.url = contactData.fbInfo.url;
+        alert(devContact.url[0].value);
+
         delete contactData.fbInfo.url;
         updateMozContacts = true;
       }
@@ -452,9 +454,16 @@ fb.Contact = function(deviceContact, cid) {
         // When marking as linked is needed to store a reference to the profile
         // picture URL
         markAsLinked(contactdata, fbFriend.uid);
+        if(fbFriend.photoUrl)  {
+          fb.setFriendPictureUrl(contactdata,fbFriend.photoUrl);
+        }
+        else if(fbFriend.mozContact) {
+          contactdata.url = fbFriend.mozContact.url;
+        }
       }
       else if (fbFriend.mozContact) {
         markAsLinked(contactdata, doGetFacebookUid(fbFriend.mozContact));
+        contactdata.url = fbFriend.mozContact.url;
       }
 
       var mozContactsReq = navigator.mozContacts.save(contactdata);

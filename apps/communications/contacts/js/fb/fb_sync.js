@@ -10,6 +10,10 @@ if(!fb.sync) {
     // Facebook contacts currently under update process
     var fbContactsById;
 
+    var totalToChange = 0;
+
+    var changed = 0;
+
     function workerMessage(m) {
       if(m.type === 'friendUpdates') {
         window.console.log('Friend updates arrived!!!',
@@ -30,6 +34,17 @@ if(!fb.sync) {
       else if(m.type === 'friendUpdated') {
         updateFbFriend(m.data.contactId, m.data.updatedFbData);
       }
+      // Message with the totals
+      else if(m.type === 'totals') {
+        changed = 0;
+        totalToChange = m.data.totalToChange;
+        window.console.log('Total to be changed: ', totalToChange);
+      }
+    }
+
+    function onsuccessCb() {
+      changed++;
+      checkTotals();
     }
 
     function removeFbFriend(contactId) {
@@ -37,18 +52,45 @@ if(!fb.sync) {
 
       var removedFriend = fbContactsById[contactId];
 
-      window.console.log(JSON.stringify(removedFriend.category));
-
       var fbContact = new fb.Contact(removedFriend);
 
       if(fb.isFbLinked(removedFriend)) {
-        window.console.log('Friend is linked ', contactId);
+        window.console.log('Friend is linked: ', contactId);
         // No care about what happens
-        fbContact.unlink('hard');
+        var req = fbContact.unlink('hard');
+        req.onsuccess = onsuccessCb;
+
+        req.onerror = function() {
+          window.console.error('FB. Error while hard unlinking friend: ',
+                               contactId);
+          // The counter has to be increased anyway
+          changed++;
+          checkTotals();
+        }
       }
       else {
-        window.console.log('Friend is not linked ', contactId);
-        fbContact.remove();
+        window.console.log('Friend is not linked: ', contactId);
+        var req = fbContact.remove();
+        req.onsuccess = onsuccessCb;
+        req.onerror = function() {
+          window.console.error('FB. Error while removing contact: ',
+                               contactId);
+          // The counter has to be increased anyway
+          changed++;
+          checkTotals();
+        }
+      }
+    }
+
+    function checkTotals() {
+      if(changed === totalToChange) {
+        window.console.log('Sync process finished!');
+
+        fb.utils.setLastUpdate(Date.now());
+
+        if(window.contacts.List) {
+          window.setTimeout(window.contacts.List.load,0);
+        }
       }
     }
 
@@ -126,11 +168,14 @@ if(!fb.sync) {
       // Nothing special
       fbReq.onsuccess = function() {
         window.console.log('Friend updated correctly', cfdata.uid);
+        onsuccessCb();
       }
 
       // Error. mark the contact as pending to be synchronized
       fbReq.onerror = function() {
-        window.console.error('FB: Error while saving contact data',cfdata.uid);
+        window.console.error('FB: Error while saving contact data', cfdata.uid);
+        changed++;
+        checkTotals();
       }
     }
 

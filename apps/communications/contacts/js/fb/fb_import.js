@@ -103,7 +103,8 @@ if (typeof fb.importer === 'undefined') {
         data: ''
       };
 
-      parent.postMessage(msg, fb.CONTACTS_APP_ORIGIN);
+      // parent.postMessage(msg, fb.CONTACTS_APP_ORIGIN);
+      parent.postMessage(msg,'*');
     }
 
     function scrollToCb(groupContainer) {
@@ -248,7 +249,10 @@ if (typeof fb.importer === 'undefined') {
           var cimp = new ContactsImporter([friend]);
           cimp.start();
           cimp.onsuccess = function() {
-            currentRequest.done();
+            currentRequest.done({
+              uid: friend.uid,
+              url: friend.pic_big
+            });
           }
         }
         else {
@@ -647,10 +651,7 @@ if (typeof fb.importer === 'undefined') {
             fbInfo.photo = [photo];
             if(cfdata.pic_big) {
               // The URL is stored for synchronization purposes
-              fbInfo.url.push({
-                type: [fb.PROFILE_PHOTO_URI],
-                value: cfdata.pic_big
-              });
+              fb.setFriendPictureUrl(fbInfo,cfdata.pic_big);
             }
           }
 

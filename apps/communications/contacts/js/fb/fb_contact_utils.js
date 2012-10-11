@@ -1,6 +1,6 @@
 'use strict';
 
-var fb = window.fb || {};
+var fb = this.fb || {};
 fb.CATEGORY = 'facebook';
 fb.NOT_LINKED = 'not_linked';
 fb.LINKED = 'fb_linked';
@@ -74,6 +74,15 @@ fb.getFriendPictureUrl = function(devContact) {
   }
 
   return out;
+}
+
+fb.setFriendPictureUrl = function(devContact, url) {
+  devContact.url = devContact.url || [];
+
+  devContact.url.push({
+    type: [fb.PROFILE_PHOTO_URI],
+    value: url
+  });
 }
 
 // Adapts data to the mozContact format names

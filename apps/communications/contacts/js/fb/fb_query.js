@@ -57,28 +57,32 @@ fb.utils.runQuery = function(query, callback, access_token) {
   xhr.onload = function(e) {
     if (xhr.status === 200 || xhr.status === 0) {
       if (callback && typeof callback.success === 'function')
-        callback.success(xhr.response);
+        self.setTimeout(function() {
+          callback.success(xhr.response);
+        },0);
     }
     else {
       self.console.error('FB: Error executing query. ', query, ' Status: ',
                            xhr.status);
       if (callback && typeof callback.error === 'function')
-        callback.error();
+        self.setTimeout(callback.error,0);
     }
-  }
+  } // onload
 
   xhr.ontimeout = function(e) {
     self.console.error('FB: Timeout!!! while executing query', query);
     if (callback && typeof callback.timeout === 'function')
-      callback.timeout();
-  }
+      self.setTimeout(callback.timeout,0);
+  } // ontimeout
 
   xhr.onerror = function(e) {
     self.console.error('FB: Error while executing query: ', query,
                              ': ', e);
     if (callback && typeof callback.error === 'function')
-      callback.error();
-  }
+      self.setTimeout(function() {
+        callback.error(e);
+      },0);
+  } // onerror
 
   xhr.send();
 }
@@ -87,7 +91,7 @@ fb.utils.runQuery = function(query, callback, access_token) {
   *  Obtains a img DOM Element with the Contact's img
   *
   */
-fb.utils.getFriendPicture = function(uid, callbacks, access_token) {
+fb.utils.getFriendPicture = function(uid, callback, access_token) {
    // Access token is necessary just in case the image is not public
    // When passing an access token to FB https must be used
   var imgSrc = 'https://graph.facebook.com/' + uid + '/picture?type=large' +
@@ -104,28 +108,31 @@ fb.utils.getFriendPicture = function(uid, callbacks, access_token) {
   xhr.onload = function(e) {
     if (xhr.status === 200 || xhr.status === 0) {
       var mblob = e.target.response;
-      if(typeof callbacks.success === 'function')
-       callbacks.success(mblob);
+      if(typeof callback === 'function')
+        self.setTimeout(function() {
+          callback(mblob);
+        },0);
     }
-  }
+  } // onload
 
   xhr.ontimeout = function(e) {
-    self.console.error('FB: Timeout!!! while retrieving img for uid',
-                                                                       uid);
+    self.console.error('FB: Timeout!!! while retrieving img for uid', uid);
 
-     // This callback has been added mainly for unit testing purposes
-    if (typeof callbacks.timeout === 'function') {
-      callbacks.timeout();
-    }
-
-    if(typeof callbacks.success === 'function')
-      callbacks.success(null);
-  }
+    if(typeof callback === 'function')
+      self.setTimeout(function() {
+        callback(null);
+      },0);
+  } // ontimeout
 
   xhr.onerror = function(e) {
     self.console.error('FB: Error while retrieving the img', e);
-    callbacks.success(null);
-  }
+
+    if(typeof callback === 'function') {
+      self.setTimeout(function() {
+        callback(null);
+      },0);
+    }
+  } // onerror
 
   xhr.send();
 }
