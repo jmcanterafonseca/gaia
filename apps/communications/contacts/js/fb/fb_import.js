@@ -31,6 +31,8 @@ if (typeof fb.importer === 'undefined') {
 
     var _ = navigator.mozL10n.get;
 
+    var syncOngoing = false;
+
     // Query that retrieves the information about friends
     var FRIENDS_QUERY = [
       'SELECT uid, name, first_name, last_name, pic_big, ' ,
@@ -127,7 +129,7 @@ if (typeof fb.importer === 'undefined') {
     }
 
     /**
-     *  Invoked when the existing FB contacts on the Adress Book are ready
+     *  Invoked when the existing FB contacts on the Address Book are ready
      *
      */
     function contactsReady(e) {
@@ -135,7 +137,17 @@ if (typeof fb.importer === 'undefined') {
       contactsLoaded = true;
 
       if (friendsLoaded) {
+        // A synchronization will start asynchronously
+        window.setTimeout(startSync,0);
+
         disableExisting(existingFbContacts);
+      }
+    }
+
+    function startSync() {
+      if(existingFbContacts.length > 0 && !syncOngoing) {
+        syncOngoing = true;
+        fb.sync.startWithData(existingFbContacts,myFriendsByUid);
       }
     }
 
@@ -147,6 +159,8 @@ if (typeof fb.importer === 'undefined') {
       friendsLoaded = true;
 
       if (contactsLoaded) {
+        window.setTimeout(startSync,0);
+
         disableExisting(existingFbContacts);
       }
     }
@@ -705,6 +719,13 @@ if (typeof fb.importer === 'undefined') {
         }
         else {
           fb.utils.setLastUpdate(Date.now());
+          var nextUpdate = new Date();
+          nextUpdate.setMinutes(nextUpdate.getMinutes() + 1);
+
+          var req = navigator.mozAlarms.add(nextUpdate,'honorTimezone', {});
+          req.onsuccess = function() {
+            window.console.log('Next alarm set for ', nextUpdate.toString());
+          }
           importedCB();
         }
       };

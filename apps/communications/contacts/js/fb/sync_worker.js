@@ -204,6 +204,28 @@ importScripts('fb_query.js', 'fb_contact_utils.js');
     });
   }
 
+  // For dealing with the case that only new imgs have to be retrieved
+  function getNewImgsForFriends(friendsByUid) {
+    var imgSync = new ImgSynchronizer(Object.keys(friendsByUid));
+
+    imgSync.start();
+
+    // Once an image is ready friend update is notified
+    imgSync.onimageready = function(uid,blob) {
+      if(!blob) {
+        self.console.error('Img for UID: ', uid ,' could not be retrieved ');
+      }
+
+      wutils.postMessage({
+        type: 'friendImgReady',
+        data: {
+          photo: blob,
+          contactId: uids[uid].contactId
+        }
+      });
+    }
+  }
+
   function processMessage(e) {
     var message = e.data;
 
@@ -219,6 +241,11 @@ importScripts('fb_query.js', 'fb_contact_utils.js');
 
       retriedTimes = 0;
       getFriendsToBeUpdated(timestamp,Object.keys(uids),access_token);
+    }
+    else if(message.type == 'startWithData') {
+      uids = message.data.uids;
+      access_token = message.data.access_token;
+      getNewImgsForFriends(Object.keys(uids), access_token);
     }
   }
 

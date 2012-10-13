@@ -14,6 +14,10 @@ if(!fb.sync) {
 
     var changed = 0;
 
+    // Only makes sense when the data from FB is provided to the sync module
+    // i.e. it is not the worker who obtains that data
+    var fbFriendsDataByUid;
+
     function workerMessage(m) {
       if(m.type === 'friendUpdates') {
         window.console.log('Friend updates arrived!!!',
@@ -40,6 +44,24 @@ if(!fb.sync) {
         totalToChange = m.data.totalToChange;
         window.console.log('Total to be changed: ', totalToChange);
       }
+      else if(m.type === 'friendImgReady') {
+        updateFbFriendWhenImageReady(m.data);
+      }
+    }
+
+    function updateFbFriendWhenImageReady(data) {
+      var contact = fbContactsById[data.contactId];
+      var uid = fb.getFriendUid(contact);
+      var updatedFbData = fbFriendsDataByUid[uid];
+
+      if(data.photo) {
+        var fbInfo = {};
+        fbInfo.photo = [m.data.photo];
+        fb.setFriendPictureUrl(fbInfo, updatedFbData.pic_big);
+        updatedFbData.fbInfo = fbInfo;
+      }
+
+      updateFbFriend(data.contactId,updatedFbData);
     }
 
     function onsuccessCb() {
@@ -94,13 +116,19 @@ if(!fb.sync) {
       }
     }
 
-    Sync.start = function() {
+    // Starts the worker
+    function startWorker() {
       if(!theWorker) {
         theWorker = new Worker('/contacts/js/fb/sync_worker.js');
         theWorker.onmessage = function(e) {
           workerMessage(e.data);
         }
       }
+    }
+
+    // Starts a synchronization
+    Sync.start = function() {
+      startWorker();
 
       // First only take into account those Friends already on the device
       // This work has to be done here and not by the worker as it has no
@@ -146,6 +174,67 @@ if(!fb.sync) {
       req.onerror = function() {
         window.console.error('FB: Error while getting friends on the device');
       }
+    }
+
+    // Starts a synchronization with data coming from import / link
+    Sync.startWithData = function(contactList,myFriendsByUid) {
+      window.console.log('Starting Synchronization with data');
+
+      fbFriendsDataByUid = myFriendsByUid;
+      // Friends to be updated by the worker
+      // (i.e. those which profile img changed)
+      var toBeUpdated = {};
+
+      var lastUpdate = fb.utils.getLastUpdate(function
+                                              import_updates(lastUpdate) {
+        fbContactsById = {};
+
+        contactList.forEach(function(aContact) {
+          fbContactsById[aContact.id] = aContact;
+
+          var uid = fb.getFriendUid(aContact);
+
+          var friendData = fbFriendsDataByUid[uid];
+          if(friendData) {
+            var friendUpdate = friendData.profile_update_time;
+            if(friendUpdate > lastUpdate) {
+              var profileImgUrl = fb.getFriendPictureUrl(aContact);
+              if(profileImgUrl !== friendData.pic_big) {
+                toBeUpdated[uid] = {
+                  contactId: aContact.id
+                }
+              }
+              else {
+                window.console.log('Updating friend: ', frienData.uid);
+                updateFbFriend(aContact.id,friendData);
+              }
+            }
+          }
+          else {
+            window.console.log('Removing friend: ', aContact.id);
+            removeFbFriend(aContact.id);
+          }
+
+          window.console.log('Simple Updates and removed finished');
+
+          // Those friends which image has changed will require help from the
+          // worker
+          if(Object.keys(toBeUpdated).length > 0) {
+            window.console.log('Starting worker for updating img data');
+
+            startWorker();
+            fb.utils.getCachedAccessToken(function(access_token) {
+              theWorker.postMessage({
+                type: 'startWithData',
+                data: {
+                  access_token: access_token,
+                  uids: toBeUpdated
+                }
+              });
+            });
+          }
+        });
+      });
     }
 
     // Updates the FB data from a friend
