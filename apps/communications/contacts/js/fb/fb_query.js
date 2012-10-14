@@ -5,8 +5,8 @@ var _ConsoleObject = function() {
 
   function getString(a) {
     var out = '';
-    for(var c= 0; c < a.length; c++) {
-      out+= a[c];
+    for (var c = 0; c < a.length; c++) {
+      out += a[c];
     }
 
     return out;
@@ -26,7 +26,7 @@ var _ConsoleObject = function() {
       data: getString(arguments)
     });
   }
-}
+};
 
 // In an only worker execution context this would not be necessary
 var self = this;
@@ -65,14 +65,14 @@ fb.utils.runQuery = function(query, callback, access_token) {
       self.console.error('FB: Error executing query. ', query, ' Status: ',
                            xhr.status);
       if (callback && typeof callback.error === 'function')
-        self.setTimeout(callback.error,0);
+        self.setTimeout(callback.error, 0);
     }
   } // onload
 
   xhr.ontimeout = function(e) {
     self.console.error('FB: Timeout!!! while executing query', query);
     if (callback && typeof callback.timeout === 'function')
-      self.setTimeout(callback.timeout,0);
+      self.setTimeout(callback.timeout, 0);
   } // ontimeout
 
   xhr.onerror = function(e) {
@@ -85,7 +85,7 @@ fb.utils.runQuery = function(query, callback, access_token) {
   } // onerror
 
   xhr.send();
-}
+};
 
 /**
   *  Obtains a img DOM Element with the Contact's img
@@ -108,7 +108,7 @@ fb.utils.getFriendPicture = function(uid, callback, access_token) {
   xhr.onload = function(e) {
     if (xhr.status === 200 || xhr.status === 0) {
       var mblob = e.target.response;
-      if(typeof callback === 'function')
+      if (typeof callback === 'function')
         self.setTimeout(function() {
           callback(mblob);
         },0);
@@ -118,7 +118,7 @@ fb.utils.getFriendPicture = function(uid, callback, access_token) {
   xhr.ontimeout = function(e) {
     self.console.error('FB: Timeout!!! while retrieving img for uid', uid);
 
-    if(typeof callback === 'function')
+    if (typeof callback === 'function')
       self.setTimeout(function() {
         callback(null);
       },0);
@@ -127,7 +127,7 @@ fb.utils.getFriendPicture = function(uid, callback, access_token) {
   xhr.onerror = function(e) {
     self.console.error('FB: Error while retrieving the img', e);
 
-    if(typeof callback === 'function') {
+    if (typeof callback === 'function') {
       self.setTimeout(function() {
         callback(null);
       },0);
@@ -135,4 +135,4 @@ fb.utils.getFriendPicture = function(uid, callback, access_token) {
   } // onerror
 
   xhr.send();
-}
+};

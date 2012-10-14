@@ -41,7 +41,7 @@ fb.getFriendUid = function(devContact) {
   }
 
   return out;
-}
+};
 
 
 fb.getLinkedTo = function(devContact) {
@@ -55,7 +55,7 @@ fb.getLinkedTo = function(devContact) {
   }
 
   return out;
-}
+};
 
 
 fb.getFriendPictureUrl = function(devContact) {
@@ -63,10 +63,10 @@ fb.getFriendPictureUrl = function(devContact) {
 
   var urls = devContact.url;
 
-  if(urls) {
-    for(var c = 0; c < urls.length; c++) {
+  if (urls) {
+    for (var c = 0; c < urls.length; c++) {
       var aurl = urls[c];
-      if(aurl.type.indexOf(fb.PROFILE_PHOTO_URI) !== -1) {
+      if (aurl.type.indexOf(fb.PROFILE_PHOTO_URI) !== -1) {
         out = aurl.value;
         break;
       }
@@ -74,7 +74,7 @@ fb.getFriendPictureUrl = function(devContact) {
   }
 
   return out;
-}
+};
 
 fb.setFriendPictureUrl = function(devContact, url) {
   devContact.url = devContact.url || [];
@@ -83,7 +83,7 @@ fb.setFriendPictureUrl = function(devContact, url) {
     type: [fb.PROFILE_PHOTO_URI],
     value: url
   });
-}
+};
 
 // Adapts data to the mozContact format names
 fb.friend2mozContact = function(f) {
@@ -136,7 +136,7 @@ fb.friend2mozContact = function(f) {
   delete f.cell;
 
   f.uid = f.uid.toString();
-}
+};
 
 
 /**
@@ -151,7 +151,7 @@ fb.getWorksAt = function(fbdata) {
   }
 
   return out;
-}
+};
 
  /**
   *  Facebook dates are MM/DD/YYYY
@@ -181,4 +181,4 @@ fb.getBirthDate = function getBirthDate(sbday) {
   }
 
   return out;
-}
+};

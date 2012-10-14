@@ -106,7 +106,7 @@ if (typeof fb.importer === 'undefined') {
       };
 
       // parent.postMessage(msg, fb.CONTACTS_APP_ORIGIN);
-      parent.postMessage(msg,'*');
+      parent.postMessage(msg, '*');
     }
 
     function scrollToCb(groupContainer) {
@@ -138,16 +138,21 @@ if (typeof fb.importer === 'undefined') {
 
       if (friendsLoaded) {
         // A synchronization will start asynchronously
-        window.setTimeout(startSync,0);
+        window.setTimeout(startSync, 0);
 
         disableExisting(existingFbContacts);
       }
     }
 
     function startSync() {
-      if(existingFbContacts.length > 0 && !syncOngoing) {
+      if (existingFbContacts.length > 0 && !syncOngoing) {
         syncOngoing = true;
-        fb.sync.startWithData(existingFbContacts,myFriendsByUid);
+
+        fb.sync.startWithData(existingFbContacts, myFriendsByUid, function() {
+          window.console.log('Synchronization ended!!!');
+          syncOngoing = false;
+        });
+
       }
     }
 
@@ -159,7 +164,7 @@ if (typeof fb.importer === 'undefined') {
       friendsLoaded = true;
 
       if (contactsLoaded) {
-        window.setTimeout(startSync,0);
+        window.setTimeout(startSync, 0);
 
         disableExisting(existingFbContacts);
       }
@@ -192,7 +197,7 @@ if (typeof fb.importer === 'undefined') {
         var ele = document.querySelector('[data-uuid="' + uid + '"]');
         // This check is needed as there might be existing FB Contacts that
         // are no longer friends
-        if(ele) {
+        if (ele) {
           var input = ele.querySelector('input');
           input.checked = true;
 
@@ -332,7 +337,7 @@ if (typeof fb.importer === 'undefined') {
         // My friends partners
         friendsPartners = parseFriendsPartners(response.data[1].fql_result_set);
 
-        contacts.List.load(myFriends, friendsAvailable);
+        fbFriends.List.load(myFriends, friendsAvailable);
 
         document.body.dataset.state = '';
       }
@@ -663,9 +668,9 @@ if (typeof fb.importer === 'undefined') {
 
           if (photo) {
             fbInfo.photo = [photo];
-            if(cfdata.pic_big) {
+            if (cfdata.pic_big) {
               // The URL is stored for synchronization purposes
-              fb.setFriendPictureUrl(fbInfo,cfdata.pic_big);
+              fb.setFriendPictureUrl(fbInfo, cfdata.pic_big);
             }
           }
 
@@ -722,7 +727,7 @@ if (typeof fb.importer === 'undefined') {
           var nextUpdate = new Date();
           nextUpdate.setMinutes(nextUpdate.getMinutes() + 1);
 
-          var req = navigator.mozAlarms.add(nextUpdate,'honorTimezone', {});
+          var req = navigator.mozAlarms.add(nextUpdate, 'honorTimezone', {});
           req.onsuccess = function() {
             window.console.log('Next alarm set for ', nextUpdate.toString());
           }

@@ -18,13 +18,13 @@ if (!fb.utils) {
 
       // For controlling data synchronization
     Utils.setLastUpdate = function(value) {
-      window.asyncStorage.setItem(LAST_UPDATED_KEY,{
+      window.asyncStorage.setItem(LAST_UPDATED_KEY, {
         data: value
       });
     }
 
     Utils.getLastUpdate = function(callback) {
-      window.asyncStorage.getItem(LAST_UPDATED_KEY,function(obj) {
+      window.asyncStorage.getItem(LAST_UPDATED_KEY, function(obj) {
         var out = obj.data || Date.now();
         callback(out);
       });

@@ -2,7 +2,7 @@
 
 var fb = window.fb || {};
 
-if(!fb.sync) {
+if (!fb.sync) {
   (function() {
     var Sync = fb.sync = {};
 
@@ -14,37 +14,39 @@ if(!fb.sync) {
 
     var changed = 0;
 
+    var completionCallback;
+
     // Only makes sense when the data from FB is provided to the sync module
     // i.e. it is not the worker who obtains that data
     var fbFriendsDataByUid;
 
     function workerMessage(m) {
-      if(m.type === 'friendUpdates') {
+      if (m.type === 'friendUpdates') {
         window.console.log('Friend updates arrived!!!',
                            m.data[0].fql_result_set.length);
 
         window.console.log('Friend deletes arrived!!!',
                            m.data[1].fql_result_set.length);
       }
-      else if(m.type === 'error') {
+      else if (m.type === 'error') {
         window.console.error('FB: Error reported by the worker', m.data);
       }
-      else if(m.type === 'trace') {
+      else if (m.type === 'trace') {
         window.console.log(m.data);
       }
-      else if(m.type === 'friendRemoved') {
+      else if (m.type === 'friendRemoved') {
         removeFbFriend(m.data.contactId);
       }
-      else if(m.type === 'friendUpdated') {
+      else if (m.type === 'friendUpdated') {
         updateFbFriend(m.data.contactId, m.data.updatedFbData);
       }
       // Message with the totals
-      else if(m.type === 'totals') {
+      else if (m.type === 'totals') {
         changed = 0;
         totalToChange = m.data.totalToChange;
         window.console.log('Total to be changed: ', totalToChange);
       }
-      else if(m.type === 'friendImgReady') {
+      else if (m.type === 'friendImgReady') {
         updateFbFriendWhenImageReady(m.data);
       }
     }
@@ -54,14 +56,14 @@ if(!fb.sync) {
       var uid = fb.getFriendUid(contact);
       var updatedFbData = fbFriendsDataByUid[uid];
 
-      if(data.photo) {
+      if (data.photo) {
         var fbInfo = {};
         fbInfo.photo = [m.data.photo];
         fb.setFriendPictureUrl(fbInfo, updatedFbData.pic_big);
         updatedFbData.fbInfo = fbInfo;
       }
 
-      updateFbFriend(data.contactId,updatedFbData);
+      updateFbFriend(data.contactId, updatedFbData);
     }
 
     function onsuccessCb() {
@@ -76,7 +78,7 @@ if(!fb.sync) {
 
       var fbContact = new fb.Contact(removedFriend);
 
-      if(fb.isFbLinked(removedFriend)) {
+      if (fb.isFbLinked(removedFriend)) {
         window.console.log('Friend is linked: ', contactId);
         // No care about what happens
         var req = fbContact.unlink('hard');
@@ -105,20 +107,24 @@ if(!fb.sync) {
     }
 
     function checkTotals() {
-      if(changed === totalToChange) {
+      if (changed === totalToChange) {
         window.console.log('Sync process finished!');
 
         fb.utils.setLastUpdate(Date.now());
 
-        if(window.contacts.List) {
-          window.setTimeout(window.contacts.List.load,0);
+        if (window.contacts.List) {
+          window.setTimeout(window.contacts.List.load, 0);
+        }
+
+        if (typeof completionCallback === 'function') {
+          window.setTimeout(completionCallback, 0);
         }
       }
     }
 
     // Starts the worker
     function startWorker() {
-      if(!theWorker) {
+      if (!theWorker) {
         theWorker = new Worker('/contacts/js/fb/sync_worker.js');
         theWorker.onmessage = function(e) {
           workerMessage(e.data);
@@ -127,7 +133,11 @@ if(!fb.sync) {
     }
 
     // Starts a synchronization
-    Sync.start = function() {
+    Sync.start = function(callback) {
+      completionCallback = callback;
+      totalToChange = 0;
+      changed = 0;
+
       startWorker();
 
       // First only take into account those Friends already on the device
@@ -139,7 +149,7 @@ if(!fb.sync) {
         var uids = {};
         var fbContacts = req.result;
 
-        if(fbContacts.length === 0) {
+        if (fbContacts.length === 0) {
           return;
         }
 
@@ -151,7 +161,7 @@ if(!fb.sync) {
           uids[fb.getFriendUid(contact)] = {
             contactId: contact.id,
             photoUrl: fb.getFriendPictureUrl(contact)
-          }
+          };
 
           window.alert(uids[fb.getFriendUid(contact)].photoUrl);
         });
@@ -177,12 +187,16 @@ if(!fb.sync) {
     }
 
     // Starts a synchronization with data coming from import / link
-    Sync.startWithData = function(contactList,myFriendsByUid) {
+    Sync.startWithData = function(contactList, myFriendsByUid, callback) {
+      completionCallback = callback;
+      changed = 0;
+      // As it is not a priori known how many are going to needed a change
+      totalToChange = Number.MAX_VALUE;
+
       window.console.log('Starting Synchronization with data');
 
       fbFriendsDataByUid = myFriendsByUid;
-      // Friends to be updated by the worker
-      // (i.e. those which profile img changed)
+      // Friends to be updated by the worker (those which profile img changed)
       var toBeUpdated = {};
 
       var lastUpdate = fb.utils.getLastUpdate(function
@@ -195,18 +209,20 @@ if(!fb.sync) {
           var uid = fb.getFriendUid(aContact);
 
           var friendData = fbFriendsDataByUid[uid];
-          if(friendData) {
+          if (friendData) {
             var friendUpdate = friendData.profile_update_time;
-            if(friendUpdate > lastUpdate) {
+
+            if (friendUpdate > lastUpdate) {
               var profileImgUrl = fb.getFriendPictureUrl(aContact);
-              if(profileImgUrl !== friendData.pic_big) {
+
+              if (profileImgUrl !== friendData.pic_big) {
                 toBeUpdated[uid] = {
                   contactId: aContact.id
-                }
+                };
               }
               else {
                 window.console.log('Updating friend: ', frienData.uid);
-                updateFbFriend(aContact.id,friendData);
+                updateFbFriend(aContact.id, friendData);
               }
             }
           }
@@ -214,26 +230,32 @@ if(!fb.sync) {
             window.console.log('Removing friend: ', aContact.id);
             removeFbFriend(aContact.id);
           }
-
-          window.console.log('Simple Updates and removed finished');
-
-          // Those friends which image has changed will require help from the
-          // worker
-          if(Object.keys(toBeUpdated).length > 0) {
-            window.console.log('Starting worker for updating img data');
-
-            startWorker();
-            fb.utils.getCachedAccessToken(function(access_token) {
-              theWorker.postMessage({
-                type: 'startWithData',
-                data: {
-                  access_token: access_token,
-                  uids: toBeUpdated
-                }
-              });
-            });
-          }
         });
+
+        window.console.log('Simple Updates and removed finished');
+
+        // Those friends which image has changed will require help from the
+        // worker
+        var toBeUpdatedList = Object.keys(toBeUpdated);
+        if (toBeUpdatedList.length > 0) {
+          window.console.log('Starting worker for updating img data');
+          totalToChange = changed + toBeUpdatedList.length;
+
+          startWorker();
+          fb.utils.getCachedAccessToken(function(access_token) {
+            theWorker.postMessage({
+              type: 'startWithData',
+              data: {
+                access_token: access_token,
+                uids: toBeUpdated
+              }
+            });
+          });
+        }
+        else {
+          totalToChange = changed;
+          checkTotals();
+        }
       });
     }
 
@@ -262,7 +284,8 @@ if(!fb.sync) {
 
       // Error. mark the contact as pending to be synchronized
       fbReq.onerror = function() {
-        window.console.error('FB: Error while saving contact data', cfdata.uid);
+        window.console.error('FB: Error while saving contact data: ',
+                             cfdata.uid);
         changed++;
         checkTotals();
       }

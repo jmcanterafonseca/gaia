@@ -131,7 +131,7 @@ fb.Contact = function(deviceContact, cid) {
         // Copying names to the mozContact
         copyNames(contactData, contactInfo);
         // URL (photo, etc) is stored also with the Device contact
-        if(contactData.fbInfo.url) {
+        if (contactData.fbInfo.url) {
           contactInfo.url = contactData.fbInfo.url;
         }
 
@@ -207,7 +207,7 @@ fb.Contact = function(deviceContact, cid) {
     // Auxiliary function to do all the work for saving to the FB cache
     function auxDoUpdate(contactData, outReq) {
       // If the photo was not updated it is needed to save it
-      if(!contactData.fbInfo.photo) {
+      if (!contactData.fbInfo.photo) {
         var dataReq = fb.contacts.get(contactData.uid);
         dataReq.onsuccess = function() {
           contactData.fbInfo.photo = dataReq.result.photo;
@@ -245,20 +245,20 @@ fb.Contact = function(deviceContact, cid) {
       // First an update to the mozContacts DB could be needed
       var updateMozContacts = false;
 
-      if(!fb.isFbLinked(devContact)) {
-        copyNames(contactData,devContact);
+      if (!fb.isFbLinked(devContact)) {
+        copyNames(contactData, devContact);
         updateMozContacts = true;
       }
 
       // Check whether the photo has changed
-      if(contactData.fbInfo.photo) {
+      if (contactData.fbInfo.photo) {
         devContact.url = contactData.fbInfo.url;
         alert(devContact.url[0].value);
 
         updateMozContacts = true;
       }
 
-      if(updateMozContacts) {
+      if (updateMozContacts) {
         var mozContactsReq = navigator.mozContacts.save(devContact);
         mozContactsReq.onsuccess = function(e) {
           auxDoUpdate(contactData, outReq);
@@ -452,10 +452,10 @@ fb.Contact = function(deviceContact, cid) {
         // When marking as linked is needed to store a reference to the profile
         // picture URL
         markAsLinked(contactdata, fbFriend.uid);
-        if(fbFriend.photoUrl)  {
-          fb.setFriendPictureUrl(contactdata,fbFriend.photoUrl);
+        if (fbFriend.photoUrl) {
+          fb.setFriendPictureUrl(contactdata, fbFriend.photoUrl);
         }
-        else if(fbFriend.mozContact) {
+        else if (fbFriend.mozContact) {
           contactdata.url = fbFriend.mozContact.url;
         }
       }

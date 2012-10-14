@@ -38,7 +38,7 @@ importScripts('fb_query.js', 'fb_contact_utils.js');
     ')'
   ];
 
-  function buildQueries(ts,uids) {
+  function buildQueries(ts, uids) {
     var uidsFilter = uids.join(',');
 
     // The index at which the timestamp is set
@@ -58,7 +58,7 @@ importScripts('fb_query.js', 'fb_contact_utils.js');
     var outQueries = {
       query1: UPDATED_QUERY.join(''),
       query2: REMOVED_QUERY.join('')
-    }
+    };
 
     return JSON.stringify(outQueries);
   }
@@ -83,7 +83,7 @@ importScripts('fb_query.js', 'fb_contact_utils.js');
     var removeList = response.data[1].fql_result_set;
     // removeList = [{target_id: '100001127136581'}];
 
-    if(typeof response.error === 'undefined') {
+    if (typeof response.error === 'undefined') {
       wutils.postMessage({
         type: 'totals',
         data: {
@@ -105,11 +105,11 @@ importScripts('fb_query.js', 'fb_contact_utils.js');
   }
 
   function timeoutQueryCb(e) {
-    if(retriedTimes < MAX_TIMES_TO_RETRY) {
+    if (retriedTimes < MAX_TIMES_TO_RETRY) {
       window.console.log('FB Sync. Retrying ... for ',
                          retriedTimes + 1, ' times');
       retriedTimes++;
-      getFriendsToBeUpdated(uids,timestamp,access_token);
+      getFriendsToBeUpdated(uids, timestamp, access_token);
     }
     else {
       // Now set the alarm to do it in the near future
@@ -130,7 +130,7 @@ importScripts('fb_query.js', 'fb_contact_utils.js');
     removedFriends.forEach(function(aremoved) {
       var removedRef = uids[aremoved.target_id];
 
-      if(removedRef) {
+      if (removedRef) {
         wutils.postMessage({
           type: 'friendRemoved',
           data: {
@@ -153,11 +153,11 @@ importScripts('fb_query.js', 'fb_contact_utils.js');
     updatedFriends.forEach(function(afriend) {
       var friendInfo = uids[afriend.uid];
 
-      if(!friendInfo) {
+      if (!friendInfo) {
         return;
       }
 
-      if(afriend.pic_big !== friendInfo.photoUrl) {
+      if (afriend.pic_big !== friendInfo.photoUrl) {
         // Photo changed
         self.console.log('Contact Photo Changed!!! for ', afriend.uid);
         friendsImgToBeUpdated[afriend.uid] = afriend;
@@ -179,15 +179,15 @@ importScripts('fb_query.js', 'fb_contact_utils.js');
       imgSync.start();
 
       // Once an image is ready friend update is notified
-      imgSync.onimageready = function(uid,blob) {
-        if(blob) {
+      imgSync.onimageready = function(uid, blob) {
+        if (blob) {
           var friendData = friendsImgToBeUpdated[uid];
           friendData.fbInfo = {};
           friendData.fbInfo.photo = [blob];
           fb.setFriendPictureUrl(friendData.fbInfo, friendData.pic_big);
         }
         else {
-          self.console.error('Img for UID', uid ,' could not be retrieved ');
+          self.console.error('Img for UID', uid, ' could not be retrieved ');
           // This friend has to be marked in a special state just to be
           // synced later on
         }
@@ -211,9 +211,9 @@ importScripts('fb_query.js', 'fb_contact_utils.js');
     imgSync.start();
 
     // Once an image is ready friend update is notified
-    imgSync.onimageready = function(uid,blob) {
-      if(!blob) {
-        self.console.error('Img for UID: ', uid ,' could not be retrieved ');
+    imgSync.onimageready = function(uid, blob) {
+      if (!blob) {
+        self.console.error('Img for UID: ', uid, ' could not be retrieved ');
       }
 
       wutils.postMessage({
@@ -229,7 +229,7 @@ importScripts('fb_query.js', 'fb_contact_utils.js');
   function processMessage(e) {
     var message = e.data;
 
-    if(message.type === 'start') {
+    if (message.type === 'start') {
       uids = message.data.uids;
       access_token = message.data.access_token;
       timestamp = message.data.timestamp;
@@ -240,9 +240,9 @@ importScripts('fb_query.js', 'fb_contact_utils.js');
       });
 
       retriedTimes = 0;
-      getFriendsToBeUpdated(timestamp,Object.keys(uids),access_token);
+      getFriendsToBeUpdated(timestamp, Object.keys(uids), access_token);
     }
-    else if(message.type == 'startWithData') {
+    else if (message.type == 'startWithData') {
       uids = message.data.uids;
       access_token = message.data.access_token;
       getNewImgsForFriends(Object.keys(uids), access_token);
@@ -260,23 +260,23 @@ importScripts('fb_query.js', 'fb_contact_utils.js');
     }
 
     function imgRetrieved(blob) {
-      if(typeof self.onimageready === 'function') {
+      if (typeof self.onimageready === 'function') {
         var uid = self.friends[next];
 
         wutils.setTimeout(function() {
-          self.onimageready(uid,blob);
+          self.onimageready(uid, blob);
         },0);
       }
 
       // And lets go for the next
       next++;
-      if(next < self.friends.length) {
+      if (next < self.friends.length) {
         retrieveImg(self.friends[next]);
       }
     }
 
     function retrieveImg(uid) {
-      fb.utils.getFriendPicture(uid,imgRetrieved, access_token);
+      fb.utils.getFriendPicture(uid, imgRetrieved, access_token);
     }
   }
 
