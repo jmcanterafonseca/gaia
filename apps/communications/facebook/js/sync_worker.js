@@ -47,7 +47,7 @@ importScripts('/contacts/js/fb/fb_query.js',
 
   function debug() {
     function getString(a) {
-      var out = '<<FBSync>> ';
+      var out = '';
       for (var c = 0; c < a.length; c++) {
         out += a[c];
       }
@@ -67,7 +67,7 @@ importScripts('/contacts/js/fb/fb_query.js',
     if (retriedTimes < MAX_TIMES_TO_RETRY) {
       debug('Retrying ... for ', retriedTimes + 1, ' times');
       retriedTimes++;
-      getFriendsToBeUpdated(uids, timestamp, access_token, forceUpdateUids);
+      getFriendsToBeUpdated(Object.keys(uids), Object.keys(forcedUids));
     }
     else {
       // Now set the alarm to do it in the near future
@@ -81,7 +81,7 @@ importScripts('/contacts/js/fb/fb_query.js',
     });
   }
 
-  function buildQueries(ts, uids, forceUpdateUids) {
+  function buildQueries(ts, uids, forcedUids) {
     var uidsFilter = uids.join(',');
 
     // The index at which the timestamp is set
@@ -95,8 +95,9 @@ importScripts('/contacts/js/fb/fb_query.js',
     // The index at which those uids forced to be updated is set
     var IDX_FORCE = 12;
     var forceUpdateUidsFilter = '';
-    if(forceUpdateUids) {
-      forceUpdateUidsFilter = forceUpdateUids.join('');
+
+    if(forcedUids && forcedUids.length > 0) {
+      forceUpdateUidsFilter = forcedUids.join(',');
     }
     UPDATED_QUERY[IDX_FORCE] = forceUpdateUidsFilter;
 
@@ -123,8 +124,12 @@ importScripts('/contacts/js/fb/fb_query.js',
 
       debug('Worker acks contacts to check: ', Object.keys(uids).length);
 
+      if(forceUpdateUids && forceUpdateUids.length > 0)
+        debug('These friends are forced to be updated: ' ,
+              JSON.stringify(forceUpdateUids));
+
       retriedTimes = 0;
-      getFriendsToBeUpdated(timestamp, Object.keys(uids), access_token);
+      getFriendsToBeUpdated(Object.keys(uids),Object.keys(forceUpdateUids));
     }
     else if (message.type === 'startWithData') {
       debug('worker Acks start with data');
@@ -137,8 +142,8 @@ importScripts('/contacts/js/fb/fb_query.js',
 
 
   // Launch a multiple query to obtain friends to be updated and deleted
-  function getFriendsToBeUpdated(ts, uids, access_token, forceUpdateUids) {
-    var query = buildQueries(ts, uids, forceUpdateUids);
+  function getFriendsToBeUpdated(uids, forcedUids) {
+    var query = buildQueries(timestamp, uids, forcedUids);
     var callbacks = {
       success: friendsReady,
       error: errorQueryCb,
@@ -203,9 +208,10 @@ importScripts('/contacts/js/fb/fb_query.js',
     var friendsImgToBeUpdated = {};
 
     updatedFriends.forEach(function(afriend) {
-      var friendInfo = uids[afriend.uid];
+      var friendInfo = forceUpdateUids[afriend.uid] || uids[afriend.uid];
 
-      if (!friendInfo) {
+      if(!friendInfo) {
+        debug('The uid provided is unknown. Doing nothing');
         return;
       }
 
@@ -224,15 +230,25 @@ importScripts('/contacts/js/fb/fb_query.js',
           }
         });
       }
+    });
+
+    debug('Worker terminated processing updates');
+
+    var friendImgList = Object.keys(friendsImgToBeUpdated);
+
+    if(friendImgList.length > 0) {
+      debug('Now starting synch for ', friendImgList.length, ' images');
 
       // Now it is time to download the images needed
-      var imgSync = new ImgSynchronizer(Object.keys(friendsImgToBeUpdated));
+      var imgSync = new ImgSynchronizer(friendImgList);
 
       imgSync.start();
 
       // Once an image is ready friend update is notified
       imgSync.onimageready = function(uid, blob) {
         if (blob) {
+          debug('Image retrieved correctly for ', uid);
+
           var friendData = friendsImgToBeUpdated[uid];
           friendData.fbInfo = {};
           friendData.fbInfo.photo = [blob];
@@ -242,18 +258,24 @@ importScripts('/contacts/js/fb/fb_query.js',
           self.console.error('Img for UID', uid, ' could not be retrieved ');
           // This friend has to be marked in a special state just to be
           // synced later on
+          var friendData = friendsImgToBeUpdated[uid];
+          friendData.fbInfo = {};
+          friendData.fbInfo.photo = [];
+          // TODO: This should only remove the URL of the profile picture
+          friendData.fbInfo.url = [];
         }
+
+        var contact = uids[uid] || forceUpdateUids[uid];
 
         wutils.postMessage({
           type: 'friendUpdated',
           data: {
             updatedFbData: friendData,
-            contactId: uids[uid].contactId
+            contactId: contact.contactId
           }
         });
       }
-
-    });
+    }
   }
 
   // For dealing with the case that only new imgs have to be retrieved

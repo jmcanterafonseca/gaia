@@ -13,6 +13,7 @@ if (!fb.sync) {
     var totalToChange = 0,
         changed = 0;
 
+    // Next timestamp to be set
     var nextTimestamp;
 
     var completionCallback,
@@ -22,11 +23,11 @@ if (!fb.sync) {
     // i.e. it is not the worker which obtains that data
     var fbFriendsDataByUid;
 
-    var logLevel = fb.logLevel || parent.fb.logLevel;
+    var logLevel = fb.logLevel || parent.fb.logLevel || 'DEBUG';
     var isDebug = (logLevel === 'DEBUG');
 
     function debug() {
-      if(true) {
+      if(isDebug) {
         var theArgs = ['<<FBSync>>'];
         for(var c = 0; c < arguments.length; c++) {
           theArgs.push(arguments[c]);
@@ -42,7 +43,7 @@ if (!fb.sync) {
         workerMessage(e.data);
       }
       theWorker.onerror = function(e) {
-        window.console.error('Worker Error', e.message);
+        window.console.error('Worker Error', e.message, e.lineno, e.column);
       }
     }
 
@@ -67,6 +68,9 @@ if (!fb.sync) {
         nextTimestamp = m.data.queryTimestamp;
 
         debug('Total to be changed: ', totalToChange);
+
+        // If totals === 0 then the completion callback will be invoked
+        checkTotals();
       }
       else if (m.type === 'friendImgReady') {
         debug('Friend Img Data ready: ', m.data.contactId);
@@ -214,19 +218,23 @@ if (!fb.sync) {
         // Contacts by id are cached for later update
         fbContactsById = {};
         // Contacts for which an update will be forced
-        var forceUpdate = [];
+        var forceUpdate = {};
 
         fbContacts.forEach(function(contact) {
           fbContactsById[contact.id] = contact;
           var pictureUrl = fb.getFriendPictureUrl(contact);
+          var uid = fb.getFriendUid(contact);
 
-          uids[fb.getFriendUid(contact)] = {
+          uids[uid] = {
             contactId: contact.id,
             photoUrl: pictureUrl
           };
 
           if(!pictureUrl) {
-            forceUpdate.push(fb.getFriendUid(contact));
+            forceUpdate[uid] = {
+              contactId: contact.id
+              // photoUrl is left undefined as it is not known
+            };
           }
         });
 
