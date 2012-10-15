@@ -34,7 +34,7 @@ if (typeof fb.importer === 'undefined') {
     var FRIENDS_QUERY = [
       'SELECT uid, name, first_name, last_name, pic_big, ' ,
       'middle_name, birthday_date, email, profile_update_time, ' ,
-      ' work, education, cell, other_phone, current_location' ,
+      ' work, education, cell, other_phone, hometown_location' ,
       ' FROM user' ,
       ' WHERE uid ',
       'IN (SELECT uid1 FROM friend WHERE uid2=me())' ,
@@ -499,33 +499,6 @@ if (typeof fb.importer === 'undefined') {
         (importSlice.bind(this))();
       }
 
-      /**
-       *  Auxiliary function to know where a contact studied
-       *
-       */
-      function getStudiedAt(fbdata) {
-        var ret = '';
-
-        if (fbdata.education && fbdata.education.length > 0) {
-          var university = fbdata.education.filter(function(d) {
-            var e = false;
-            if (d.school.type === 'College') {
-              e = true;
-            }
-            return e;
-          });
-
-          if (university.length > 0) {
-            ret = university[0].school.name;
-          }
-          else {
-            ret = fbdata.education[0].school.name;
-          }
-        }
-
-        return ret;
-      }
-
 
     /**
      *  Persists a group of contacts
@@ -547,7 +520,7 @@ if (typeof fb.importer === 'undefined') {
           // When photo is ready this code will be executed
 
           var worksAt = fb.getWorksAt(cfdata);
-          var studiedAt = getStudiedAt(cfdata);
+          var address = fb.getAddress(cfdata);
 
           var birthDate = null;
           if (cfdata.birthday_date && cfdata.birthday_date.length > 0) {
@@ -555,10 +528,13 @@ if (typeof fb.importer === 'undefined') {
           }
 
           var fbInfo = {
-                          studiedAt: studiedAt,
                           bday: birthDate,
                           org: [worksAt]
           };
+
+          if(address) {
+            fbInfo.adr = [address];
+          }
 
           // Check whether we were able to get the photo or not
           fbInfo.url = [];

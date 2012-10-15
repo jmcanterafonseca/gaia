@@ -294,8 +294,7 @@ fb.Contact = function(deviceContact, cid) {
       out = Object.create(devContact);
 
       Object.keys(devContact).forEach(function(prop) {
-        if (devContact[prop] &&
-                              typeof devContact[prop].forEach === 'function') {
+        if (devContact[prop] && Array.isArray(devContact[prop]) ) {
           out[prop] = [];
           out[prop] = out[prop].concat(devContact[prop]);
         }
@@ -311,7 +310,7 @@ fb.Contact = function(deviceContact, cid) {
   }
 
   function mergeFbData(dcontact, fbdata) {
-    var multipleFields = ['email', 'tel', 'photo', 'org'];
+    var multipleFields = ['email', 'tel', 'photo', 'org', 'adr'];
 
     multipleFields.forEach(function(field) {
       if (!dcontact[field]) {
@@ -382,14 +381,21 @@ fb.Contact = function(deviceContact, cid) {
           Object.keys(fbdata).forEach(function(key) {
             var dataElement = fbdata[key];
 
-            if (dataElement && typeof dataElement.forEach === 'function' &&
-                key !== 'photo') {
+            if (dataElement && Array.isArray(dataElement) && key !== 'photo') {
               dataElement.forEach(function(item) {
                 if (item.value && item.value.length > 0) {
                   out2[item.value] = 'p';
                 }
                 else if (typeof item === 'string' && item.length > 0) {
                   out2[item] = 'p';
+                }
+                else if(key === 'adr') {
+                  if(item.locality) {
+                    out2[item.locality] = 'p';
+                  }
+                  if(item.countryName) {
+                    out2[item.countryName] = 'p';
+                  }
                 }
               });
             }

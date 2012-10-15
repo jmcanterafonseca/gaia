@@ -184,3 +184,18 @@ fb.getBirthDate = function getBirthDate(sbday) {
 
   return out;
 }
+
+fb.getAddress = function(fbdata) {
+  var out;
+
+  var hometownInfo = fbdata.hometown_location;
+  if(hometownInfo) {
+    out = {};
+    out.type = ['home'];
+    out.locality = hometownInfo.city || '';
+    out.region = hometownInfo.state || '';
+    out.countryName = hometownInfo.country || '';
+  }
+
+  return out;
+}

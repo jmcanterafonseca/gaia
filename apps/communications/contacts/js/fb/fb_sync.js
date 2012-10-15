@@ -286,6 +286,11 @@ if (!fb.sync) {
       }
       cfdata.fbInfo.bday = birthDate;
 
+      var address = fb.getAddress(cfdata);
+      if(address) {
+        cfdata.fbInfo.adr = [address];
+      }
+
        // Then the new data saved to the cache
       var fbContact = new fb.Contact(fbContactsById[contactId]);
       var fbReq = fbContact.update(cfdata);

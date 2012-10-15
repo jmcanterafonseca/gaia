@@ -19,7 +19,7 @@ importScripts('fb_query.js', 'fb_contact_utils.js', 'console.js');
   var UPDATED_QUERY = [
       'SELECT uid, name, first_name, last_name, ' ,
       'middle_name, birthday_date, email, ' ,
-      'work, cell, other_phone, pic_big ' ,
+      'work, cell, other_phone, hometown_location, pic_big ' ,
       ' FROM user' ,
       ' WHERE uid ',
       ' IN (SELECT uid1 FROM friend WHERE uid2=me()',
