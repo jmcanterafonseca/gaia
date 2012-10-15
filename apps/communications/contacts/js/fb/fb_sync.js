@@ -38,7 +38,8 @@ if (!fb.sync) {
         removeFbFriend(m.data.contactId);
       }
       else if (m.type === 'friendUpdated') {
-        updateFbFriend(m.data.contactId, m.data.updatedFbData);
+        updateFbFriend(m.data.contactId,
+                       fb.friend2mozContact(m.data.updatedFbData));
       }
       // Message with the totals
       else if (m.type === 'totals') {
@@ -47,6 +48,7 @@ if (!fb.sync) {
         window.console.log('Total to be changed: ', totalToChange);
       }
       else if (m.type === 'friendImgReady') {
+        window.console.log('Friend Img Data ready');
         updateFbFriendWhenImageReady(m.data);
       }
     }
@@ -58,7 +60,7 @@ if (!fb.sync) {
 
       if (data.photo) {
         var fbInfo = {};
-        fbInfo.photo = [m.data.photo];
+        fbInfo.photo = [data.photo];
         fb.setFriendPictureUrl(fbInfo, updatedFbData.pic_big);
         updatedFbData.fbInfo = fbInfo;
       }
@@ -199,8 +201,8 @@ if (!fb.sync) {
       // Friends to be updated by the worker (those which profile img changed)
       var toBeUpdated = {};
 
-      var lastUpdate = fb.utils.getLastUpdate(function
-                                              import_updates(lastUpdate) {
+      fb.utils.getLastUpdate(function import_updates(lastUpdate) {
+        window.console.log('Last update time: ', lastUpdate);
         fbContactsById = {};
 
         contactList.forEach(function(aContact) {
@@ -211,9 +213,14 @@ if (!fb.sync) {
           var friendData = fbFriendsDataByUid[uid];
           if (friendData) {
             var friendUpdate = friendData.profile_update_time;
+            window.console.log('Friend update', friendUpdate);
 
-            if (friendUpdate > lastUpdate) {
+            if (friendUpdate > Math.round(lastUpdate / 1000)) {
+              window.console.log('Friend changed!!');
+
               var profileImgUrl = fb.getFriendPictureUrl(aContact);
+
+              window.console.log('Profile Img Url:', profileImgUrl);
 
               if (profileImgUrl !== friendData.pic_big) {
                 toBeUpdated[uid] = {
@@ -221,7 +228,7 @@ if (!fb.sync) {
                 };
               }
               else {
-                window.console.log('Updating friend: ', frienData.uid);
+                window.console.log('Updating friend: ', friendData.uid);
                 updateFbFriend(aContact.id, friendData);
               }
             }
@@ -243,6 +250,7 @@ if (!fb.sync) {
 
           startWorker();
           fb.utils.getCachedAccessToken(function(access_token) {
+            window.console.log('going to send message to the worker ', theWorker, access_token);
             theWorker.postMessage({
               type: 'startWithData',
               data: {
@@ -261,8 +269,6 @@ if (!fb.sync) {
 
     // Updates the FB data from a friend
     function updateFbFriend(contactId, cfdata) {
-      fb.friend2mozContact(cfdata);
-
       cfdata.fbInfo = cfdata.fbInfo || {};
 
       cfdata.fbInfo.org = [fb.getWorksAt(cfdata)];

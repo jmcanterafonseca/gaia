@@ -13,6 +13,8 @@ importScripts('fb_query.js', 'fb_contact_utils.js');
 
   wutils.addEventListener('message', processMessage);
 
+  self.console.log('Worker up and running');
+
   // Query to know what friends need to be updated
   var UPDATED_QUERY = [
       'SELECT uid, name, first_name, last_name, ' ,
@@ -100,13 +102,13 @@ importScripts('fb_query.js', 'fb_contact_utils.js');
   }
 
   function errorQueryCb(e) {
-    window.console.error('FB Sync: Error while trying to sync');
+    self.console.error('FB Sync: Error while trying to sync');
     // Here it is needed to set a new alarm for the next n hours
   }
 
   function timeoutQueryCb(e) {
     if (retriedTimes < MAX_TIMES_TO_RETRY) {
-      window.console.log('FB Sync. Retrying ... for ',
+      self.console.log('FB Sync. Retrying ... for ',
                          retriedTimes + 1, ' times');
       retriedTimes++;
       getFriendsToBeUpdated(uids, timestamp, access_token);
@@ -205,13 +207,17 @@ importScripts('fb_query.js', 'fb_contact_utils.js');
   }
 
   // For dealing with the case that only new imgs have to be retrieved
-  function getNewImgsForFriends(friendsByUid) {
-    var imgSync = new ImgSynchronizer(Object.keys(friendsByUid));
+  function getNewImgsForFriends(friendList) {
+    self.console.log('Getting new imgs for friends', JSON.stringify(friendList));
+
+    var imgSync = new ImgSynchronizer(friendList);
 
     imgSync.start();
 
     // Once an image is ready friend update is notified
     imgSync.onimageready = function(uid, blob) {
+      self.console.log('Img Ready from worker');
+
       if (!blob) {
         self.console.error('Img for UID: ', uid, ' could not be retrieved ');
       }
@@ -227,6 +233,8 @@ importScripts('fb_query.js', 'fb_contact_utils.js');
   }
 
   function processMessage(e) {
+    self.console.log('process message in the worker');
+
     var message = e.data;
 
     if (message.type === 'start') {
@@ -242,7 +250,9 @@ importScripts('fb_query.js', 'fb_contact_utils.js');
       retriedTimes = 0;
       getFriendsToBeUpdated(timestamp, Object.keys(uids), access_token);
     }
-    else if (message.type == 'startWithData') {
+    else if (message.type === 'startWithData') {
+      self.console.log('start With Data message in the worker');
+
       uids = message.data.uids;
       access_token = message.data.access_token;
       getNewImgsForFriends(Object.keys(uids), access_token);
