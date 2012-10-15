@@ -1,19 +1,21 @@
 'use strict';
 
-importScripts('fb_query.js', 'fb_contact_utils.js', 'console.js');
+importScripts('/contacts/js/fb/fb_query.js',
+              '/contacts/js/fb/fb_contact_utils.js', 'console.js');
 
 (function(wutils) {
 
   var uids,
       timestamp,
-      access_token;
+      access_token,
+      forceUpdateUids;
 
   var retriedTimes = 0;
   var MAX_TIMES_TO_RETRY = 3;
 
   wutils.addEventListener('message', processMessage);
 
-  self.console.log('Worker up and running');
+  debug('Worker up and running ....');
 
   // Query to know what friends need to be updated
   var UPDATED_QUERY = [
@@ -27,7 +29,10 @@ importScripts('fb_query.js', 'fb_contact_utils.js', 'console.js');
       null,
       ') )',
       ' AND profile_update_time > ',
-      null
+      null,
+      ' OR uid IN (',
+      null,
+      ')'
     ];
 
   // Query to know what friends need to be removed
@@ -40,78 +45,29 @@ importScripts('fb_query.js', 'fb_contact_utils.js', 'console.js');
     ')'
   ];
 
-  function buildQueries(ts, uids) {
-    var uidsFilter = uids.join(',');
+  function debug() {
+    function getString(a) {
+      var out = '<<FBSync>> ';
+      for (var c = 0; c < a.length; c++) {
+        out += a[c];
+      }
 
-    // The index at which the timestamp is set
-    var IDX_TS = 10;
-    UPDATED_QUERY[IDX_TS] = Math.round(ts / 1000);
-
-    // UPDATED_QUERY[IDX_TS] = 1;
-
-    // The index at which uids filter is set
-    var IDX_UIDS = 7;
-    UPDATED_QUERY[IDX_UIDS] = uidsFilter;
-
-    var R_IDX_UIDS = 4;
-    REMOVED_QUERY[R_IDX_UIDS] = uidsFilter;
-
-    // Two queries launched at the same time
-    var outQueries = {
-      query1: UPDATED_QUERY.join(''),
-      query2: REMOVED_QUERY.join('')
-    };
-
-    return JSON.stringify(outQueries);
-  }
-
-  // Launch a multiple query to obtain friends to be updated and deleted
-  function getFriendsToBeUpdated(ts, uids, access_token) {
-    var query = buildQueries(ts, uids);
-    var callbacks = {
-      success: friendsReady,
-      error: errorQueryCb,
-      timeout: timeoutQueryCb
-    };
-
-    self.console.log(query);
-
-    fb.utils.runQuery(query, callbacks, access_token);
-  }
-
-  // Callback executed when data is ready
-  function friendsReady(response) {
-    var updateList = response.data[0].fql_result_set;
-    var removeList = response.data[1].fql_result_set;
-    // removeList = [{target_id: '100001127136581'}];
-
-    if (typeof response.error === 'undefined') {
-      wutils.postMessage({
-        type: 'totals',
-        data: {
-          totalToChange: updateList.length + removeList.length
-        }
-      });
-
-      syncUpdatedFriends(updateList);
-      syncRemovedFriends(removeList);
+      return out;
     }
-    else {
-      postError(response.error);
-    }
+
+    self.console.log(getString(arguments));
   }
 
   function errorQueryCb(e) {
-    self.console.error('FB Sync: Error while trying to sync');
+    self.console.error('<<FB Sync>>: Error while trying to sync');
     // Here it is needed to set a new alarm for the next n hours
   }
 
   function timeoutQueryCb(e) {
     if (retriedTimes < MAX_TIMES_TO_RETRY) {
-      self.console.log('FB Sync. Retrying ... for ',
-                         retriedTimes + 1, ' times');
+      debug('Retrying ... for ', retriedTimes + 1, ' times');
       retriedTimes++;
-      getFriendsToBeUpdated(uids, timestamp, access_token);
+      getFriendsToBeUpdated(uids, timestamp, access_token, forceUpdateUids);
     }
     else {
       // Now set the alarm to do it in the near future
@@ -125,8 +81,102 @@ importScripts('fb_query.js', 'fb_contact_utils.js', 'console.js');
     });
   }
 
+  function buildQueries(ts, uids, forceUpdateUids) {
+    var uidsFilter = uids.join(',');
+
+    // The index at which the timestamp is set
+    var IDX_TS = 10;
+    UPDATED_QUERY[IDX_TS] = Math.round(ts / 1000);
+
+    // The index at which uids filter is set
+    var IDX_UIDS = 7;
+    UPDATED_QUERY[IDX_UIDS] = uidsFilter;
+
+    // The index at which those uids forced to be updated is set
+    var IDX_FORCE = 12;
+    var forceUpdateUidsFilter = '';
+    if(forceUpdateUids) {
+      forceUpdateUidsFilter = forceUpdateUids.join('');
+    }
+    UPDATED_QUERY[IDX_FORCE] = forceUpdateUidsFilter;
+
+    var R_IDX_UIDS = 4;
+    REMOVED_QUERY[R_IDX_UIDS] = uidsFilter;
+
+    // Two queries launched at the same time
+    var outQueries = {
+      query1: UPDATED_QUERY.join(''),
+      query2: REMOVED_QUERY.join('')
+    };
+
+    return JSON.stringify(outQueries);
+  }
+
+  function processMessage(e) {
+    var message = e.data;
+
+    if (message.type === 'start') {
+      uids = message.data.uids;
+      access_token = message.data.access_token;
+      timestamp = message.data.timestamp;
+      forceUpdateUids = message.data.imgNeedsUpdate;
+
+      debug('Worker acks contacts to check: ', Object.keys(uids).length);
+
+      retriedTimes = 0;
+      getFriendsToBeUpdated(timestamp, Object.keys(uids), access_token);
+    }
+    else if (message.type === 'startWithData') {
+      debug('worker Acks start with data');
+
+      uids = message.data.uids;
+      access_token = message.data.access_token;
+      getNewImgsForFriends(Object.keys(uids), access_token);
+    }
+  }
+
+
+  // Launch a multiple query to obtain friends to be updated and deleted
+  function getFriendsToBeUpdated(ts, uids, access_token, forceUpdateUids) {
+    var query = buildQueries(ts, uids, forceUpdateUids);
+    var callbacks = {
+      success: friendsReady,
+      error: errorQueryCb,
+      timeout: timeoutQueryCb
+    };
+
+    fb.utils.runQuery(query, callbacks, access_token);
+  }
+
+  // Callback executed when data is ready
+  function friendsReady(response) {
+    // Timestamp is captured right now to avoid problems
+    // with updates in between
+    var qts = Date.now();
+
+    var updateList = response.data[0].fql_result_set;
+    var removeList = response.data[1].fql_result_set;
+    // removeList = [{target_id: '100001127136581'}];
+
+    if (typeof response.error === 'undefined') {
+      wutils.postMessage({
+        type: 'totals',
+        data: {
+          totalToChange: updateList.length + removeList.length,
+          queryTimestamp: qts
+        }
+      });
+
+      syncUpdatedFriends(updateList);
+      syncRemovedFriends(removeList);
+    }
+    else {
+      postError(response.error);
+    }
+  }
+
   function syncRemovedFriends(removedFriends) {
-    self.console.log('Friends to be removed: ', removedFriends.length);
+    debug('Friends to be removed: ', removedFriends.length);
 
     // Simply an iteration over the collection is done and a message passed
     removedFriends.forEach(function(aremoved) {
@@ -147,7 +197,7 @@ importScripts('fb_query.js', 'fb_contact_utils.js', 'console.js');
 
 
   function syncUpdatedFriends(updatedFriends) {
-     self.console.log('Friends to be updated: ', updatedFriends.length);
+    debug('Friends to be updated: ', updatedFriends.length);
 
     // Friends which image has to be updated
     var friendsImgToBeUpdated = {};
@@ -161,11 +211,11 @@ importScripts('fb_query.js', 'fb_contact_utils.js', 'console.js');
 
       if (afriend.pic_big !== friendInfo.photoUrl) {
         // Photo changed
-        self.console.log('Contact Photo Changed!!! for ', afriend.uid);
+        debug('Contact Photo Changed!!! for ', afriend.uid);
         friendsImgToBeUpdated[afriend.uid] = afriend;
       }
       else {
-        self.console.log('Contact Photo unchanged for ', afriend.uid);
+        debug('Contact Photo unchanged for ', afriend.uid);
         wutils.postMessage({
           type: 'friendUpdated',
           data: {
@@ -208,7 +258,7 @@ importScripts('fb_query.js', 'fb_contact_utils.js', 'console.js');
 
   // For dealing with the case that only new imgs have to be retrieved
   function getNewImgsForFriends(friendList) {
-    self.console.log('Getting new imgs for friends', JSON.stringify(friendList));
+    debug('Getting new imgs for friends', JSON.stringify(friendList));
 
     var imgSync = new ImgSynchronizer(friendList);
 
@@ -232,32 +282,6 @@ importScripts('fb_query.js', 'fb_contact_utils.js', 'console.js');
     }
   }
 
-  function processMessage(e) {
-    self.console.log('process message in the worker');
-
-    var message = e.data;
-
-    if (message.type === 'start') {
-      uids = message.data.uids;
-      access_token = message.data.access_token;
-      timestamp = message.data.timestamp;
-
-      wutils.postMessage({
-        type: 'trace',
-        data: 'Ackx!!! ' + Object.keys(uids).length
-      });
-
-      retriedTimes = 0;
-      getFriendsToBeUpdated(timestamp, Object.keys(uids), access_token);
-    }
-    else if (message.type === 'startWithData') {
-      self.console.log('start With Data message in the worker');
-
-      uids = message.data.uids;
-      access_token = message.data.access_token;
-      getNewImgsForFriends(Object.keys(uids), access_token);
-    }
-  }
 
   var ImgSynchronizer = function(friends) {
     var next = 0;

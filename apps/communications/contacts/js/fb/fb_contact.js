@@ -253,7 +253,6 @@ fb.Contact = function(deviceContact, cid) {
       // Check whether the photo has changed
       if (contactData.fbInfo.photo) {
         devContact.url = contactData.fbInfo.url;
-        alert(devContact.url[0].value);
 
         updateMozContacts = true;
       }

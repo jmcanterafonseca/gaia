@@ -10,30 +10,48 @@ if (!fb.sync) {
     // Facebook contacts currently under update process
     var fbContactsById;
 
-    var totalToChange = 0;
+    var totalToChange = 0,
+        changed = 0;
 
-    var changed = 0;
+    var nextTimestamp;
 
     var completionCallback,
         errorCallback;
 
     // Only makes sense when the data from FB is provided to the sync module
-    // i.e. it is not the worker who obtains that data
+    // i.e. it is not the worker which obtains that data
     var fbFriendsDataByUid;
 
-    function workerMessage(m) {
-      if (m.type === 'friendUpdates') {
-        window.console.log('Friend updates arrived!!!',
-                           m.data[0].fql_result_set.length);
+    var logLevel = fb.logLevel || parent.fb.logLevel;
+    var isDebug = (logLevel === 'DEBUG');
 
-        window.console.log('Friend deletes arrived!!!',
-                           m.data[1].fql_result_set.length);
+    function debug() {
+      if(true) {
+        var theArgs = ['<<FBSync>>'];
+        for(var c = 0; c < arguments.length; c++) {
+          theArgs.push(arguments[c]);
+        }
+        window.console.log.apply(this,theArgs);
       }
-      else if (m.type === 'error') {
+    }
+
+    // Starts the worker
+    function startWorker() {
+      theWorker = new Worker('/facebook/js/sync_worker.js');
+      theWorker.onmessage = function(e) {
+        workerMessage(e.data);
+      }
+      theWorker.onerror = function(e) {
+        window.console.error('Worker Error', e.message);
+      }
+    }
+
+    function workerMessage(m) {
+      if (m.type === 'error') {
         window.console.error('FB: Error reported by the worker', m.data);
       }
       else if (m.type === 'trace') {
-        window.console.log(m.data);
+        debug(m.data);
       }
       else if (m.type === 'friendRemoved') {
         removeFbFriend(m.data.contactId);
@@ -46,10 +64,12 @@ if (!fb.sync) {
       else if (m.type === 'totals') {
         changed = 0;
         totalToChange = m.data.totalToChange;
-        window.console.log('Total to be changed: ', totalToChange);
+        nextTimestamp = m.data.queryTimestamp;
+
+        debug('Total to be changed: ', totalToChange);
       }
       else if (m.type === 'friendImgReady') {
-        window.console.log('Friend Img Data ready');
+        debug('Friend Img Data ready: ', m.data.contactId);
         updateFbFriendWhenImageReady(m.data);
       }
     }
@@ -74,207 +94,6 @@ if (!fb.sync) {
       checkTotals();
     }
 
-    function removeFbFriend(contactId) {
-      window.console.log('Removing Friend: ', contactId);
-
-      var removedFriend = fbContactsById[contactId];
-
-      var fbContact = new fb.Contact(removedFriend);
-
-      if (fb.isFbLinked(removedFriend)) {
-        window.console.log('Friend is linked: ', contactId);
-        // No care about what happens
-        var req = fbContact.unlink('hard');
-        req.onsuccess = onsuccessCb;
-
-        req.onerror = function() {
-          window.console.error('FB. Error while hard unlinking friend: ',
-                               contactId);
-          // The counter has to be increased anyway
-          changed++;
-          checkTotals();
-        }
-      }
-      else {
-        window.console.log('Friend is not linked: ', contactId);
-        var req = fbContact.remove();
-        req.onsuccess = onsuccessCb;
-        req.onerror = function() {
-          window.console.error('FB. Error while removing contact: ',
-                               contactId);
-          // The counter has to be increased anyway
-          changed++;
-          checkTotals();
-        }
-      }
-    }
-
-    function checkTotals() {
-      if (changed === totalToChange) {
-        window.console.log('Sync process finished!');
-
-        fb.utils.setLastUpdate(Date.now());
-
-        if (window.contacts.List) {
-          window.setTimeout(window.contacts.List.load, 0);
-        }
-
-        if (typeof completionCallback === 'function') {
-          window.setTimeout(completionCallback, 0);
-        }
-      }
-    }
-
-    // Starts the worker
-    function startWorker() {
-      if (!theWorker) {
-        theWorker = new Worker('/contacts/js/fb/sync_worker.js');
-        theWorker.onmessage = function(e) {
-          workerMessage(e.data);
-        }
-      }
-    }
-
-    // Starts a synchronization
-    Sync.start = function(callbacks) {
-      completionCallback = callback.success;
-      errorCallback = callback.error;
-
-      totalToChange = 0;
-      changed = 0;
-
-      startWorker();
-
-      // First only take into account those Friends already on the device
-      // This work has to be done here and not by the worker as it has no
-      // access to the Web APIs
-      var req = fb.utils.getAllFbContacts();
-
-      req.onsuccess = function() {
-        var uids = {};
-        var fbContacts = req.result;
-
-        if (fbContacts.length === 0) {
-          return;
-        }
-
-        // Contacts by id are cached for later update
-        fbContactsById = {};
-        fbContacts.forEach(function(contact) {
-          fbContactsById[contact.id] = contact;
-
-          uids[fb.getFriendUid(contact)] = {
-            contactId: contact.id,
-            photoUrl: fb.getFriendPictureUrl(contact)
-          };
-
-          window.alert(uids[fb.getFriendUid(contact)].photoUrl);
-        });
-
-        fb.utils.getLastUpdate(function run_worker(ts) {
-          fb.utils.getCachedAccessToken(function(access_token) {
-            // The worker must start
-            theWorker.postMessage({
-              type: 'start',
-              data: {
-                uids: uids,
-                timestamp: ts,
-                access_token: access_token
-              }
-            });
-          });
-        });
-      }
-
-      req.onerror = function() {
-        window.console.error('FB: Error while getting friends on the device');
-        if(typeof errorCallback === 'function') {
-          errorCallback(req.error);
-        }
-      }
-    }
-
-    // Starts a synchronization with data coming from import / link
-    Sync.startWithData = function(contactList, myFriendsByUid, callbacks) {
-      completionCallback = callbacks.success;
-      errorCallback = callbacks.error;
-
-      changed = 0;
-      // As it is not a priori known how many are going to needed a change
-      totalToChange = Number.MAX_VALUE;
-
-      window.console.log('Starting Synchronization with data');
-
-      fbFriendsDataByUid = myFriendsByUid;
-      // Friends to be updated by the worker (those which profile img changed)
-      var toBeUpdated = {};
-
-      fb.utils.getLastUpdate(function import_updates(lastUpdate) {
-        window.console.log('Last update time: ', lastUpdate);
-        fbContactsById = {};
-
-        contactList.forEach(function(aContact) {
-          fbContactsById[aContact.id] = aContact;
-
-          var uid = fb.getFriendUid(aContact);
-
-          var friendData = fbFriendsDataByUid[uid];
-          if (friendData) {
-            var friendUpdate = friendData.profile_update_time;
-            window.console.log('Friend update', friendUpdate);
-
-            if (friendUpdate > Math.round(lastUpdate / 1000)) {
-              window.console.log('Friend changed!!');
-
-              var profileImgUrl = fb.getFriendPictureUrl(aContact);
-
-              window.console.log('Profile Img Url:', profileImgUrl);
-
-              if (profileImgUrl !== friendData.pic_big) {
-                toBeUpdated[uid] = {
-                  contactId: aContact.id
-                };
-              }
-              else {
-                window.console.log('Updating friend: ', friendData.uid);
-                updateFbFriend(aContact.id, friendData);
-              }
-            }
-          }
-          else {
-            window.console.log('Removing friend: ', aContact.id);
-            removeFbFriend(aContact.id);
-          }
-        });
-
-        window.console.log('Simple Updates and removed finished');
-
-        // Those friends which image has changed will require help from the
-        // worker
-        var toBeUpdatedList = Object.keys(toBeUpdated);
-        if (toBeUpdatedList.length > 0) {
-          window.console.log('Starting worker for updating img data');
-          totalToChange = changed + toBeUpdatedList.length;
-
-          startWorker();
-          fb.utils.getCachedAccessToken(function(access_token) {
-            window.console.log('going to send message to the worker ', theWorker, access_token);
-            theWorker.postMessage({
-              type: 'startWithData',
-              data: {
-                access_token: access_token,
-                uids: toBeUpdated
-              }
-            });
-          });
-        }
-        else {
-          totalToChange = changed;
-          checkTotals();
-        }
-      });
-    }
-
     // Updates the FB data from a friend
     function updateFbFriend(contactId, cfdata) {
       cfdata.fbInfo = cfdata.fbInfo || {};
@@ -297,7 +116,7 @@ if (!fb.sync) {
 
       // Nothing special
       fbReq.onsuccess = function() {
-        window.console.log('Friend updated correctly', cfdata.uid);
+        debug('Friend updated correctly', cfdata.uid);
         onsuccessCb();
       }
 
@@ -309,6 +128,222 @@ if (!fb.sync) {
         checkTotals();
       }
     }
+
+    function removeFbFriend(contactId) {
+      debug('Removing Friend: ', contactId);
+
+      var removedFriend = fbContactsById[contactId];
+
+      var fbContact = new fb.Contact(removedFriend);
+
+      if (fb.isFbLinked(removedFriend)) {
+        debug('Friend is linked: ', contactId);
+        // No care about what happens
+        var req = fbContact.unlink('hard');
+        req.onsuccess = onsuccessCb;
+
+        req.onerror = function() {
+          window.console.error('FB. Error while hard unlinking friend: ',
+                               contactId);
+          // The counter has to be increased anyway
+          changed++;
+          checkTotals();
+        }
+      }
+      else {
+        debug('Friend is not linked: ', contactId);
+        var req = fbContact.remove();
+        req.onsuccess = onsuccessCb;
+        req.onerror = function() {
+          window.console.error('FB. Error while removing contact: ',
+                               contactId);
+          // The counter has to be increased anyway
+          changed++;
+          checkTotals();
+        }
+      }
+    }
+
+    function checkTotals() {
+      if (changed === totalToChange) {
+        debug('Sync process finished!');
+
+        fb.utils.setLastUpdate(nextTimestamp);
+
+        if (window.contacts.List) {
+          window.setTimeout(window.contacts.List.load, 0);
+        }
+
+        if (typeof completionCallback === 'function') {
+          window.setTimeout(completionCallback, 0);
+        }
+
+        if(theWorker) {
+          theWorker.terminate();
+          theWorker = null;
+        }
+      }
+    }
+
+
+    // Starts a synchronization
+    Sync.start = function(callbacks) {
+      if(callbacks) {
+        completionCallback = callbacks.success;
+        errorCallback = callbacks.error;
+      }
+
+      totalToChange = 0;
+      changed = 0;
+
+      startWorker();
+
+      // First only take into account those Friends already on the device
+      // This work has to be done here and not by the worker as it has no
+      // access to the Web APIs
+      var req = fb.utils.getAllFbContacts();
+
+      req.onsuccess = function() {
+        var uids = {};
+        var fbContacts = req.result;
+
+        if (fbContacts.length === 0) {
+          return;
+        }
+
+        // Contacts by id are cached for later update
+        fbContactsById = {};
+        // Contacts for which an update will be forced
+        var forceUpdate = [];
+
+        fbContacts.forEach(function(contact) {
+          fbContactsById[contact.id] = contact;
+          var pictureUrl = fb.getFriendPictureUrl(contact);
+
+          uids[fb.getFriendUid(contact)] = {
+            contactId: contact.id,
+            photoUrl: pictureUrl
+          };
+
+          if(!pictureUrl) {
+            forceUpdate.push(fb.getFriendUid(contact));
+          }
+        });
+
+        fb.utils.getLastUpdate(function run_worker(ts) {
+          fb.utils.getCachedAccessToken(function(access_token) {
+            // The worker must start
+            theWorker.postMessage({
+              type: 'start',
+              data: {
+                uids: uids,
+                imgNeedsUpdate: forceUpdate,
+                timestamp: ts,
+                access_token: access_token
+              }
+            });
+          });
+        });
+      }
+
+      req.onerror = function() {
+        window.console.error('FB: Error while getting friends on the device');
+        if(typeof errorCallback === 'function') {
+          errorCallback(req.error);
+        }
+      }
+    }
+
+    // Starts a synchronization with data coming from import / link
+    Sync.startWithData = function(contactList, myFriendsByUid, callbacks) {
+      completionCallback = callbacks.success;
+      errorCallback = callbacks.error;
+      nextTimestamp = Date.now();
+
+      changed = 0;
+      // As it is not a priori known how many are going to needed a change
+      totalToChange = Number.MAX_VALUE;
+
+      debug('Starting Synchronization with data');
+
+      fbFriendsDataByUid = myFriendsByUid;
+      // Friends to be updated by the worker (those which profile img changed)
+      var toBeUpdated = {};
+
+      fb.utils.getLastUpdate(function import_updates(lastUpdate) {
+        var lastUpdateTime = Math.round(lastUpdate / 1000);
+
+        debug('Last update time: ', lastUpdateTime);
+        fbContactsById = {};
+
+        contactList.forEach(function(aContact) {
+          fbContactsById[aContact.id] = aContact;
+
+          var uid = fb.getFriendUid(aContact);
+
+          var friendData = fbFriendsDataByUid[uid];
+          if (friendData) {
+            var friendUpdate = friendData.profile_update_time;
+            debug('Friend update Time ', friendUpdate, 'for UID: ', uid);
+
+            var profileImgUrl = fb.getFriendPictureUrl(aContact);
+
+            if (friendUpdate > lastUpdateTime ||
+                            profileImgUrl !== friendData.pic_big) {
+              debug('Friend changed!! : ', uid);
+
+              if (profileImgUrl !== friendData.pic_big) {
+                debug('Profile img changed: ', profileImgUrl);
+
+                toBeUpdated[uid] = {
+                  contactId: aContact.id
+                };
+              }
+              else {
+                debug('Updating friend: ', friendData.uid);
+                updateFbFriend(aContact.id, friendData);
+              }
+            }
+            else {
+              debug('Friend has not changed', uid);
+            }
+          }
+          else {
+            debug('Removing friend: ', aContact.id);
+            removeFbFriend(aContact.id);
+          }
+        });
+
+        debug('First pass of Updates and removed finished');
+
+        // Those friends which image has changed will require help from the
+        // worker
+        var toBeUpdatedList = Object.keys(toBeUpdated);
+        if (toBeUpdatedList.length > 0) {
+          totalToChange = changed + toBeUpdatedList.length;
+
+          debug('Starting worker for updating img data');
+          startWorker();
+
+          fb.utils.getCachedAccessToken(function(access_token) {
+
+            theWorker.postMessage({
+              type: 'startWithData',
+              data: {
+                access_token: access_token,
+                uids: toBeUpdated
+              }
+            });
+          });
+        }
+        else {
+          totalToChange = changed;
+          checkTotals();
+        }
+      });
+    }
+
+
 
   })();
 }

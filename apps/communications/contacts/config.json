@@ -1,4 +1,5 @@
 {
   "facebookEnabled": true,
-  "operationsTimeout": 20000
+  "operationsTimeout": 20000,
+  "logLevel": "DEBUG"
 }
