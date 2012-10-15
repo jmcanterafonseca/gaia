@@ -1,37 +1,10 @@
 'use strict';
 
 var fb = this.fb || {};
-var _ConsoleObject = function() {
-
-  function getString(a) {
-    var out = '';
-    for (var c = 0; c < a.length; c++) {
-      out += a[c];
-    }
-
-    return out;
-  }
-
-  this.error = function() {
-
-    self.postMessage({
-      type: 'error',
-      data: getString(arguments)
-    });
-  }
-
-  this.log = function() {
-    self.postMessage({
-      type: 'trace',
-      data: getString(arguments)
-    });
-  }
-};
 
 // In an only worker execution context this would not be necessary
 var self = this;
 fb.utils = this.fb.utils || {};
-this.console = this.console || new _ConsoleObject();
 
 // Runs a query against Facebook FQL. Callback is a string!!
 fb.utils.runQuery = function(query, callback, access_token) {

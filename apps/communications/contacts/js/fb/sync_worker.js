@@ -1,6 +1,6 @@
 'use strict';
 
-importScripts('fb_query.js', 'fb_contact_utils.js');
+importScripts('fb_query.js', 'fb_contact_utils.js', 'console.js');
 
 (function(wutils) {
 

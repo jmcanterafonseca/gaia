@@ -14,7 +14,8 @@ if (!fb.sync) {
 
     var changed = 0;
 
-    var completionCallback;
+    var completionCallback,
+        errorCallback;
 
     // Only makes sense when the data from FB is provided to the sync module
     // i.e. it is not the worker who obtains that data
@@ -135,8 +136,10 @@ if (!fb.sync) {
     }
 
     // Starts a synchronization
-    Sync.start = function(callback) {
-      completionCallback = callback;
+    Sync.start = function(callbacks) {
+      completionCallback = callback.success;
+      errorCallback = callback.error;
+
       totalToChange = 0;
       changed = 0;
 
@@ -185,12 +188,17 @@ if (!fb.sync) {
 
       req.onerror = function() {
         window.console.error('FB: Error while getting friends on the device');
+        if(typeof errorCallback === 'function') {
+          errorCallback(req.error);
+        }
       }
     }
 
     // Starts a synchronization with data coming from import / link
-    Sync.startWithData = function(contactList, myFriendsByUid, callback) {
-      completionCallback = callback;
+    Sync.startWithData = function(contactList, myFriendsByUid, callbacks) {
+      completionCallback = callbacks.success;
+      errorCallback = callbacks.error;
+
       changed = 0;
       // As it is not a priori known how many are going to needed a change
       totalToChange = Number.MAX_VALUE;
