@@ -16,13 +16,13 @@ fb.CONTACTS_APP_ORIGIN = 'app://communications.gaiamobile.org';
 fb.isFbContact = function(devContact) {
   return (devContact.category &&
                         devContact.category.indexOf(fb.CATEGORY) !== -1);
-}
+};
 
 
 fb.isFbLinked = function(devContact) {
   return (devContact.category &&
                         devContact.category.indexOf(fb.LINKED) !== -1);
-}
+};
 
 
 fb.getFriendUid = function(devContact) {
@@ -41,7 +41,7 @@ fb.getFriendUid = function(devContact) {
   }
 
   return out;
-}
+};
 
 
 fb.getLinkedTo = function(devContact) {
@@ -55,7 +55,7 @@ fb.getLinkedTo = function(devContact) {
   }
 
   return out;
-}
+};
 
 
 fb.getFriendPictureUrl = function(devContact) {
@@ -74,7 +74,7 @@ fb.getFriendPictureUrl = function(devContact) {
   }
 
   return out;
-}
+};
 
 fb.setFriendPictureUrl = function(devContact, url) {
   devContact.url = devContact.url || [];
@@ -83,7 +83,7 @@ fb.setFriendPictureUrl = function(devContact, url) {
     type: [fb.PROFILE_PHOTO_URI],
     value: url
   });
-}
+};
 
 // Adapts data to the mozContact format names
 fb.friend2mozContact = function(f) {
@@ -138,7 +138,7 @@ fb.friend2mozContact = function(f) {
   f.uid = f.uid.toString();
 
   return f;
-}
+};
 
 
 /**
@@ -153,7 +153,7 @@ fb.getWorksAt = function(fbdata) {
   }
 
   return out;
-}
+};
 
  /**
   *  Facebook dates are MM/DD/YYYY
@@ -183,13 +183,13 @@ fb.getBirthDate = function getBirthDate(sbday) {
   }
 
   return out;
-}
+};
 
 fb.getAddress = function(fbdata) {
   var out;
 
   var hometownInfo = fbdata.hometown_location;
-  if(hometownInfo) {
+  if (hometownInfo) {
     out = {};
     out.type = ['home'];
     out.locality = hometownInfo.city || '';
@@ -198,4 +198,4 @@ fb.getAddress = function(fbdata) {
   }
 
   return out;
-}
+};

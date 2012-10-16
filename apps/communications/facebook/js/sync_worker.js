@@ -96,7 +96,7 @@ importScripts('/contacts/js/fb/fb_query.js',
     var IDX_FORCE = 12;
     var forceUpdateUidsFilter = '';
 
-    if(forcedUids && forcedUids.length > 0) {
+    if (forcedUids && forcedUids.length > 0) {
       forceUpdateUidsFilter = forcedUids.join(',');
     }
     UPDATED_QUERY[IDX_FORCE] = forceUpdateUidsFilter;
@@ -124,12 +124,12 @@ importScripts('/contacts/js/fb/fb_query.js',
 
       debug('Worker acks contacts to check: ', Object.keys(uids).length);
 
-      if(forceUpdateUids && forceUpdateUids.length > 0)
+      if (forceUpdateUids && forceUpdateUids.length > 0)
         debug('These friends are forced to be updated: ' ,
               JSON.stringify(forceUpdateUids));
 
       retriedTimes = 0;
-      getFriendsToBeUpdated(Object.keys(uids),Object.keys(forceUpdateUids));
+      getFriendsToBeUpdated(Object.keys(uids), Object.keys(forceUpdateUids));
     }
     else if (message.type === 'startWithData') {
       debug('worker Acks start with data');
@@ -210,7 +210,7 @@ importScripts('/contacts/js/fb/fb_query.js',
     updatedFriends.forEach(function(afriend) {
       var friendInfo = forceUpdateUids[afriend.uid] || uids[afriend.uid];
 
-      if(!friendInfo) {
+      if (!friendInfo) {
         debug('The uid provided is unknown. Doing nothing');
         return;
       }
@@ -236,7 +236,7 @@ importScripts('/contacts/js/fb/fb_query.js',
 
     var friendImgList = Object.keys(friendsImgToBeUpdated);
 
-    if(friendImgList.length > 0) {
+    if (friendImgList.length > 0) {
       debug('Now starting synch for ', friendImgList.length, ' images');
 
       // Now it is time to download the images needed

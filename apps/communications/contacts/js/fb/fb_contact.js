@@ -293,7 +293,7 @@ fb.Contact = function(deviceContact, cid) {
       out = Object.create(devContact);
 
       Object.keys(devContact).forEach(function(prop) {
-        if (devContact[prop] && Array.isArray(devContact[prop]) ) {
+        if (devContact[prop] && Array.isArray(devContact[prop])) {
           out[prop] = [];
           out[prop] = out[prop].concat(devContact[prop]);
         }
@@ -388,11 +388,11 @@ fb.Contact = function(deviceContact, cid) {
                 else if (typeof item === 'string' && item.length > 0) {
                   out2[item] = 'p';
                 }
-                else if(key === 'adr') {
-                  if(item.locality) {
+                else if (key === 'adr') {
+                  if (item.locality) {
                     out2[item.locality] = 'p';
                   }
-                  if(item.countryName) {
+                  if (item.countryName) {
                     out2[item.countryName] = 'p';
                   }
                 }

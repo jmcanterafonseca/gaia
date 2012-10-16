@@ -213,7 +213,7 @@ contacts.Settings = (function() {
           checkFbImported(false);
           // And it is needed to clear any previously set alarm
           window.asyncStorage.getItem(fb.utils.ALARM_ID_KEY, function(data) {
-            if(data) {
+            if (data) {
               var req = navigator.mozAlarms.remove(data.id);
               req.onsuccess = function() {
                 window.asyncStorage.removeItem(fb.utils.ALARM_ID_KEY);

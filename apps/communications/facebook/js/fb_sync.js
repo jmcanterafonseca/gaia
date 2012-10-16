@@ -30,12 +30,12 @@ if (!fb.sync) {
         currentAlarmRequest = null;
 
     function debug() {
-      if(isDebug) {
+      if (isDebug) {
         var theArgs = ['<<FBSync>>'];
-        for(var c = 0; c < arguments.length; c++) {
+        for (var c = 0; c < arguments.length; c++) {
           theArgs.push(arguments[c]);
         }
-        window.console.log.apply(this,theArgs);
+        window.console.log.apply(this, theArgs);
       }
     }
 
@@ -113,7 +113,7 @@ if (!fb.sync) {
       cfdata.fbInfo.bday = birthDate;
 
       var address = fb.getAddress(cfdata);
-      if(address) {
+      if (address) {
         cfdata.fbInfo.adr = [address];
       }
 
@@ -181,7 +181,7 @@ if (!fb.sync) {
 
         fb.utils.setLastUpdate(nextTimestamp, completionCallback);
 
-        if(theWorker) {
+        if (theWorker) {
           theWorker.terminate();
           theWorker = null;
         }
@@ -191,7 +191,7 @@ if (!fb.sync) {
 
     // Starts a synchronization
     Sync.start = function(callbacks) {
-      if(callbacks) {
+      if (callbacks) {
         completionCallback = callbacks.success;
         errorCallback = callbacks.error;
       }
@@ -229,7 +229,7 @@ if (!fb.sync) {
             photoUrl: pictureUrl
           };
 
-          if(!pictureUrl) {
+          if (!pictureUrl) {
             forceUpdate[uid] = {
               contactId: contact.id
               // photoUrl is left undefined as it is not known
@@ -255,7 +255,7 @@ if (!fb.sync) {
 
       req.onerror = function() {
         window.console.error('FB: Error while getting friends on the device');
-        if(typeof errorCallback === 'function') {
+        if (typeof errorCallback === 'function') {
           errorCallback(req.error);
         }
       }
@@ -283,7 +283,7 @@ if (!fb.sync) {
 
     Sync.onAlarmScheduled = function(date) {
       debug('Next synch scheduled at: ', date);
-      if(alarmFrame) {
+      if (alarmFrame) {
         document.body.removeChild(alarmFrame);
         alarmFrame = null;
       }
@@ -293,7 +293,7 @@ if (!fb.sync) {
 
 
     Sync.onAlarmError = function(e) {
-      if(alarmFrame) {
+      if (alarmFrame) {
         document.body.removeChild(alarmFrame);
         alarmFrame = null;
       }
@@ -305,7 +305,7 @@ if (!fb.sync) {
     }
 
     Sync.debug = function() {
-      debug.apply(this,arguments);
+      debug.apply(this, arguments);
     }
 
     // Starts a synchronization with data coming from import / link

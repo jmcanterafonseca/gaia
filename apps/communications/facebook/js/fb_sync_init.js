@@ -14,8 +14,8 @@ fb.sync = Sync;
   Alarm.init = function() {
     fb.init(function fb_alarm_init() {
 
-      if(navigator.mozHasPendingMessage('alarm')) {
-        navigator.mozSetMessageHandler('alarm',handleAlarm);
+      if (navigator.mozHasPendingMessage('alarm')) {
+        navigator.mozSetMessageHandler('alarm', handleAlarm);
       }
       else {
         setNextAlarm(true);
@@ -40,7 +40,7 @@ fb.sync = Sync;
     }
 
     // First is checked if this is a sync alarm
-    if(message.data.sync && !isSyncOngoing) {
+    if (message.data.sync && !isSyncOngoing) {
       isSyncOngoing = true;
       fb.sync.debug('Starting sync at: ', new Date());
 
@@ -60,7 +60,7 @@ fb.sync = Sync;
   function setNextAlarm(notifyParent) {
     // Let's check whether there was a previous set alarm
     window.asyncStorage.getItem(ALARM_ID_KEY, function(data) {
-      if(data && data.value) {
+      if (data && data.value) {
         // If there was a previous alarm it has to be removed
         fb.sync.debug('Removing existing alarm: ', data.value);
         var req = navigator.mozAlarms.remove(data.value);
@@ -79,7 +79,7 @@ fb.sync = Sync;
       fb.sync.debug('Going to set a new alarm at: ', scheduledDate);
 
       var req = navigator.mozAlarms.add(scheduledDate,
-                                        'honorTimezone',{
+                                        'honorTimezone', {
         sync: true});
 
       req.onsuccess = function() {
@@ -88,7 +88,7 @@ fb.sync = Sync;
           id: req.result
         });
 
-        if(notifyParent) {
+        if (notifyParent) {
           window.setTimeout(function() {
             parent.fb.sync.onAlarmScheduled(scheduledDate);
           },0);
@@ -96,13 +96,13 @@ fb.sync = Sync;
 
         fb.sync.debug('Alarm correctly set!!');
 
-        if(typeof callback === 'function') {
+        if (typeof callback === 'function') {
           callback();
         }
       }
 
       req.onerror = function() {
-        if(notifyParent) {
+        if (notifyParent) {
           window.setTimeout(function() {
             parent.fb.sync.onAlarmError(req.error);
           },0);

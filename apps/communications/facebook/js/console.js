@@ -23,6 +23,6 @@ var _ConsoleObject = function() {
       data: getString(arguments)
     });
   }
-}
+};
 
 this.console = this.console || new _ConsoleObject();

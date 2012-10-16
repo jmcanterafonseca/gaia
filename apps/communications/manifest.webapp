@@ -12,31 +12,35 @@
       "launch_path": "/dialer/index.html",
       "name": "Phone",
       "icons": {
-        "120": "/dialer/style/icons/Dialer.png",
-        "60": "/dialer/style/icons/60/Dialer.png"
+        "120": "/style/icons/Dialer.png",
+        "60": "/style/icons/60/Dialer.png"
       }
     },
     "contacts": {
       "launch_path": "/contacts/index.html",
       "name": "Contacts",
       "icons": {
-        "120": "/contacts/style/icons/Contacts.png",
-        "60": "/contacts/style/icons/60/Contacts.png"
+        "120": "/style/icons/Contacts.png",
+        "60": "/style/icons/60/Contacts.png"
       }
     }
   },
-  "permissions": [
-    "telephony",
-    "voicemail",
-    "contacts",
-    "mobileconnection",
-    "attention",
-    "settings",
-    "systemXHR",
-    "desktop-notification",
-    "alarm",
-    "alarms"
-  ],
+  "permissions": {
+    "telephony":{},
+    "voicemail":{},
+    "contacts":{},
+    "mobileconnection":{},
+    "attention":{},
+    "settings":{},
+    "desktop-notification":{},
+    "alarm": {},
+    "alarms": {},
+    "systemXHR": {}
+  },
+  "icons": {
+    "120": "/dialer/style/icons/Dialer.png",
+    "60": "/dialer/style/icons/60/Dialer.png"
+  },
   "orientation": "portrait-primary",
   "activities": {
     "pick": {

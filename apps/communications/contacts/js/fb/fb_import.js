@@ -135,7 +135,7 @@ if (typeof fb.importer === 'undefined') {
 
         var callbacks = {
           success: syncSuccess
-        }
+        };
         fb.sync.startWithData(existingFbContacts, myFriendsByUid, callbacks);
       }
     }
@@ -259,7 +259,7 @@ if (typeof fb.importer === 'undefined') {
 
             // Check wether we need to set the update alarm
             window.asyncStorage.getItem(fb.utils.ALARM_ID_KEY, function(data) {
-              if(!data) {
+              if (!data) {
                 // This is the first contact imported
                 fb.utils.setLastUpdate(nextUpdateTime, function() {
                   fb.sync.scheduleNextSync();
@@ -553,7 +553,7 @@ if (typeof fb.importer === 'undefined') {
                           org: [worksAt]
           };
 
-          if(address) {
+          if (address) {
             fbInfo.adr = [address];
           }
 
@@ -619,7 +619,7 @@ if (typeof fb.importer === 'undefined') {
         else {
           // Check whether we need to set the last update and schedule next sync
           // Only in that case otherwise that will be done by the sync process
-          if(!existingFbContacts || existingFbContacts.length === 0 &&
+          if (!existingFbContacts || existingFbContacts.length === 0 &&
              !scheduledAlarm) {
             fb.utils.setLastUpdate(nextUpdateTime, function() {
               var req = fb.sync.scheduleNextSync();
