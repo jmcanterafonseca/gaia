@@ -334,8 +334,10 @@ if (!fb.link) {
         data: data
       };
 
-      // parent.postMessage(msg, fb.CONTACTS_APP_ORIGIN);
-      parent.postMessage(msg, '*');
+      parent.postMessage(msg, fb.CONTACTS_APP_ORIGIN);
+
+      // Uncomment this to make this work in B2G-Desktop
+      // parent.postMessage(msg, '*');
     }
 
     UI.viewAllFriends = function(event) {

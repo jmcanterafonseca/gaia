@@ -72,8 +72,8 @@ fb.sync = Sync;
 
   function doSetNextAlarm(notifyParent, callback) {
     fb.utils.getLastUpdate(function(timestamp) {
-      // var nextUpdate = timestamp + fb.syncPeriod * 60 * 60 * 1000;
-      var nextUpdate = timestamp + 60 * 1000;
+      var nextUpdate = timestamp + fb.syncPeriod * 60 * 60 * 1000;
+      // var nextUpdate = timestamp + 60 * 1000;
       var scheduledDate = new Date(nextUpdate);
 
       fb.sync.debug('Going to set a new alarm at: ', scheduledDate);

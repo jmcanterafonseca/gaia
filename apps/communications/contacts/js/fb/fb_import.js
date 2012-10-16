@@ -80,8 +80,9 @@ if (typeof fb.importer === 'undefined') {
         data: ''
       };
 
-      // parent.postMessage(msg, fb.CONTACTS_APP_ORIGIN);
-      parent.postMessage(msg, '*');
+      parent.postMessage(msg, fb.CONTACTS_APP_ORIGIN);
+      // uncomment this to make it work on B2G-Desktop
+      // parent.postMessage(msg, '*');
     }
 
     function scrollToCb(groupContainer) {
