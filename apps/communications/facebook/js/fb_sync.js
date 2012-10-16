@@ -26,6 +26,9 @@ if (!fb.sync) {
     var logLevel = fb.logLevel || parent.fb.logLevel || 'DEBUG';
     var isDebug = (logLevel === 'DEBUG');
 
+    var alarmFrame = null,
+        currentAlarmRequest = null;
+
     function debug() {
       if(isDebug) {
         var theArgs = ['<<FBSync>>'];
@@ -172,15 +175,11 @@ if (!fb.sync) {
       if (changed === totalToChange) {
         debug('Sync process finished!');
 
-        fb.utils.setLastUpdate(nextTimestamp);
-
-        if (window.contacts.List) {
+        if (window.contacts && window.contacts.List) {
           window.setTimeout(window.contacts.List.load, 0);
         }
 
-        if (typeof completionCallback === 'function') {
-          window.setTimeout(completionCallback, 0);
-        }
+        fb.utils.setLastUpdate(nextTimestamp, completionCallback);
 
         if(theWorker) {
           theWorker.terminate();
@@ -260,6 +259,53 @@ if (!fb.sync) {
           errorCallback(req.error);
         }
       }
+    }
+
+    // Schedules a next synchronization
+    Sync.scheduleNextSync = function() {
+      //
+      currentAlarmRequest = new fb.utils.Request();
+
+      window.setTimeout(function() {
+        // The alarm has to be scheduled by the same page that will handle it
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=800431
+        alarmFrame = document.createElement('iframe');
+        alarmFrame.src = '/facebook/fb_sync.html';
+        alarmFrame.width = 1;
+        alarmFrame.height = 1;
+        alarmFrame.style.display = 'none';
+        document.body.appendChild(alarmFrame);
+      },0);
+
+      return currentAlarmRequest;
+    }
+
+
+    Sync.onAlarmScheduled = function(date) {
+      debug('Next synch scheduled at: ', date);
+      if(alarmFrame) {
+        document.body.removeChild(alarmFrame);
+        alarmFrame = null;
+      }
+
+      currentAlarmRequest.done(date);
+    }
+
+
+    Sync.onAlarmError = function(e) {
+      if(alarmFrame) {
+        document.body.removeChild(alarmFrame);
+        alarmFrame = null;
+      }
+
+      window.console.error('<<FB Sync>> Error while scheduling a new sync: ',
+                           e);
+
+      currentAlarmRequest.failed(e);
+    }
+
+    Sync.debug = function() {
+      debug.apply(this,arguments);
     }
 
     // Starts a synchronization with data coming from import / link

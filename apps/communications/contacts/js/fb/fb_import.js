@@ -29,6 +29,7 @@ if (typeof fb.importer === 'undefined') {
     var _ = navigator.mozL10n.get;
 
     var syncOngoing = false;
+    var nextUpdateTime;
 
     // Query that retrieves the information about friends
     var FRIENDS_QUERY = [
@@ -122,6 +123,7 @@ if (typeof fb.importer === 'undefined') {
     function syncSuccess() {
       window.console.log('Synchronization ended!!!');
       syncOngoing = false;
+      fb.sync.scheduleNextSync();
     }
 
     function startSync() {
@@ -277,6 +279,10 @@ if (typeof fb.importer === 'undefined') {
      */
     Importer.friendsReady = function(response) {
       if (typeof response.error === 'undefined') {
+        // This is the timestamp for later syncing as it set at the time
+        // when data was ready
+        nextUpdateTime = Date.now();
+
         var lmyFriends = response.data;
 
         // Now caching the number
@@ -329,8 +335,7 @@ if (typeof fb.importer === 'undefined') {
     UI.importAll = function(e) {
       if (Object.keys(selectedContacts).length > 0) {
 
-        Importer.importAll(function() {
-
+        Importer.importAll(function on_all_imported() {
           document.body.dataset.state = '';
           var list = [];
           // Once all contacts have been imported, they are unselected
@@ -596,14 +601,13 @@ if (typeof fb.importer === 'undefined') {
           },0);
         }
         else {
-          fb.utils.setLastUpdate(Date.now());
-          var nextUpdate = new Date();
-          nextUpdate.setMinutes(nextUpdate.getMinutes() + 1);
+          // Check whether we need to set the last update and schedule next sync
+          // Only in that case otherwise that will be done by the sync process
+          if(!existingFbContacts || existingFbContacts.length === 0)
+            fb.utils.setLastUpdate(nextUpdateTime, function() {
+              fb.sync.scheduleNextSync();
+            });
 
-          var req = navigator.mozAlarms.add(nextUpdate, 'honorTimezone', {});
-          req.onsuccess = function() {
-            window.console.log('Next alarm set for ', nextUpdate.toString());
-          }
           importedCB();
         }
       };

@@ -17,10 +17,10 @@ if (!fb.utils) {
     var STORAGE_KEY = 'tokenData';
 
       // For controlling data synchronization
-    Utils.setLastUpdate = function(value) {
+    Utils.setLastUpdate = function(value, cb) {
       window.asyncStorage.setItem(LAST_UPDATED_KEY, {
         data: value
-      });
+      }, cb);
     }
 
     Utils.getLastUpdate = function(callback) {
