@@ -9,8 +9,7 @@ if (!fb.utils) {
     var TIMEOUT_QUERY = fb.operationsTimeout;
     var FRIEND_COUNT_QUERY = 'select friend_count from user where uid=me()';
 
-    var IMPORT_INFO_KEY = 'importInfo';
-    var CACHE_FRIENDS_KEY = 'numFacebookFriends';
+    var CACHE_FRIENDS_KEY = Utils.CACHE_FRIENDS_KEY = 'numFacebookFriends';
     var LAST_UPDATED_KEY = Utils.LAST_UPDATED_KEY = 'lastUpdatedTime';
     Utils.ALARM_ID_KEY = 'nextAlarmId';
 

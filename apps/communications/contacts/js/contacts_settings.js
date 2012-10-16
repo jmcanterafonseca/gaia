@@ -218,6 +218,7 @@ contacts.Settings = (function() {
               req.onsuccess = function() {
                 window.asyncStorage.removeItem(fb.utils.ALARM_ID_KEY);
                 window.asyncStorage.removeItem(fb.utils.LAST_UPDATE_KEY);
+                window.asyncStorage.removeItem(fb.utils.CACHE_FRIENDS_KEY);
               }
               req.onerror = function() {
                 window.console.error('Error while removing a setted alarm',
@@ -289,8 +290,16 @@ contacts.Settings = (function() {
     Contacts.goBack();
   };
 
+  var refresh = function refresh() {
+    var fbTotalsMessage = document.getElementById('fbTotalsResult');
+    if (fbTotalsMessage) {
+      fbGetTotals();
+    }
+  }
+
   return {
     'init': init,
-    'close': close
+    'close': close,
+    'refresh': refresh
   };
 })();
