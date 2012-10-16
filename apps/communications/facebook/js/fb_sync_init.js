@@ -8,7 +8,7 @@ fb.sync = Sync;
 (function() {
   var Alarm = Sync.alarm = {};
 
-  var ALARM_ID_KEY = 'nextAlarmId';
+  var ALARM_ID_KEY = fb.utils.ALARM_ID_KEY;
   var isSyncOngoing = false;
 
   Alarm.init = function() {

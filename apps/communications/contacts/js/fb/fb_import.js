@@ -30,6 +30,8 @@ if (typeof fb.importer === 'undefined') {
 
     var syncOngoing = false;
     var nextUpdateTime;
+    // Indicates whether an alarm was already scheduled during an import session
+    var scheduledAlarm = false;
 
     // Query that retrieves the information about friends
     var FRIENDS_QUERY = [
@@ -240,6 +242,9 @@ if (typeof fb.importer === 'undefined') {
 
     Importer.importDataReady = function(response) {
       if (typeof response.error === 'undefined') {
+        // Just in case this is the first contact imported
+        nextUpdateTime = Date.now();
+
         var friend = response.data[0];
         if (friend) {
           fillData(friend);
@@ -250,6 +255,16 @@ if (typeof fb.importer === 'undefined') {
             currentRequest.done({
               uid: friend.uid,
               url: friend.pic_big
+            });
+
+            // Check wether we need to set the update alarm
+            window.asyncStorage.getItem(fb.utils.ALARM_ID_KEY, function(data) {
+              if(!data) {
+                // This is the first contact imported
+                fb.utils.setLastUpdate(nextUpdateTime, function() {
+                  fb.sync.scheduleNextSync();
+                });
+              }
             });
           }
         }
@@ -604,10 +619,15 @@ if (typeof fb.importer === 'undefined') {
         else {
           // Check whether we need to set the last update and schedule next sync
           // Only in that case otherwise that will be done by the sync process
-          if(!existingFbContacts || existingFbContacts.length === 0)
+          if(!existingFbContacts || existingFbContacts.length === 0 &&
+             !scheduledAlarm) {
             fb.utils.setLastUpdate(nextUpdateTime, function() {
-              fb.sync.scheduleNextSync();
+              var req = fb.sync.scheduleNextSync();
+              req.onsuccess = function() {
+                scheduledAlarm = true;
+              }
             });
+          }
 
           importedCB();
         }

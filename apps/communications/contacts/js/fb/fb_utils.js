@@ -11,7 +11,8 @@ if (!fb.utils) {
 
     var IMPORT_INFO_KEY = 'importInfo';
     var CACHE_FRIENDS_KEY = 'numFacebookFriends';
-    var LAST_UPDATED_KEY = 'lastUpdatedTime';
+    var LAST_UPDATED_KEY = Utils.LAST_UPDATED_KEY = 'lastUpdatedTime';
+    Utils.ALARM_ID_KEY = 'nextAlarmId';
 
     var REDIRECT_LOGOUT_URI = fb.oauthflow.params['redirectLogout'];
     var STORAGE_KEY = 'tokenData';
@@ -131,7 +132,7 @@ if (!fb.utils) {
 
     // Requests the number remotely
     Utils.getNumFbFriends = function(callback, access_token) {
-      Utils.runQuery(FRIEND_COUNT_QUERY, callback, access_token);
+      fb.utils.runQuery(FRIEND_COUNT_QUERY, callback, access_token);
     };
 
     Utils.getCachedAccessToken = function(callback) {
