@@ -33,7 +33,6 @@
     "attention":{},
     "settings":{},
     "desktop-notification":{},
-    "alarm": {},
     "alarms": {},
     "systemXHR": {}
   },
