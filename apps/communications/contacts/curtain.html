@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+    <title>Facebook</title>
+
+    <link rel="stylesheet" href="style/shared/core/css/root.css">
+
+    <!-- Building Blocks -->
+    <link href="/shared/style/headers.css" rel="stylesheet">
+    <link href="/shared/style/confirm.css" rel="stylesheet">
+    <link href="/shared/style_unstable/progress_activity.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="style/curtain/curtain.css">
+
+    <link rel="resource" type="application/l10n" href="/contacts/locales/fb/locales.ini">
+    <script type="text/javascript" src="/shared/js/l10n.js"></script>
+  </head>
+
+  <body role="application">
+    <section id="curtain" role="region">
+      <header>
+        <h1 data-l10n-id="facebook">Facebook</h1>
+      </header>
+      <form role="dialog" data-type="confirm">
+        <section id="friendsWait">
+          <h1 data-l10n-id="friendsWait1">Connecting to your list of friends</h1>
+          <p data-l10n-id="friendsWait2">This may take a couple of minutes</p>
+          <p role="status">
+            <progress class="small"></progress>
+          </p>
+        </section>
+
+        <section id="friendsImport">
+          <h1 data-l10n-id="friendsImport1">Importing your friends</h1>
+          <p data-l10n-id="friendsImport2">This may take a couple of seconds</p>
+          <p role="status">
+            <span id="friendsImportProgressLabel"></span>
+            <progress id="friendsImportProgress" value="0" max="100"></progress>
+          </p>
+        </section>
+
+        <section id="friendsError">
+          <h1 data-l10n-id="friendsError1">Error retrieving friends</h1>
+          <p data-l10n-id="friendsError2">Do you want to try again?</p>
+        </section>
+
+        <section id="friendsTimeout">
+          <h1 data-l10n-id="friendsTimeout1">Exceeded timeout retrieving friends</h1>
+          <p data-l10n-id="friendsTimeout2">Do you want to try again?</p>
+        </section>
+
+        <section id="proposalsWait">
+          <h1 data-l10n-id="proposalsWait1">Calculating proposals</h1>
+          <p data-l10n-id="proposalsWait2">This may take a couple of seconds</p>
+          <p role="status">
+            <progress class="small"></progress>
+          </p>
+        </section>
+
+        <section id="proposalsError">
+          <h1 data-l10n-id="proposalsError1">Error calculating proposals</h1>
+          <p data-l10n-id="proposalsError2">Do you want to try again?</p>
+        </section>
+
+        <section id="proposalsTimeout">
+          <h1 data-l10n-id="proposalsTimeout1">Exceeded timeout calculating proposals</h1>
+          <p data-l10n-id="proposalsTimeout2">Do you want to try again?</p>
+        </section>
+
+        <section id="friendLink">
+          <h1 data-l10n-id="friendLink1">Linking contact</h1>
+          <p data-l10n-id="friendLink2">This may take a couple of seconds</p>
+        </section>
+
+        <section id="friendError">
+          <h1 data-l10n-id="friendError1">Error linking contact</h1>
+          <p data-l10n-id="friendError2">Do you want to try again?</p>
+        </section>
+
+        <section id="friendTimeout">
+          <h1 data-l10n-id="friendTimeout1">Exceeded timeout linking contact</h1>
+          <p data-l10n-id="friendTimeout2">Do you want to try again?</p>
+        </section>
+
+        <menu>
+          <button data-l10n-id="curtainCancel" type="reset" id="cancel">Cancel</button>
+          <button data-l10n-id="curtainTryAgain" type="submit" id="tryagain">Try again</button>
+        </menu>
+      </form>
+    </section>
+  </body>
+</html>

@@ -1,0 +1,74 @@
+#curtain {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+form[role="dialog"][data-type="confirm"] > section {
+  display: none;
+}
+
+form[role="dialog"][data-type="confirm"][data-state="friendsWait"] #friendsWait {
+  display: inline-block;
+}
+
+form[role="dialog"][data-type="confirm"][data-state="friendsWait"] #cancel,
+form[role="dialog"][data-type="confirm"][data-state="proposalsWait"] #cancel {
+  width: 100%;
+}
+
+form[role="dialog"][data-type="confirm"][data-state="friendsWait"] #tryagain,
+form[role="dialog"][data-type="confirm"][data-state="proposalsWait"] #tryagain {
+  display: none;
+}
+
+form[role="dialog"][data-type="confirm"][data-state="friendsError"] #friendsError {
+  display: inline-block;
+}
+
+form[role="dialog"][data-type="confirm"][data-state="friendsTimeout"] #friendsTimeout {
+  display: inline-block;
+}
+
+form[role="dialog"][data-type="confirm"][data-state="friendsImport"] #friendsImport {
+  display: inline-block;
+}
+
+form[role="dialog"][data-type="confirm"][data-state="friendsImport"] menu {
+  display: none;
+}
+
+form[role="dialog"][data-type="confirm"][data-state="proposalsWait"] #proposalsWait {
+  display: inline-block;
+}
+
+form[role="dialog"][data-type="confirm"][data-state="proposalsError"] #proposalsError {
+  display: inline-block;
+}
+
+form[role="dialog"][data-type="confirm"][data-state="proposalsTimeout"] #proposalsTimeout {
+  display: inline-block;
+}
+
+form[role="dialog"][data-type="confirm"][data-state="friendError"] #friendError {
+  display: inline-block;
+}
+
+form[role="dialog"][data-type="confirm"][data-state="friendTimeout"] #friendTimeout {
+  display: inline-block;
+}
+
+form[role="dialog"][data-type="confirm"][data-state="friendLink"] #friendLink {
+  display: inline-block;
+}
+
+form[role="dialog"][data-type="confirm"][data-state="friendLink"] menu {
+  display: none;
+}
+
+p[role="status"] {
+  text-align: center;
+}

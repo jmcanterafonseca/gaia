@@ -136,6 +136,8 @@ if (!fb.link) {
           cdata = req.result;
           numQueries = 1;
           currentRecommendation = null;
+          fb.link.accessToken = access_token;
+          fb.link.contId = contid;
           doGetRemoteProposal(access_token, cdata, buildQuery(cdata));
         }
         else {
@@ -154,7 +156,6 @@ if (!fb.link) {
 
     // Performs all the work to obtain the remote proposal
     function doGetRemoteProposal(access_token, contactData, query) {
-      document.body.dataset.state = 'waiting';
 
       /*
         Phone.lookup was analysed but we were not happy about how it worked
@@ -166,7 +167,7 @@ if (!fb.link) {
       var sentries = JSON.stringify(entries);
 
       */
-
+      fb.link.callerName = 'proposals';
       fb.utils.runQuery(query, {
         success: fb.link.proposalReady,
         error: fb.link.errorHandler,
@@ -176,8 +177,9 @@ if (!fb.link) {
 
 
     function getRemoteAll() {
-      document.body.dataset.state = 'waiting';
-
+      var req = fb.utils.showCurtain('friendsWait');
+      req.oncancel = Curtain.hide;
+      fb.link.callerName = 'friends';
       fb.utils.runQuery(ALL_QUERY.join(''), {
         success: fb.link.friendsReady,
         error: fb.link.errorHandler,
@@ -187,6 +189,7 @@ if (!fb.link) {
 
     // When the access_token is available it is executed
     function tokenReady(at) {
+      fb.utils.showCurtain('proposalsWait');
       access_token = at;
       link.getRemoteProposal(at, contactid);
     }
@@ -222,26 +225,34 @@ if (!fb.link) {
         });
 
         utils.templates.append('#friends-list', data);
-
-        document.body.dataset.state = 'selection';
+        Curtain.hide(fb.utils.sendReadyEvent);
       }
 
       // Guarantee that the user always return to a known state
       if (numQueries > 1) {
-        document.body.dataset.state = 'selection';
+        Curtain.hide(fb.utils.sendReadyEvent);
+      }
+    }
+
+    link.baseHandler = function(type) {
+      var callerName = link.callerName;
+      var req = fb.utils.showCurtain(callerName + type);
+      if (callerName === 'friends') {
+        req.ontryagain = getRemoteAll;
+        req.oncancel = Curtain.hide;
+      } else if (callerName === 'proposals') {
+        req.ontryagain = function() {
+          link.getRemoteProposal(link.accessToken, link.contId);
+        };
       }
     }
 
     link.timeoutHandler = function() {
-       // TODO: figure out with UX what to do in that case
-      window.alert('Timeout!!');
-      document.body.dataset.state = 'selection';
+      link.baseHandler('Timeout');
     }
 
     link.errorHandler = function() {
-       // TODO: figure out with UX what to do in that case
-      window.alert('Error!!');
-      document.body.dataset.state = 'selection';
+      link.baseHandler('Error');
     }
 
     /**
@@ -283,39 +294,63 @@ if (!fb.link) {
                               response.error.code, response.error.message);
       }
 
-      document.body.dataset.state = 'selection';
+      Curtain.hide();
     }
 
 
     UI.selected = function(event) {
+      fb.utils.showCurtain('friendLink');
       var element = event.target;
-      var friendUid = element.dataset.uuid;
+      var friendUid = UI.friendUid = element.dataset.uuid;
 
       // First it is needed to check whether is an already imported friend
       var req = fb.contacts.get(friendUid);
       req.onsuccess = function() {
         if (req.result) {
-          notifyParent({
-            uid: friendUid
+          Curtain.hide(function() {
+            notifyParent({
+              uid: friendUid
+            });
           });
         }
         else {
           var importReq = fb.importer.importFriend(friendUid, access_token);
-          document.body.dataset.state = 'waiting';
 
           importReq.onsuccess = function() {
-            document.body.dataset.state = 'selection';
-            notifyParent(importReq.result);
+            Curtain.hide(function() {
+              notifyParent(importReq.result)
+            });
           }
 
           importReq.onerror = function() {
             window.console.error('FB: Error while importing friend data');
-            document.body.dataset.state = 'selection';
+            var ret = fb.utils.showCurtain('friendError');
+            req.ontryagain = function() {
+              UI.selected({
+                target: {
+                  dataset: {
+                    uuid: UI.friendUid
+                  }
+                }
+              });
+            };
+            req.oncancel = Curtain.hide;
           }
         }
       }
       req.onerror = function() {
         window.console.error('FB: Error while importing friend data');
+        var ret = fb.utils.showCurtain('friendError');
+        req.ontryagain = function() {
+          UI.selected({
+            target: {
+              dataset: {
+                uuid: UI.friendUid
+              }
+            }
+          });
+        };
+        req.oncancel = Curtain.hide;
       }
     }
 

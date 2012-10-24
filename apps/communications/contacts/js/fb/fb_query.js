@@ -22,6 +22,15 @@ fb.utils.runQuery = function(query, callback, access_token) {
     mozSystem: true
   });
 
+  var onCancel = function doOnCancel(e) {
+    if (e.data.type === 'close') {
+      xhr.abort();
+      window.removeEventListener('message', onCancel);
+    }
+  }
+
+  window.addEventListener('message', onCancel);
+
   xhr.open('GET', remote, true);
   xhr.responseType = 'json';
 
@@ -40,12 +49,14 @@ fb.utils.runQuery = function(query, callback, access_token) {
       if (callback && typeof callback.error === 'function')
         self.setTimeout(callback.error, 0);
     }
+    window.removeEventListener('message', onCancel);
   } // onload
 
   xhr.ontimeout = function(e) {
     self.console.error('FB: Timeout!!! while executing query', query);
     if (callback && typeof callback.timeout === 'function')
       self.setTimeout(callback.timeout, 0);
+    window.removeEventListener('message', onCancel);
   } // ontimeout
 
   xhr.onerror = function(e) {
@@ -55,6 +66,7 @@ fb.utils.runQuery = function(query, callback, access_token) {
       self.setTimeout(function() {
         callback.error(e);
       },0);
+    window.removeEventListener('message', onCancel);
   } // onerror
 
   xhr.send();
