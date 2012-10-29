@@ -26,64 +26,42 @@
         <h1 data-l10n-id="facebook">Facebook</h1>
       </header>
       <form role="dialog" data-type="confirm">
-        <section id="friendsWait">
-          <h1 data-l10n-id="friendsWait1">Connecting to your list of friends</h1>
-          <p data-l10n-id="friendsWait2">This may take a couple of minutes</p>
+
+        <!-- Progress activity card -->
+        <section id="progress">
+          <h1 id="progressMsg" data-l10n-id="progress1">Please wait</h1>
+          <p data-l10n-id="progress2">This may take a couple of seconds</p>
+          <p role="status">
+            <span id="progressLabel"></span>
+            <progress id="progressElement" value="0" max="100"></progress>
+          </p>
+        </section>
+
+        <!-- Message card -->
+        <section id="message">
+          <h1 id="messageMsg"></h1>
+          <p data-l10n-id="message2">This may take a couple of seconds</p>
+        </section>
+
+        <!-- Waiting card -->
+        <section id="wait">
+          <h1 id="waitMsg" data-l10n-id="wait1">Please wait</h1>
+          <p data-l10n-id="wait2">This may take a couple of minutes</p>
           <p role="status">
             <progress class="small"></progress>
           </p>
         </section>
 
-        <section id="friendsImport">
-          <h1 data-l10n-id="friendsImport1">Importing your friends</h1>
-          <p data-l10n-id="friendsImport2">This may take a couple of seconds</p>
-          <p role="status">
-            <span id="friendsImportProgressLabel"></span>
-            <progress id="friendsImportProgress" value="0" max="100"></progress>
-          </p>
+        <!-- Error card -->
+        <section id="error">
+          <h1 id="errorMsg" data-l10n-id="error1">Error</h1>
+          <p data-l10n-id="error2">Do you want to try again?</p>
         </section>
 
-        <section id="friendsError">
-          <h1 data-l10n-id="friendsError1">Error retrieving friends</h1>
-          <p data-l10n-id="friendsError2">Do you want to try again?</p>
-        </section>
-
-        <section id="friendsTimeout">
-          <h1 data-l10n-id="friendsTimeout1">Exceeded timeout retrieving friends</h1>
-          <p data-l10n-id="friendsTimeout2">Do you want to try again?</p>
-        </section>
-
-        <section id="proposalsWait">
-          <h1 data-l10n-id="proposalsWait1">Calculating proposals</h1>
-          <p data-l10n-id="proposalsWait2">This may take a couple of seconds</p>
-          <p role="status">
-            <progress class="small"></progress>
-          </p>
-        </section>
-
-        <section id="proposalsError">
-          <h1 data-l10n-id="proposalsError1">Error calculating proposals</h1>
-          <p data-l10n-id="proposalsError2">Do you want to try again?</p>
-        </section>
-
-        <section id="proposalsTimeout">
-          <h1 data-l10n-id="proposalsTimeout1">Exceeded timeout calculating proposals</h1>
-          <p data-l10n-id="proposalsTimeout2">Do you want to try again?</p>
-        </section>
-
-        <section id="friendLink">
-          <h1 data-l10n-id="friendLink1">Linking contact</h1>
-          <p data-l10n-id="friendLink2">This may take a couple of seconds</p>
-        </section>
-
-        <section id="friendError">
-          <h1 data-l10n-id="friendError1">Error linking contact</h1>
-          <p data-l10n-id="friendError2">Do you want to try again?</p>
-        </section>
-
-        <section id="friendTimeout">
-          <h1 data-l10n-id="friendTimeout1">Exceeded timeout linking contact</h1>
-          <p data-l10n-id="friendTimeout2">Do you want to try again?</p>
+        <!-- Timeout card -->
+        <section id="timeout">
+          <h1 id="timeoutMsg" data-l10n-id="timeout1">Exceeded timeout</h1>
+          <p data-l10n-id="timeout2">Do you want to try again?</p>
         </section>
 
         <menu>
@@ -91,6 +69,7 @@
           <button data-l10n-id="curtainTryAgain" type="submit" id="tryagain">Try again</button>
         </menu>
       </form>
+
     </section>
   </body>
 </html>

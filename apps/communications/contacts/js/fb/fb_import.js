@@ -101,7 +101,7 @@ if (typeof fb.importer === 'undefined') {
      *
      */
     function tokenReady(at) {
-      fb.utils.showCurtain('friendsWait');
+      fb.utils.showCurtain('wait', 'friends');
       access_token = at;
       Importer.getFriends(at);
     }
@@ -230,7 +230,7 @@ if (typeof fb.importer === 'undefined') {
       window.setTimeout(function do_importFriend() {
         var oneFriendQuery = buildFriendQuery(uid);
         fb.importer.contId = uid;
-        fb.importer.callerName = 'friend';
+        fb.importer.callerName = 'linking';
         fb.utils.runQuery(oneFriendQuery, {
                             success: fb.importer.importDataReady,
                             error: fb.importer.errorHandler,
@@ -346,7 +346,7 @@ if (typeof fb.importer === 'undefined') {
 
     Importer.baseHandler = function(type) {
       var callerName = Importer.callerName;
-      var req = fb.utils.showCurtain(callerName + type);
+      var req = fb.utils.showCurtain(type, callerName);
       if (callerName === 'friends') {
         req.ontryagain = UI.getFriends;
       } else if (callerName === 'friend') {
@@ -364,11 +364,11 @@ if (typeof fb.importer === 'undefined') {
     }
 
     Importer.timeoutHandler = function() {
-      Importer.baseHandler('Timeout');
+      Importer.baseHandler('timeout');
     }
 
     Importer.errorHandler = function() {
-      Importer.baseHandler('Error');
+      Importer.baseHandler('error');
     }
 
     function fillData(f) {
@@ -654,7 +654,7 @@ if (typeof fb.importer === 'undefined') {
      */
     Importer.importAll = function(importedCB) {
       var progress = {};
-      fb.utils.showCurtain('friendsImport', progress);
+      fb.utils.showCurtain('progress', 'import', progress);
       var numFriends = Object.keys(selectedContacts).length;
       var cont = 0;
       var cImporter = new ContactsImporter(selectedContacts, progress);

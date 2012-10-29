@@ -177,7 +177,7 @@ if (!fb.link) {
 
 
     function getRemoteAll() {
-      var req = fb.utils.showCurtain('friendsWait');
+      var req = fb.utils.showCurtain('wait', 'friends');
       req.oncancel = Curtain.hide;
       fb.link.callerName = 'friends';
       fb.utils.runQuery(ALL_QUERY.join(''), {
@@ -189,7 +189,7 @@ if (!fb.link) {
 
     // When the access_token is available it is executed
     function tokenReady(at) {
-      fb.utils.showCurtain('proposalsWait');
+      fb.utils.showCurtain('wait', 'proposals');
       access_token = at;
       link.getRemoteProposal(at, contactid);
     }
@@ -236,7 +236,7 @@ if (!fb.link) {
 
     link.baseHandler = function(type) {
       var callerName = link.callerName;
-      var req = fb.utils.showCurtain(callerName + type);
+      var req = fb.utils.showCurtain(type, callerName);
       if (callerName === 'friends') {
         req.ontryagain = getRemoteAll;
         req.oncancel = Curtain.hide;
@@ -248,11 +248,11 @@ if (!fb.link) {
     }
 
     link.timeoutHandler = function() {
-      link.baseHandler('Timeout');
+      link.baseHandler('timeout');
     }
 
     link.errorHandler = function() {
-      link.baseHandler('Error');
+      link.baseHandler('error');
     }
 
     /**
@@ -299,7 +299,7 @@ if (!fb.link) {
 
 
     UI.selected = function(event) {
-      fb.utils.showCurtain('friendLink');
+      fb.utils.showCurtain('message', 'linking');
       var element = event.target;
       var friendUid = UI.friendUid = element.dataset.uuid;
 
@@ -324,7 +324,7 @@ if (!fb.link) {
 
           importReq.onerror = function() {
             window.console.error('FB: Error while importing friend data');
-            var ret = fb.utils.showCurtain('friendError');
+            var ret = fb.utils.showCurtain('error', 'linking');
             req.ontryagain = function() {
               UI.selected({
                 target: {
@@ -340,7 +340,7 @@ if (!fb.link) {
       }
       req.onerror = function() {
         window.console.error('FB: Error while importing friend data');
-        var ret = fb.utils.showCurtain('friendError');
+        var ret = fb.utils.showCurtain('error', 'linking');
         req.ontryagain = function() {
           UI.selected({
             target: {
