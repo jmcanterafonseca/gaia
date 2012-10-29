@@ -376,53 +376,6 @@ if (!fb.utils) {
       });
     }
 
-    Utils.showCurtain = function(type, from, progress) {
-      var req;
-
-      switch(type) {
-        case 'wait':
-          req = Curtain.wait(from);
-          req.oncancel = function oncancel() {
-            window.postMessage({ type: 'close', data: '' }, '*');
-            Curtain.hide();
-            parent.postMessage({ type: 'abort', data: '' },
-                                 fb.CONTACTS_APP_ORIGIN);
-          }
-
-          break;
-
-        case 'timeout':
-          req = Curtain.timeout(from);
-          req.oncancel = function oncancel() {
-            Curtain.hide();
-            parent.postMessage({ type: 'abort', data: '' },
-                                 fb.CONTACTS_APP_ORIGIN);
-          }
-
-          break;
-
-        case 'error':
-          req = Curtain.error(from);
-          req.oncancel = function oncancel() {
-            Curtain.hide();
-            parent.postMessage({ type: 'abort', data: '' },
-                                 fb.CONTACTS_APP_ORIGIN);
-          }
-
-          break;
-
-        case 'message':
-          req = Curtain.message(from);
-          break;
-
-        case 'progress':
-          req = Curtain.progress(from, progress);
-          break;
-      }
-
-      return req;
-    }
-
     // FbContactsCleaner Object
     function FbContactsCleaner(contacts) {
       this.lcontacts = contacts;

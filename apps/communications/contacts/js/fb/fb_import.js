@@ -101,7 +101,7 @@ if (typeof fb.importer === 'undefined') {
      *
      */
     function tokenReady(at) {
-      fb.utils.showCurtain('wait', 'friends');
+      Curtain.show('wait', 'friends');
       access_token = at;
       Importer.getFriends(at);
     }
@@ -346,7 +346,7 @@ if (typeof fb.importer === 'undefined') {
 
     Importer.baseHandler = function(type) {
       var callerName = Importer.callerName;
-      var req = fb.utils.showCurtain(type, callerName);
+      var req = Curtain.show(type, callerName);
       if (callerName === 'friends') {
         req.ontryagain = UI.getFriends;
       } else if (callerName === 'linking') {
@@ -654,7 +654,7 @@ if (typeof fb.importer === 'undefined') {
      */
     Importer.importAll = function(importedCB) {
       var progress = {};
-      fb.utils.showCurtain('progress', 'import', progress);
+      Curtain.show('progress', 'import', progress);
       var numFriends = Object.keys(selectedContacts).length;
       var cont = 0;
       var cImporter = new ContactsImporter(selectedContacts, progress);
