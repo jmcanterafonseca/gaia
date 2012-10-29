@@ -349,7 +349,7 @@ if (typeof fb.importer === 'undefined') {
       var req = fb.utils.showCurtain(type, callerName);
       if (callerName === 'friends') {
         req.ontryagain = UI.getFriends;
-      } else if (callerName === 'friend') {
+      } else if (callerName === 'linking') {
         req.ontryagain = function() {
           fb.link.ui.selected({
             target: {
