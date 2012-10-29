@@ -63,6 +63,7 @@ if (typeof fb.oauth === 'undefined') {
      *
      */
     function startOAuth(state) {
+      fb.utils.sendAuthenticatingEvent();
       clearStorage();
 
       // This page will be in charge of handling authorization
@@ -71,6 +72,10 @@ if (typeof fb.oauth === 'undefined') {
 
     function tokenDataReady(e) {
       var tokenData = e.data;
+
+      if (tokenData.type === 'close') {
+        return;
+      }
 
       // The content of window.postMessage is parsed
       var parameters = JSON.parse(tokenData);

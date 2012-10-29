@@ -101,6 +101,7 @@ if (typeof fb.importer === 'undefined') {
      *
      */
     function tokenReady(at) {
+      fb.utils.showCurtain('wait', 'friends');
       access_token = at;
       Importer.getFriends(at);
     }
@@ -199,7 +200,7 @@ if (typeof fb.importer === 'undefined') {
      *
      */
     Importer.getFriends = function(access_token) {
-      document.body.dataset.state = 'waiting';
+      fb.importer.callerName = 'friends';
 
       fb.utils.runQuery(friendsQueryStr, {
           success: fb.importer.friendsReady,
@@ -228,7 +229,8 @@ if (typeof fb.importer === 'undefined') {
 
       window.setTimeout(function do_importFriend() {
         var oneFriendQuery = buildFriendQuery(uid);
-
+        fb.importer.contId = uid;
+        fb.importer.callerName = 'linking';
         fb.utils.runQuery(oneFriendQuery, {
                             success: fb.importer.importDataReady,
                             error: fb.importer.errorHandler,
@@ -330,8 +332,6 @@ if (typeof fb.importer === 'undefined') {
         });
 
         fbFriends.List.load(myFriends, friendsAvailable);
-
-        document.body.dataset.state = '';
       }
       else {
         window.console.error('FB: Error, while retrieving friends',
@@ -340,18 +340,35 @@ if (typeof fb.importer === 'undefined') {
           startOAuth();
         }
       }
+
+      Curtain.hide(fb.utils.sendReadyEvent);
+    }
+
+    Importer.baseHandler = function(type) {
+      var callerName = Importer.callerName;
+      var req = fb.utils.showCurtain(type, callerName);
+      if (callerName === 'friends') {
+        req.ontryagain = UI.getFriends;
+      } else if (callerName === 'friend') {
+        req.ontryagain = function() {
+          fb.link.ui.selected({
+            target: {
+              dataset: {
+                uuid: Importer.contId
+              }
+            }
+          });
+        };
+        req.oncancel = Curtain.hide;
+      }
     }
 
     Importer.timeoutHandler = function() {
-      // TODO: figure out with UX what to do in that case
-      window.alert('Timeout!!');
-      document.body.dataset.state = '';
+      Importer.baseHandler('timeout');
     }
 
     Importer.errorHandler = function() {
-      // TODO: figure out with UX what to do in that case
-      window.alert('Error!');
-      document.body.dataset.state = '';
+      Importer.baseHandler('error');
     }
 
     function fillData(f) {
@@ -373,7 +390,6 @@ if (typeof fb.importer === 'undefined') {
             friendsImported = true;
           });
 
-          document.body.dataset.state = '';
           var list = [];
           // Once all contacts have been imported, they are unselected
           Object.keys(selectedContacts).forEach(function(c) {
@@ -491,7 +507,7 @@ if (typeof fb.importer === 'undefined') {
      *
      *
      */
-    var ContactsImporter = function(pcontacts) {
+    var ContactsImporter = function(pcontacts, progress) {
       // The selected contacts
       var mcontacts = pcontacts;
       // The uids of the selected contacts
@@ -499,7 +515,9 @@ if (typeof fb.importer === 'undefined') {
 
       var chunkSize = 10;
       var pointer = 0;
-      this.pending = mcontacts.length;
+      var total = this.pending = kcontacts.length;
+      var mprogress = progress || { onchange : function() {}};
+      var cont = 0;
 
       /**
        *  Imports a slice
@@ -541,12 +559,16 @@ if (typeof fb.importer === 'undefined') {
         (importSlice.bind(this))();
       }
 
+      function updateProgress() {
+        mprogress.onchange(Math.ceil((++cont * 100) / total));
+      }
 
     /**
      *  Persists a group of contacts
      *
      */
     function persistContactGroup(cgroup, doneCB) {
+
       var numResponses = 0;
       var totalContacts = cgroup.length;
 
@@ -598,6 +620,7 @@ if (typeof fb.importer === 'undefined') {
 
           request.onsuccess = function() {
             numResponses++;
+            updateProgress();
 
             if (numResponses === totalContacts) {
               if (typeof doneCB === 'function') {
@@ -608,6 +631,8 @@ if (typeof fb.importer === 'undefined') {
 
           request.onerror = function() {
             numResponses++;
+            updateProgress();
+
             window.console.error('FB: Contact Add error: ', request.error,
                                                             cfdata.uid);
 
@@ -628,9 +653,11 @@ if (typeof fb.importer === 'undefined') {
      *
      */
     Importer.importAll = function(importedCB) {
-      document.body.dataset.state = 'waiting';
-
-      var cImporter = new ContactsImporter(selectedContacts);
+      var progress = {};
+      fb.utils.showCurtain('progress', 'import', progress);
+      var numFriends = Object.keys(selectedContacts).length;
+      var cont = 0;
+      var cImporter = new ContactsImporter(selectedContacts, progress);
       cImporter.onsuccess = function() {
         if (cImporter.pending > 0) {
           window.setTimeout(function() {
@@ -638,7 +665,15 @@ if (typeof fb.importer === 'undefined') {
           },0);
         }
         else {
-          importedCB();
+          // 1 second delay in order to show the progress 100% to users
+          window.setTimeout(function() {
+            Curtain.hide(function onhide() {
+              fb.utils.showStatus(_('friendsImported', {
+                numFriends: numFriends
+              }));
+              importedCB();
+            });
+          },1000);
         }
       };
 

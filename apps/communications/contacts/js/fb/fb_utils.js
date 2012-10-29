@@ -16,6 +16,9 @@ if (!fb.utils) {
     var REDIRECT_LOGOUT_URI = fb.oauthflow.params['redirectLogout'];
     var STORAGE_KEY = 'tokenData';
 
+    var STATUS_TIME = 1500;
+    var statusMsg = document.querySelector('#statusMsg');
+
       // For controlling data synchronization
     Utils.setLastUpdate = function(value, cb) {
       window.asyncStorage.setItem(LAST_UPDATED_KEY, {
@@ -322,33 +325,103 @@ if (!fb.utils) {
 
     } // logout
 
-     /**
-       *   Request auxiliary object to support asynchronous calls
-       *
-       */
-       Utils.Request = function() {
-        this.done = function(result) {
-          this.result = result;
-          if (typeof this.onsuccess === 'function') {
-            var ev = {};
-            ev.target = this;
-            window.setTimeout(function() {
-              this.onsuccess(ev);
-            }.bind(this), 0);
-          }
-        }
-
-        this.failed = function(error) {
-          this.error = error;
-          if (typeof this.onerror === 'function') {
-            var ev = {};
-            ev.target = this;
-            window.setTimeout(function() {
-              this.onerror(ev);
-            }.bind(this), 0);
-          }
+    /**
+     *   Request auxiliary object to support asynchronous calls
+     *
+     */
+    Utils.Request = function() {
+      this.done = function(result) {
+        this.result = result;
+        if (typeof this.onsuccess === 'function') {
+          var ev = {};
+          ev.target = this;
+          window.setTimeout(function() {
+            this.onsuccess(ev);
+          }.bind(this), 0);
         }
       }
+
+      this.failed = function(error) {
+        this.error = error;
+        if (typeof this.onerror === 'function') {
+          var ev = {};
+          ev.target = this;
+          window.setTimeout(function() {
+            this.onerror(ev);
+          }.bind(this), 0);
+        }
+      }
+    }
+
+    Utils.sendReadyEvent = function() {
+      parent.postMessage({
+        type: 'ready', data: ''
+      }, fb.CONTACTS_APP_ORIGIN);
+    }
+
+    Utils.sendAuthenticatingEvent = function() {
+      parent.postMessage({
+        type: 'authenticating', data: ''
+      }, fb.CONTACTS_APP_ORIGIN);
+    }
+
+    Utils.showStatus = function(text) {
+      statusMsg.querySelector('p').textContent = text;
+      statusMsg.classList.add('visible');
+      statusMsg.addEventListener('transitionend', function tend() {
+        statusMsg.removeEventListener('transitionend', tend);
+        setTimeout(function hide() {
+          statusMsg.classList.remove('visible')
+        }, STATUS_TIME);
+      });
+    }
+
+    Utils.showCurtain = function(type, from, progress) {
+      var req;
+
+      switch(type) {
+        case 'wait':
+          req = Curtain.wait(from);
+          req.oncancel = function oncancel() {
+            window.postMessage({ type: 'close', data: '' }, '*');
+            Curtain.hide();
+            parent.postMessage({ type: 'abort', data: '' },
+                                 fb.CONTACTS_APP_ORIGIN);
+          }
+
+          break;
+
+        case 'timeout':
+          req = Curtain.timeout(from);
+          req.oncancel = function oncancel() {
+            Curtain.hide();
+            parent.postMessage({ type: 'abort', data: '' },
+                                 fb.CONTACTS_APP_ORIGIN);
+          }
+
+          break;
+
+        case 'error':
+          req = Curtain.error(from);
+          req.oncancel = function oncancel() {
+            Curtain.hide();
+            parent.postMessage({ type: 'abort', data: '' },
+                                 fb.CONTACTS_APP_ORIGIN);
+          }
+
+          break;
+
+        case 'message':
+          req = Curtain.message(from);
+          break;
+
+        case 'progress':
+          req = Curtain.progress(from, progress);
+          break;
+      }
+
+      return req;
+    }
 
     // FbContactsCleaner Object
     function FbContactsCleaner(contacts) {
