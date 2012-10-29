@@ -72,9 +72,11 @@ var Curtain = (function() {
      *                    or <ontryagain>
      */
     show: function(type, from, progress) {
+      from = capitalize(from);
+
       switch(type) {
         case 'wait':
-          messages[type].textContent = _(type + capitalize(from));
+          messages[type].textContent = _(type + from);
           currentRequest.oncancel = function oncancel() {
             window.postMessage({ type: 'close', data: '' }, '*');
             Curtain.hide();
@@ -85,8 +87,9 @@ var Curtain = (function() {
 
         case 'timeout':
           messages[type].textContent = _('timeout1', {
-            from: _('timeout' + capitalize(from))
+            from: _('timeout' + from)
           });
+          
           currentRequest.oncancel = function oncancel() {
             Curtain.hide();
             parent.postMessage({ type: 'abort', data: '' }, '*');
@@ -96,8 +99,9 @@ var Curtain = (function() {
 
         case 'error':
           messages[type].textContent = _('error1', {
-            from: _(type + capitalize(from))
+            from: _(type + from)
           });
+
           currentRequest.oncancel = function oncancel() {
             Curtain.hide();
             parent.postMessage({ type: 'abort', data: '' }, '*');
@@ -106,11 +110,11 @@ var Curtain = (function() {
           break;
 
         case 'message':
-          messages[type].textContent = _(type + capitalize(from));
+          messages[type].textContent = _(type + from);
           break;
 
         case 'progress':
-          messages[type].textContent = _(type + capitalize(from));
+          messages[type].textContent = _(type + from);
           progress.onchange = setProgressUI;
           setProgressUI(0);
           break;
