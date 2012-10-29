@@ -89,7 +89,7 @@ var Curtain = (function() {
           messages[type].textContent = _('timeout1', {
             from: _('timeout' + from)
           });
-          
+
           currentRequest.oncancel = function oncancel() {
             Curtain.hide();
             parent.postMessage({ type: 'abort', data: '' }, '*');
@@ -136,7 +136,8 @@ var Curtain = (function() {
       curtainFrame.addEventListener('transitionend', function tend() {
         curtainFrame.removeEventListener('transitionend', tend);
         if (hiddenCB) {
-          hiddenCB();
+          // TODO: Timeout should be ideally 0 but we have found issues
+          window.setTimeout(hiddenCB,50);
         }
       });
     }

@@ -90,18 +90,17 @@ if (typeof fb.importer === 'undefined') {
       scrollableElement.scrollTop = groupContainer.offsetTop;
     }
 
-    UI.getFriends = function() {
-      clearList();
 
-      fb.oauth.getAccessToken(tokenReady, 'friends');
+    UI.getFriends = function() {
+      Importer.getFriends(access_token);
     }
+
 
     /**
      *  This function is invoked when a token is ready to be used
      *
      */
-    function tokenReady(at) {
-      Curtain.show('wait', 'friends');
+    Importer.start = function (at) {
       access_token = at;
       Importer.getFriends(at);
     }
@@ -145,6 +144,8 @@ if (typeof fb.importer === 'undefined') {
      *
      */
     function friendsAvailable() {
+      Curtain.hide(fb.utils.sendReadyEvent);
+
       friendsLoaded = true;
 
       if (contactsLoaded) {
@@ -334,14 +335,15 @@ if (typeof fb.importer === 'undefined') {
         fbFriends.List.load(myFriends, friendsAvailable);
       }
       else {
+        // TODO: Define a better error management
+        Curtain.hide(fb.utils.sendReadyEvent);
+
         window.console.error('FB: Error, while retrieving friends',
                                                     response.error.message);
         if (response.error.code === 190) {
           startOAuth();
         }
       }
-
-      Curtain.hide(fb.utils.sendReadyEvent);
     }
 
     Importer.baseHandler = function(type) {
