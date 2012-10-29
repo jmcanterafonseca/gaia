@@ -54,7 +54,10 @@ var Curtain = (function() {
   return {
 
     /**
-     *  Shows a progress activity
+     *  Shows the curtain
+     *
+     *  @param {String} type
+     *    Curtain type (wait, timeout, error, message and progress)
      *
      *  @param {String} from
      *    The origin of the message
@@ -64,74 +67,60 @@ var Curtain = (function() {
      *    called <onchange> that is executed when the value changes (0..100)
      *    so the curtain could be updated
      *
-     *  @returns {Object} empty current request
-     */
-    progress: function c_progress(from, progress) {
-      messages['progress'].textContent = _('progress' + capitalize(from));
-      progress.onchange = setProgressUI;
-      setProgressUI(0);
-      return show('progress');
-    },
-
-    /**
-     *  Shows a timeout card
-     *
-     *  @param {String} from
-     *    The origin of the timeout
-     *
      *  @returns {Object} current request composed by two methods that will
      *                    be performed when user click on some button <oncancel>
      *                    or <ontryagain>
      */
-    timeout: function c_timeout(from) {
-      messages['timeout'].textContent = _('timeout1', {
-        from: _('timeout' + capitalize(from))
-      });
-      return show('timeout');
-    },
+    show: function(type, from, progress) {
+      from = capitalize(from);
 
-    /**
-     *  Shows an error card
-     *
-     *  @param {String} from
-     *    The origin of the error
-     *
-     *  @returns {Object} current request composed by two methods that will
-     *                    be performed when user click on some button <oncancel>
-     *                    or <ontryagain>
-     */
-    error: function c_error(from) {
-      messages['error'].textContent = _('error1', {
-        from: _('error' + capitalize(from))
-      });
-      return show('error');
-    },
+      switch(type) {
+        case 'wait':
+          messages[type].textContent = _(type + from);
+          currentRequest.oncancel = function oncancel() {
+            window.postMessage({ type: 'close', data: '' }, '*');
+            Curtain.hide();
+            parent.postMessage({ type: 'abort', data: '' }, '*');
+          }
 
-    /**
-     *  Shows a waiting card
-     *
-     *  @param {String} from
-     *    The origin of the timeout
-     *
-     *  @returns {Object} current request composed by one method that will
-     *                    be performed when user click on <oncancel>
-     */
-    wait: function c_wait(from) {
-      messages['wait'].textContent = _('wait' + capitalize(from));
-      return show('wait');
-    },
+          break;
 
-    /**
-     *  Shows a message
-     *
-     *  @param {String} from
-     *    The origin of the message
-     *
-     *  @returns {Object} empty current request
-     */
-    message: function c_message(from) {
-      messages['message'].textContent = _('message' + capitalize(from));
-      return show('message');
+        case 'timeout':
+          messages[type].textContent = _('timeout1', {
+            from: _('timeout' + from)
+          });
+          
+          currentRequest.oncancel = function oncancel() {
+            Curtain.hide();
+            parent.postMessage({ type: 'abort', data: '' }, '*');
+          }
+
+          break;
+
+        case 'error':
+          messages[type].textContent = _('error1', {
+            from: _(type + from)
+          });
+
+          currentRequest.oncancel = function oncancel() {
+            Curtain.hide();
+            parent.postMessage({ type: 'abort', data: '' }, '*');
+          }
+
+          break;
+
+        case 'message':
+          messages[type].textContent = _(type + from);
+          break;
+
+        case 'progress':
+          messages[type].textContent = _(type + from);
+          progress.onchange = setProgressUI;
+          setProgressUI(0);
+          break;
+      }
+
+      return show(type);
     },
 
     /**

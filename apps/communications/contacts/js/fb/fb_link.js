@@ -177,7 +177,7 @@ if (!fb.link) {
 
 
     function getRemoteAll() {
-      var req = fb.utils.showCurtain('wait', 'friends');
+      var req = Curtain.show('wait', 'friends');
       req.oncancel = Curtain.hide;
       fb.link.callerName = 'friends';
       fb.utils.runQuery(ALL_QUERY.join(''), {
@@ -189,7 +189,7 @@ if (!fb.link) {
 
     // When the access_token is available it is executed
     function tokenReady(at) {
-      fb.utils.showCurtain('wait', 'proposals');
+      Curtain.show('wait', 'proposals');
       access_token = at;
       link.getRemoteProposal(at, contactid);
     }
@@ -236,7 +236,7 @@ if (!fb.link) {
 
     link.baseHandler = function(type) {
       var callerName = link.callerName;
-      var req = fb.utils.showCurtain(type, callerName);
+      var req = Curtain.show(type, callerName);
       if (callerName === 'friends') {
         req.ontryagain = getRemoteAll;
         req.oncancel = Curtain.hide;
@@ -299,7 +299,7 @@ if (!fb.link) {
 
 
     UI.selected = function(event) {
-      fb.utils.showCurtain('message', 'linking');
+      Curtain.show('message', 'linking');
       var element = event.target;
       var friendUid = UI.friendUid = element.dataset.uuid;
 
@@ -324,7 +324,7 @@ if (!fb.link) {
 
           importReq.onerror = function() {
             window.console.error('FB: Error while importing friend data');
-            var ret = fb.utils.showCurtain('error', 'linking');
+            var ret = Curtain.show('error', 'linking');
             req.ontryagain = function() {
               UI.selected({
                 target: {
@@ -340,7 +340,7 @@ if (!fb.link) {
       }
       req.onerror = function() {
         window.console.error('FB: Error while importing friend data');
-        var ret = fb.utils.showCurtain('error', 'linking');
+        var ret = Curtain.show('error', 'linking');
         req.ontryagain = function() {
           UI.selected({
             target: {
