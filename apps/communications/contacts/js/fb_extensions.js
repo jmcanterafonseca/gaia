@@ -237,6 +237,10 @@ if (typeof Contacts.extFb === 'undefined') {
         break;
 
         case 'abort':
+          extensionFrame.contentWindow.postMessage({
+            type: 'close',
+            data: ''
+          }, fb.CONTACTS_APP_ORIGIN);
           unload();
         break;
 

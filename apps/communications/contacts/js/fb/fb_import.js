@@ -197,7 +197,7 @@ if (typeof fb.importer === 'undefined') {
     }
 
     /**
-     *  Gets the Facebook friends by invoking Graph API using JSONP mechanism
+     *  Gets the Facebook friends by invoking Graph API
      *
      */
     Importer.getFriends = function(access_token) {
@@ -346,16 +346,37 @@ if (typeof fb.importer === 'undefined') {
       }
     }
 
+    function cancelCbWhenRetry() {
+      window.postMessage({
+            type: 'close',
+            data: ''
+      }, fb.CONTACTS_APP_ORIGIN);
+
+      Curtain.hide();
+    }
+
     Importer.baseHandler = function(type) {
+      window.console.log('Base handler invoked');
+      
       var callerName = Importer.callerName;
-      var req = Curtain.show(type, callerName);
+      var callbacks = {
+        oncancel: Curtain.hide
+      };
+
       if (callerName === 'friends') {
-        req.onretry = function get_friends() {
-          Curtain.show('wait',callerName);
+        callbacks.onretry = function get_friends() {
+          Curtain.show('wait', callerName, {
+            oncancel: cancelCbWhenRetry
+          });
+
           UI.getFriends();
         }
       } else if (callerName === 'linking') {
-        req.onretry = function() {
+        callbacks.onretry = function get_friends() {
+          Curtain.show('wait', callerName, {
+            oncancel: cancelCbWhenRetry
+          });
+
           fb.link.ui.selected({
             target: {
               dataset: {
@@ -363,9 +384,10 @@ if (typeof fb.importer === 'undefined') {
               }
             }
           });
-        };
-        req.oncancel = Curtain.hide;
+        }
       }
+
+      Curtain.show(type, callerName, callbacks);
     }
 
     Importer.timeoutHandler = function() {
@@ -659,7 +681,8 @@ if (typeof fb.importer === 'undefined') {
      */
     Importer.importAll = function(importedCB) {
       var progress = {};
-      Curtain.show('progress', 'import', progress);
+      Curtain.show('progress', 'import', null, progress);
+
       var numFriends = Object.keys(selectedContacts).length;
       var cont = 0;
       var cImporter = new ContactsImporter(selectedContacts, progress);

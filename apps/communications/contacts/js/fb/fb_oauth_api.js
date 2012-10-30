@@ -6,15 +6,27 @@ if (typeof fb.oauthAPI === 'undefined') {
   (function() {
 
     var oauthAPI = fb.oauthAPI = {};
+    var contactsAppOrigin = fb.oauthflow.params.contactsAppOrigin;
+
+    function cancelCb() {
+      Curtain.hide();
+
+      parent.postMessage({
+        type: 'abort',
+        data: ''
+      }, contactsAppOrigin);
+    }
 
     oauthAPI.start = function(from) {
       fb.oauth.getAccessToken(function tokenReady(access_token) {
-        Curtain.show('wait', from);
+        Curtain.show('wait', from, {
+          oncancel: cancelCb
+        });
 
         parent.postMessage({
           type: 'authenticated',
           data: access_token
-        }, fb.oauthflow.params.contactsAppOrigin);
+        }, contactsAppOrigin);
       }, from);
     }
 

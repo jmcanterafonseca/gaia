@@ -136,8 +136,6 @@ if (!fb.link) {
           cdata = req.result;
           numQueries = 1;
           currentRecommendation = null;
-          fb.link.accessToken = access_token;
-          fb.link.contId = contid;
           doGetRemoteProposal(access_token, cdata, buildQuery(cdata));
         }
         else {
@@ -175,11 +173,29 @@ if (!fb.link) {
       }, access_token);
     }
 
+    // Invoked when remoteAll is canceled
+    function cancelCb() {
+      window.postMessage({
+            type: 'close',
+            data: ''
+      }, fb.CONTACTS_APP_ORIGIN);
+
+      Curtain.hide();
+    }
+
+
+    // Invoked when timeoout or error and the user cancels all
+    function closeCb() {
+      Curtain.hide();
+    }
 
     function getRemoteAll() {
-      var req = Curtain.show('wait', 'friends');
-      req.oncancel = Curtain.hide;
+      Curtain.show('wait', 'friends',{
+        oncancel: cancelCb
+      });
+
       fb.link.callerName = 'friends';
+
       fb.utils.runQuery(ALL_QUERY.join(''), {
         success: fb.link.friendsReady,
         error: fb.link.errorHandler,
@@ -228,17 +244,34 @@ if (!fb.link) {
       }
     }
 
+    function cancelCbWhenRetry() {
+      window.postMessage({
+            type: 'close',
+            data: ''
+      }, fb.CONTACTS_APP_ORIGIN);
+
+      Curtain.hide();
+    }
+
     link.baseHandler = function(type) {
       var callerName = link.callerName;
-      var req = Curtain.show(type, callerName);
+      var callbacks  = {
+        oncancel: Curtain.hide
+      };
+
       if (callerName === 'friends') {
-        req.onretry = getRemoteAll;
-        req.oncancel = Curtain.hide;
+        callbacks.onretry = getRemoteAll;
       } else if (callerName === 'proposal') {
-        req.onretry = function() {
-          link.getRemoteProposal(link.accessToken, link.contId);
-        };
+        callbacks.onretry = function getRemoteProposal() {
+          Curtain.show('wait', callerName, {
+            oncancel: cancelCbWhenRetry
+          });
+
+          link.getRemoteProposal(access_token, contactid);
+        }
       }
+
+       Curtain.show(type, callerName, callbacks);
     }
 
     link.timeoutHandler = function() {
@@ -291,9 +324,19 @@ if (!fb.link) {
       Curtain.hide();
     }
 
+    function retryOnErrorCb() {
+      UI.selected({
+        target: {
+          dataset: {
+            uuid: UI.friendUid
+          }
+        }
+      });
+    }
 
     UI.selected = function(event) {
       Curtain.show('message', 'linking');
+      
       var element = event.target;
       var friendUid = UI.friendUid = element.dataset.uuid;
 
@@ -318,33 +361,20 @@ if (!fb.link) {
 
           importReq.onerror = function() {
             window.console.error('FB: Error while importing friend data');
-            var ret = Curtain.show('error', 'linking');
-            req.onretry = function() {
-              UI.selected({
-                target: {
-                  dataset: {
-                    uuid: UI.friendUid
-                  }
-                }
-              });
-            };
-            req.oncancel = Curtain.hide;
+            Curtain.show('error', 'linking', {
+              onretry: retryOnErrorCb,
+              oncancel: Curtain.hide
+            });
           }
         }
       }
+
       req.onerror = function() {
         window.console.error('FB: Error while importing friend data');
-        var ret = Curtain.show('error', 'linking');
-        req.onretry = function() {
-          UI.selected({
-            target: {
-              dataset: {
-                uuid: UI.friendUid
-              }
-            }
-          });
-        };
-        req.oncancel = Curtain.hide;
+        Curtain.show('error', 'linking', {
+              onretry: retryOnErrorCb,
+              oncancel: Curtain.hide
+        });
       }
     }
 

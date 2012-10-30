@@ -2,28 +2,12 @@
 
 var Curtain = (function() {
 
-  var currentRequest = {};
-
   var _ = navigator.mozL10n.get;
 
   var curtainFrame = parent.document.querySelector('#fb-curtain');
-
   var doc = curtainFrame.contentDocument;
-  doc.querySelector('#cancel').onclick = function oncancel() {
-    if (currentRequest.oncancel) {
-      currentRequest.oncancel();
-    }
-
-    return false;
-  };
-
-  doc.querySelector('#retry').onclick = function onretry(e) {
-    if (currentRequest.onretry) {
-      currentRequest.onretry();
-    }
-
-    return false;
-  };
+  var cancelButton = doc.querySelector('#cancel');
+  var retryButton = doc.querySelector('#retry');
 
   var progressElement = doc.querySelector('#progressElement');
   var progressLabel = doc.querySelector('#progressLabel');
@@ -44,7 +28,6 @@ var Curtain = (function() {
   function show(type) {
     form.dataset.state = type;
     curtainFrame.classList.add('visible');
-    return currentRequest;
   }
 
   function capitalize(str) {
@@ -71,68 +54,56 @@ var Curtain = (function() {
      *                    be performed when user click on some button <oncancel>
      *                    or <onretry>
      */
-    show: function(type, from, progress) {
+    show: function(type, from, callbacks, progress) {
       from = capitalize(from);
 
       switch(type) {
         case 'wait':
           messages[type].textContent = _(type + from);
-
-          currentRequest.oncancel = function oncancel() {
-            window.postMessage({
-              type: 'close',
-              data: ''
-            }, fb.CONTACTS_APP_ORIGIN);
-
-            Curtain.hide();
-
-            parent.postMessage({
-              type: 'abort',
-              data: ''
-            }, fb.CONTACTS_APP_ORIGIN);
-          }
-
-          break;
+        break;
 
         case 'timeout':
           messages[type].textContent = _('timeout1', {
             from: _('timeout' + from)
           });
-
-          currentRequest.oncancel = function oncancel() {
-            Curtain.hide();
-            parent.postMessage({
-              type: 'abort',
-              data: ''
-            }, '*');
-          }
-
-          break;
+        break;
 
         case 'error':
           messages[type].textContent = _('error1', {
             from: _(type + from)
           });
-
-          currentRequest.oncancel = function oncancel() {
-            Curtain.hide();
-            parent.postMessage({ type: 'abort', data: '' }, '*');
-          }
-
-          break;
+        break;
 
         case 'message':
           messages[type].textContent = _(type + from);
-          break;
+        break;
 
         case 'progress':
           messages[type].textContent = _(type + from);
           progress.onchange = setProgressUI;
           setProgressUI(0);
-          break;
+        break;
       }
 
-      return show(type);
+      show(type);
+
+      if(callbacks) {
+        if(typeof callbacks['oncancel'] === 'function') {
+          cancelButton.onclick = function oncancel(e) {
+            delete cancelButton.onclick;
+            callbacks.oncancel();
+            return false;
+          };
+        }
+
+        if(typeof callbacks['onretry'] === 'function') {
+          retryButton.onclick = function onretry(e) {
+            delete retryButton.onclick;
+            callbacks.retryButton();
+            return false;
+          };
+        }
+      }
     },
 
     /**
