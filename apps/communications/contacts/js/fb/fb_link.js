@@ -167,7 +167,7 @@ if (!fb.link) {
       var sentries = JSON.stringify(entries);
 
       */
-      fb.link.callerName = 'proposals';
+      fb.link.callerName = 'proposal';
       fb.utils.runQuery(query, {
         success: fb.link.proposalReady,
         error: fb.link.errorHandler,
@@ -187,18 +187,12 @@ if (!fb.link) {
       }, access_token);
     }
 
-    // When the access_token is available it is executed
-    function tokenReady(at) {
-      Curtain.show('wait', 'proposals');
-      access_token = at;
-      link.getRemoteProposal(at, contactid);
-    }
-
     // Obtains a linking proposal to be shown to the user
-    link.getProposal = function(cid) {
+    link.getProposal = function(cid, at) {
       contactid = cid;
+      access_token = at;
 
-      fb.oauth.getAccessToken(tokenReady, 'proposal');
+      link.getRemoteProposal(at, contactid);
     }
 
     // Executed when the server response is available
@@ -240,7 +234,7 @@ if (!fb.link) {
       if (callerName === 'friends') {
         req.onretry = getRemoteAll;
         req.oncancel = Curtain.hide;
-      } else if (callerName === 'proposals') {
+      } else if (callerName === 'proposal') {
         req.onretry = function() {
           link.getRemoteProposal(link.accessToken, link.contId);
         };

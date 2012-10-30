@@ -7,22 +7,19 @@ if (typeof fb.oauthAPI === 'undefined') {
 
     var oauthAPI = fb.oauthAPI = {};
 
-    window.console.log('Oauth API loaded');
-
     oauthAPI.start = function(from) {
       fb.oauth.getAccessToken(function tokenReady(access_token) {
         Curtain.show('wait', from);
+
         parent.postMessage({
           type: 'authenticated',
           data: access_token
-        }, '*');
+        }, fb.oauthflow.params.contactsAppOrigin);
       }, from);
     }
 
     window.addEventListener('message', function messageHandler(e) {
       var data = e.data;
-
-      window.console.log('PostMessage got',JSON.stringify(data));
 
       if (data && data.type === 'start') {
         oauthAPI.start(data.data.from);

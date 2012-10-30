@@ -77,10 +77,19 @@ var Curtain = (function() {
       switch(type) {
         case 'wait':
           messages[type].textContent = _(type + from);
+
           currentRequest.oncancel = function oncancel() {
-            window.postMessage({ type: 'close', data: '' }, '*');
+            window.postMessage({
+              type: 'close',
+              data: ''
+            }, fb.CONTACTS_APP_ORIGIN);
+
             Curtain.hide();
-            parent.postMessage({ type: 'abort', data: '' }, '*');
+
+            parent.postMessage({
+              type: 'abort',
+              data: ''
+            }, fb.CONTACTS_APP_ORIGIN);
           }
 
           break;
@@ -92,7 +101,10 @@ var Curtain = (function() {
 
           currentRequest.oncancel = function oncancel() {
             Curtain.hide();
-            parent.postMessage({ type: 'abort', data: '' }, '*');
+            parent.postMessage({
+              type: 'abort',
+              data: ''
+            }, '*');
           }
 
           break;
@@ -135,9 +147,8 @@ var Curtain = (function() {
       curtainFrame.classList.remove('visible');
       curtainFrame.addEventListener('transitionend', function tend() {
         curtainFrame.removeEventListener('transitionend', tend);
-        if (hiddenCB) {
-          // TODO: Timeout should be ideally 0 but we have found issues
-          window.setTimeout(hiddenCB,50);
+        if (typeof hiddenCB === 'function') {
+          window.setTimeout(hiddenCB,0);
         }
       });
     }

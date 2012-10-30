@@ -9,19 +9,19 @@ if (typeof Contacts.extFb === 'undefined') {
 
     var extensionFrame = document.querySelector('#fb-extensions');
     var oauthFrame = document.querySelector('#fb-oauth');
-    var currentURI;
+    var currentURI, access_token;
 
     extFb.startLink = function(cid, linked) {
       contactId = cid;
       if (!linked) {
-        load('fb_link.html' + '?contactId=' + contactId, 'proposals');
+        load('fb_link.html' + '?contactId=' + contactId, 'proposal');
       } else {
         doUnlink(contactId);
       }
     }
 
     extFb.importFB = function(evt) {
-      load('fb_import.html?contacts=1', 'import');
+      load('fb_import.html?contacts=1', 'friends');
     }
 
     function open() {
@@ -36,7 +36,7 @@ if (typeof Contacts.extFb === 'undefined') {
         data: {
           from: from
         }
-      }, '*');
+      }, fb.CONTACTS_APP_ORIGIN);
       currentURI = uri;
     }
 
@@ -225,11 +225,20 @@ if (typeof Contacts.extFb === 'undefined') {
       switch (data.type) {
         case 'ready':
           open();
-          break;
+        break;
+
+        case 'authenticating':
+          extensionFrame.dataset.animFrom = 'bottom';
+        break;
+
+        case 'authenticated':
+          extensionFrame.src = currentURI;
+          access_token = data.data;
+        break;
 
         case 'abort':
           unload();
-          break;
+        break;
 
         case 'window_close':
           close();
@@ -247,12 +256,11 @@ if (typeof Contacts.extFb === 'undefined') {
           notifySettings();
         break;
 
-        case 'authenticating':
-          extensionFrame.dataset.animFrom = 'bottom';
-        break;
-
-        case 'authenticated':
-          extensionFrame.src = currentURI;
+        case 'messaging_ready':
+          extensionFrame.contentWindow.postMessage({
+            type: 'token',
+            data: access_token
+          }, fb.CONTACTS_APP_ORIGIN)
         break;
       }
     }

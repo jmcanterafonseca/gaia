@@ -1,9 +1,12 @@
 'use strict';
 
 (function(document) {
+  var isContactsMode = window.location.search.indexOf('contacts') === -1;
+  
   function tokenReady(access_token) {
+
     // The curtain is only shown when we are launched from contacts
-    if(window.location.search.indexOf('contacts') === -1) {
+    if (isContactsMode) {
       Curtain.show('wait', 'friends');
     }
 
@@ -50,6 +53,18 @@
     document.documentElement.dir = navigator.mozL10n.language.direction;
   });
 
-  fb.oauth.getAccessToken(tokenReady, 'friends');
+  if (isContactsMode) {
+    window.addEventListener('message', function getAccessToken(e) {
+      window.removeEventListener('message', getAccessToken);
+      tokenReady(e.data.data);
+    });
+
+    parent.postMessage({
+      type: 'messaging_ready',
+      data: ''
+    }, fb.CONTACTS_APP_ORIGIN);
+  } else {
+    fb.oauth.getAccessToken(tokenReady, 'friends');
+  }
 
 })(document);

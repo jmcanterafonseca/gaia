@@ -46,7 +46,7 @@ if (typeof fb.oauthflow === 'undefined') {
           parameters[values[0]] = values[1];
         });
 
-        window.opener.postMessage(JSON.stringify(parameters),
+        window.opener.postMessage(parameters,
                                   fb.oauthflow.params[CONTACTS_APP_ORIGIN]);
 
         // Finally the window is closed
