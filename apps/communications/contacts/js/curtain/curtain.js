@@ -17,9 +17,9 @@ var Curtain = (function() {
     return false;
   };
 
-  doc.querySelector('#tryagain').onclick = function ontryagain(e) {
-    if (currentRequest.ontryagain) {
-      currentRequest.ontryagain();
+  doc.querySelector('#retry').onclick = function onretry(e) {
+    if (currentRequest.onretry) {
+      currentRequest.onretry();
     }
 
     return false;
@@ -69,7 +69,7 @@ var Curtain = (function() {
      *
      *  @returns {Object} current request composed by two methods that will
      *                    be performed when user click on some button <oncancel>
-     *                    or <ontryagain>
+     *                    or <onretry>
      */
     show: function(type, from, progress) {
       from = capitalize(from);

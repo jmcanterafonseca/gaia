@@ -2,7 +2,10 @@
 
 (function(document) {
   function tokenReady(access_token) {
-    Curtain.show('wait', 'friends');
+    // The curtain is only shown when we are launched from contacts
+    if(window.location.search.indexOf('contacts') === -1) {
+      Curtain.show('wait', 'friends');
+    }
 
     if(document.readyState === 'complete') {
       onLoad(access_token);
@@ -50,8 +53,3 @@
   fb.oauth.getAccessToken(tokenReady, 'friends');
 
 })(document);
-
-
-
-
-

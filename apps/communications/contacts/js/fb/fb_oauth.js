@@ -63,7 +63,7 @@ if (typeof fb.oauth === 'undefined') {
      *
      */
     function startOAuth(state) {
-      fb.utils.sendAuthenticatingEvent();
+      // fb.utils.sendAuthenticatingEvent();
       clearStorage();
 
       // This page will be in charge of handling authorization
@@ -73,7 +73,7 @@ if (typeof fb.oauth === 'undefined') {
     function tokenDataReady(e) {
       var tokenData = e.data;
 
-      if (tokenData.type === 'close') {
+      if (tokenData.type === 'close' || tokenData.type === 'start') {
         return;
       }
 

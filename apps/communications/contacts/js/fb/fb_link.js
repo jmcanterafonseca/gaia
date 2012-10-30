@@ -238,10 +238,10 @@ if (!fb.link) {
       var callerName = link.callerName;
       var req = Curtain.show(type, callerName);
       if (callerName === 'friends') {
-        req.ontryagain = getRemoteAll;
+        req.onretry = getRemoteAll;
         req.oncancel = Curtain.hide;
       } else if (callerName === 'proposals') {
-        req.ontryagain = function() {
+        req.onretry = function() {
           link.getRemoteProposal(link.accessToken, link.contId);
         };
       }
@@ -325,7 +325,7 @@ if (!fb.link) {
           importReq.onerror = function() {
             window.console.error('FB: Error while importing friend data');
             var ret = Curtain.show('error', 'linking');
-            req.ontryagain = function() {
+            req.onretry = function() {
               UI.selected({
                 target: {
                   dataset: {
@@ -341,7 +341,7 @@ if (!fb.link) {
       req.onerror = function() {
         window.console.error('FB: Error while importing friend data');
         var ret = Curtain.show('error', 'linking');
-        req.ontryagain = function() {
+        req.onretry = function() {
           UI.selected({
             target: {
               dataset: {

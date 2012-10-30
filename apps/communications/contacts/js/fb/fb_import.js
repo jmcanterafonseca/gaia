@@ -350,9 +350,12 @@ if (typeof fb.importer === 'undefined') {
       var callerName = Importer.callerName;
       var req = Curtain.show(type, callerName);
       if (callerName === 'friends') {
-        req.ontryagain = UI.getFriends;
+        req.onretry = function get_friends() {
+          Curtain.show('wait',callerName);
+          UI.getFriends();
+        }
       } else if (callerName === 'linking') {
-        req.ontryagain = function() {
+        req.onretry = function() {
           fb.link.ui.selected({
             target: {
               dataset: {

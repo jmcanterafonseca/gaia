@@ -8,28 +8,36 @@ if (typeof Contacts.extFb === 'undefined') {
     var contactId;
 
     var extensionFrame = document.querySelector('#fb-extensions');
+    var oauthFrame = document.querySelector('#fb-oauth');
+    var currentURI;
 
     extFb.startLink = function(cid, linked) {
       contactId = cid;
       if (!linked) {
-        load('fb_link.html' + '?contactId=' + contactId);
+        load('fb_link.html' + '?contactId=' + contactId, 'proposals');
       } else {
         doUnlink(contactId);
       }
     }
 
     extFb.importFB = function(evt) {
-      load('fb_import.html');
+      load('fb_import.html?contacts=1', 'import');
     }
 
     function open() {
       extensionFrame.className = 'opening';
     }
 
-    function load(uri) {
+    function load(uri, from) {
       extensionFrame.dataset.animFrom = 'left';
       window.addEventListener('message', messageHandler);
-      extensionFrame.src = uri;
+      oauthFrame.contentWindow.postMessage({
+        type: 'start',
+        data: {
+          from: from
+        }
+      }, '*');
+      currentURI = uri;
     }
 
     function unload() {
@@ -241,6 +249,10 @@ if (typeof Contacts.extFb === 'undefined') {
 
         case 'authenticating':
           extensionFrame.dataset.animFrom = 'bottom';
+        break;
+
+        case 'authenticated':
+          extensionFrame.src = currentURI;
         break;
       }
     }
