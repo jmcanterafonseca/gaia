@@ -42,7 +42,7 @@
     utils.listeners.add({
       '#import-close': fb.importer.ui.end,
       '#import-action': fb.importer.ui.importAll,
-      '#cancel-search': contacts.Search.exitSearchMode,
+      '#done-search': contacts.Search.exitSearchMode,
       '#search-contact': [
         {
           event: 'focus',

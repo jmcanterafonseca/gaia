@@ -253,6 +253,7 @@ if (!fb.link) {
         });
 
         utils.templates.append('#friends-list', data);
+        ImageLoader.reload();
 
         Curtain.hide(sendReadyEvent);
       }
@@ -330,6 +331,7 @@ if (!fb.link) {
         clearList();
 
         utils.templates.append(friendsList, response.data);
+        ImageLoader.reload();
 
         Curtain.hide();
       }
@@ -366,6 +368,7 @@ if (!fb.link) {
       contactid = contactId;
 
       setCurtainHandlers();
+      ImageLoader.init('#mainContent', "li:not([data-uuid='#uid#'])");
 
       if (!at) {
         fb.oauth.getAccessToken('proposal', function(at) {
@@ -467,6 +470,7 @@ if (!fb.link) {
 
       clearList();
       utils.templates.append(friendsList, currentRecommendation);
+      ImageLoader.reload();
     }
 
   })(document);

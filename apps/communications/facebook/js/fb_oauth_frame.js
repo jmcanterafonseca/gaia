@@ -2,10 +2,10 @@
 
 var fb = window.fb || {};
 
-if (typeof fb.oauthAPI === 'undefined') {
+if (typeof fb.oauthFrame === 'undefined') {
   (function() {
 
-    var oauthAPI = fb.oauthAPI = {};
+    var oauthFrame = fb.oauthFrame = {};
     var contactsAppOrigin = fb.oauthflow.params.contactsAppOrigin;
 
     function cancelCb() {
@@ -17,11 +17,13 @@ if (typeof fb.oauthAPI === 'undefined') {
       }, contactsAppOrigin);
     }
 
-    oauthAPI.start = function(from) {
+    oauthFrame.start = function(from) {
       fb.oauth.getAccessToken(function tokenReady(access_token) {
         Curtain.oncancel = cancelCb;
 
-        Curtain.show('wait', from);
+        if (!Curtain.visible) {
+          Curtain.show('wait', from);
+        }
 
         parent.postMessage({
           type: 'authenticated',
@@ -34,7 +36,7 @@ if (typeof fb.oauthAPI === 'undefined') {
       var data = e.data;
 
       if (data && data.type === 'start') {
-        oauthAPI.start(data.data.from);
+        oauthFrame.start(data.data.from);
       }
     });
   })();

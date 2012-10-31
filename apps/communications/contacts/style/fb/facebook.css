@@ -111,6 +111,10 @@ h2.block-title {
   padding: 0;
 }
 
+link li {
+  margin-top: 0;
+}
+
 .link li img {
   margin-right: 0.8rem;
 }

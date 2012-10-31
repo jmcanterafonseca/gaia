@@ -25,7 +25,7 @@ var Curtain = (function() {
     messages[name] = doc.getElementById(name + 'Msg');
   });
 
-  function show(type) {
+  function doShow(type) {
     form.dataset.state = type;
     curtainFrame.classList.add('visible');
   }
@@ -85,7 +85,7 @@ var Curtain = (function() {
         break;
       }
 
-      show(type);
+      doShow(type);
     },
 
     /**
@@ -124,6 +124,10 @@ var Curtain = (function() {
           return false;
         };
       }
+    },
+
+    get visible() {
+      return curtainFrame.classList.contains('visible');
     }
   };
 
