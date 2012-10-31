@@ -237,10 +237,6 @@ if (typeof Contacts.extFb === 'undefined') {
         break;
 
         case 'abort':
-          extensionFrame.contentWindow.postMessage({
-            type: 'close',
-            data: ''
-          }, fb.CONTACTS_APP_ORIGIN);
           unload();
         break;
 
@@ -264,7 +260,7 @@ if (typeof Contacts.extFb === 'undefined') {
           extensionFrame.contentWindow.postMessage({
             type: 'token',
             data: access_token
-          }, fb.CONTACTS_APP_ORIGIN)
+          }, fb.CONTACTS_APP_ORIGIN);
         break;
       }
     }

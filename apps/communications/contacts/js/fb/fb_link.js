@@ -332,7 +332,7 @@ if (!fb.link) {
       };
     }
 
-    link.start = function(contactId,at) {
+    link.start = function(contactId, at) {
       setCurtainHandlers();
 
       link.getProposal(contactId, at);

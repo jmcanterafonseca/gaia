@@ -34,6 +34,11 @@
 
 
   function onLoad(access_token) {
+    // Getting the timeout config from the parent
+    if(parent.fb) {
+      fb.operationsTimeout = parent.fb.operationsTimeout;
+    }
+
     utils.listeners.add({
       '#import-close': fb.importer.ui.end,
       '#import-action': fb.importer.ui.importAll,

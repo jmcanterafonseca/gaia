@@ -8,6 +8,8 @@ fb.utils = this.fb.utils || {};
 
 // Runs a query against Facebook FQL. Callback is a string!!
 fb.utils.runQuery = function(query, callback, access_token) {
+  var DEFAULT_TIMEOUT = 30000;
+
   // Auxiliary function for canceling a request
   function QueryRequest() {
     this.cancel = function() {
@@ -44,7 +46,7 @@ fb.utils.runQuery = function(query, callback, access_token) {
   xhr.open('GET', remote, true);
   xhr.responseType = 'json';
 
-  xhr.timeout = fb.operationsTimeout || 30000;
+  xhr.timeout = fb.operationsTimeout || DEFAULT_TIMEOUT;
 
   xhr.onload = function(e) {
     if (xhr.status === 200 || xhr.status === 0) {
@@ -103,7 +105,7 @@ fb.utils.getFriendPicture = function(uid, callback, access_token) {
    xhr.open('GET', imgService, true);
    xhr.responseType = 'blob';
 
-  xhr.timeout = fb.operationsTimeout || 30000;
+  xhr.timeout = fb.operationsTimeout || DEFAULT_TIMEOUT;
 
   xhr.onload = function(e) {
     if (xhr.status === 200 || xhr.status === 0) {

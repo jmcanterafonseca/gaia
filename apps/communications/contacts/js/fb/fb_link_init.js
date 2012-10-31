@@ -3,6 +3,11 @@
 (function(document) {
   var cid = window.location.search.substring(fb.link.CID_PARAM.length + 2);
 
+  // Getting the timeout config from the parent
+  if(parent.fb) {
+    fb.operationsTimeout = parent.fb.operationsTimeout;
+  }
+
   utils.listeners.add({
     '#link-close': fb.link.ui.end,
     '#friends-list': fb.link.ui.selected
