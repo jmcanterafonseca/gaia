@@ -15,7 +15,7 @@
   fb.contacts.init(function fb_init() {
     window.addEventListener('message', function getAccessToken(e) {
       window.removeEventListener('message', getAccessToken);
-       fb.link.getProposal(cid,e.data.data);
+       fb.link.start(cid, e.data.data);
     });
 
     parent.postMessage({

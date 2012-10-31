@@ -19,9 +19,9 @@ if (typeof fb.oauthAPI === 'undefined') {
 
     oauthAPI.start = function(from) {
       fb.oauth.getAccessToken(function tokenReady(access_token) {
-        Curtain.show('wait', from, {
-          oncancel: cancelCb
-        });
+        Curtain.oncancel = cancelCb;
+
+        Curtain.show('wait', from);
 
         parent.postMessage({
           type: 'authenticated',

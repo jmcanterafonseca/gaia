@@ -21,13 +21,13 @@
       });
     }
 
-    if(document.readyState === 'complete') {
+    if (document.readyState === 'complete') {
       onLoad(access_token);
     }
     else {
       window.addEventListener('load', function do_load() {
         onLoad(access_token);
-        window.removeEventListener('load',do_load);
+        window.removeEventListener('load', do_load);
       });
     }
   }
@@ -67,7 +67,7 @@
   if (isContactsMode) {
     window.addEventListener('message', function getAccessToken(e) {
       window.removeEventListener('message', getAccessToken);
-      if(e.data.type === 'token') {
+      if (e.data.type === 'token') {
         tokenReady(e.data.data);
       }
     });

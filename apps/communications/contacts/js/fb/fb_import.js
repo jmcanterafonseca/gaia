@@ -25,12 +25,18 @@ if (typeof fb.importer === 'undefined') {
     var contactsLoaded = false, friendsLoaded = false;
 
     var currentRequest;
+    // Current network request to enable canceling
+    var currentNetworkRequest = null;
 
     var _ = navigator.mozL10n.get;
 
     var syncOngoing = false;
     var nextUpdateTime;
+    // Indicates whether some friends have been imported or not
     var friendsImported;
+
+    // To know whether import or link is the caller
+    var callerName;
 
     // Query that retrieves the information about friends
     var FRIENDS_QUERY = [
@@ -100,7 +106,9 @@ if (typeof fb.importer === 'undefined') {
      *  This function is invoked when a token is ready to be used
      *
      */
-    Importer.start = function (at) {
+    Importer.start = function(at) {
+      setCurtainHandlers();
+
       access_token = at;
       Importer.getFriends(at);
     }
@@ -196,14 +204,18 @@ if (typeof fb.importer === 'undefined') {
       selectedContacts = friends;
     }
 
+    function setCurtainHandlers() {
+      Curtain.oncancel = cancelCb;
+    }
+
     /**
      *  Gets the Facebook friends by invoking Graph API
      *
      */
     Importer.getFriends = function(access_token) {
-      fb.importer.callerName = 'friends';
+      callerName = 'friends';
 
-      fb.utils.runQuery(friendsQueryStr, {
+      currentNetworkRequest = fb.utils.runQuery(friendsQueryStr, {
           success: fb.importer.friendsReady,
           error: fb.importer.errorHandler,
           timeout: fb.importer.timeoutHandler
@@ -231,8 +243,8 @@ if (typeof fb.importer === 'undefined') {
       window.setTimeout(function do_importFriend() {
         var oneFriendQuery = buildFriendQuery(uid);
         fb.importer.contId = uid;
-        fb.importer.callerName = 'linking';
-        fb.utils.runQuery(oneFriendQuery, {
+        callerName = 'linking';
+        currentNetworkRequest = fb.utils.runQuery(oneFriendQuery, {
                             success: fb.importer.importDataReady,
                             error: fb.importer.errorHandler,
                             timeout: fb.importer.timeoutHandler
@@ -346,36 +358,44 @@ if (typeof fb.importer === 'undefined') {
       }
     }
 
-    function cancelCbWhenRetry() {
-      window.postMessage({
-            type: 'close',
-            data: ''
-      }, fb.CONTACTS_APP_ORIGIN);
+    function cancelCb() {
+      if (currentNetworkRequest) {
+         currentNetworkRequest.cancel();
+         currentNetworkRequest = null;
+      }
 
       Curtain.hide();
+
+      parent.postMessage({
+            type: 'abort',
+            data: ''
+      }, fb.CONTACTS_APP_ORIGIN);
     }
 
+    // Error / timeout handler
     Importer.baseHandler = function(type) {
-      window.console.log('Base handler invoked');
-      
-      var callerName = Importer.callerName;
-      var callbacks = {
-        oncancel: Curtain.hide
-      };
 
       if (callerName === 'friends') {
-        callbacks.onretry = function get_friends() {
-          Curtain.show('wait', callerName, {
-            oncancel: cancelCbWhenRetry
-          });
+        Curtain.oncancel = function friends_cancel() {
+          Curtain.hide();
+
+          parent.postMessage({
+            type: 'abort',
+            data: ''
+          }, fb.CONTACTS_APP_ORIGIN);
+        }
+
+        Curtain.onretry = function get_friends() {
+          Curtain.oncancel = cancelCb;
+          Curtain.show('wait', callerName);
 
           UI.getFriends();
         }
       } else if (callerName === 'linking') {
-        callbacks.onretry = function get_friends() {
-          Curtain.show('wait', callerName, {
-            oncancel: cancelCbWhenRetry
-          });
+        Curtain.oncancel = Curtain.hide;
+
+        Curtain.onretry = function get_friends() {
+          Curtain.show('message', callerName);
 
           fb.link.ui.selected({
             target: {
@@ -387,7 +407,7 @@ if (typeof fb.importer === 'undefined') {
         }
       }
 
-      Curtain.show(type, callerName, callbacks);
+      Curtain.show(type, callerName);
     }
 
     Importer.timeoutHandler = function() {
@@ -543,7 +563,7 @@ if (typeof fb.importer === 'undefined') {
       var chunkSize = 10;
       var pointer = 0;
       var total = this.pending = kcontacts.length;
-      var mprogress = progress || { onchange : function() {}};
+      var mprogress = progress || { onchange: function() {}};
       var cont = 0;
 
       /**
@@ -681,7 +701,7 @@ if (typeof fb.importer === 'undefined') {
      */
     Importer.importAll = function(importedCB) {
       var progress = {};
-      Curtain.show('progress', 'import', null, progress);
+      Curtain.show('progress', 'import', progress);
 
       var numFriends = Object.keys(selectedContacts).length;
       var cont = 0;

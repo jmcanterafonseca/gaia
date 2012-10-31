@@ -40,24 +40,24 @@ var Curtain = (function() {
      *  Shows the curtain
      *
      *  @param {String} type
-     *    Curtain type (wait, timeout, error, message and progress)
+     *    Curtain type (wait, timeout, error, message and progress).
      *
      *  @param {String} from
-     *    The origin of the message
+     *    The origin of the message.
      *
      *  @param {Object} progress
      *    Some curtains show a progress activity. This object defines a method
      *    called <onchange> that is executed when the value changes (0..100)
-     *    so the curtain could be updated
+     *    so the curtain could be updated.
      *
-     *  @returns {Object} current request composed by two methods that will
+     *  @return {Object} current request composed by two methods that will
      *                    be performed when user click on some button <oncancel>
-     *                    or <onretry>
+     *                    or. <onretry>
      */
-    show: function(type, from, callbacks, progress) {
+    show: function(type, from, progress) {
       from = capitalize(from);
 
-      switch(type) {
+      switch (type) {
         case 'wait':
           messages[type].textContent = _(type + from);
         break;
@@ -86,24 +86,6 @@ var Curtain = (function() {
       }
 
       show(type);
-
-      if(callbacks) {
-        if(typeof callbacks['oncancel'] === 'function') {
-          cancelButton.onclick = function oncancel(e) {
-            delete cancelButton.onclick;
-            callbacks.oncancel();
-            return false;
-          };
-        }
-
-        if(typeof callbacks['onretry'] === 'function') {
-          retryButton.onclick = function onretry(e) {
-            delete retryButton.onclick;
-            callbacks.retryButton();
-            return false;
-          };
-        }
-      }
     },
 
     /**
@@ -119,10 +101,30 @@ var Curtain = (function() {
       curtainFrame.addEventListener('transitionend', function tend() {
         curtainFrame.removeEventListener('transitionend', tend);
         if (typeof hiddenCB === 'function') {
-          window.setTimeout(hiddenCB,0);
+          window.setTimeout(hiddenCB, 0);
         }
       });
+    },
+
+    set oncancel(cancelCb) {
+      if (typeof cancelCb === 'function') {
+        cancelButton.onclick = function on_cancel(e) {
+          delete cancelButton.onclick;
+          cancelCb();
+          return false;
+        };
+      }
+    },
+
+    set onretry(retryCb) {
+      if (typeof retryCb === 'function') {
+        retryButton.onclick = function on_retry(e) {
+          delete retryButton.onclick;
+          retryCb();
+          return false;
+        };
+      }
     }
-  }
+  };
 
 })();

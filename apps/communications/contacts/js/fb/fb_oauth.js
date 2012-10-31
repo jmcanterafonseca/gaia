@@ -80,7 +80,7 @@ if (typeof fb.oauth === 'undefined') {
         return;
       }
 
-      Curtain.show('wait',accessTokenCbData.state);
+      Curtain.show('wait', accessTokenCbData.state);
 
       window.setTimeout(function do_token_ready() {
         var access_token = parameters.access_token;

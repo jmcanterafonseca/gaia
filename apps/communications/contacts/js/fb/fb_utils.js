@@ -371,7 +371,7 @@ if (!fb.utils) {
       statusMsg.addEventListener('transitionend', function tend() {
         statusMsg.removeEventListener('transitionend', tend);
         setTimeout(function hide() {
-          statusMsg.classList.remove('visible')
+          statusMsg.classList.remove('visible');
         }, STATUS_TIME);
       });
     }

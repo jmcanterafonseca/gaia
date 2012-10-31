@@ -48,6 +48,10 @@ if (!fb.link) {
 
     var currentRecommendation = null;
     var allFriends = null;
+    // Enables cancelation
+    var currentNetworkRequest = null;
+    // State can be proposal or view All
+    var state;
 
     // Builds the first query for finding a contact to be linked to
     function buildQuery(contact) {
@@ -165,8 +169,8 @@ if (!fb.link) {
       var sentries = JSON.stringify(entries);
 
       */
-      fb.link.callerName = 'proposal';
-      fb.utils.runQuery(query, {
+      state = 'proposal';
+      currentNetworkRequest = fb.utils.runQuery(query, {
         success: fb.link.proposalReady,
         error: fb.link.errorHandler,
         timeout: fb.link.timeoutHandler
@@ -174,29 +178,36 @@ if (!fb.link) {
     }
 
     // Invoked when remoteAll is canceled
-    function cancelCb() {
-      window.postMessage({
-            type: 'close',
-            data: ''
-      }, fb.CONTACTS_APP_ORIGIN);
+    function cancelCb(notifyParent) {
+      if (currentNetworkRequest) {
+        currentNetworkRequest.cancel();
+        currentNetworkRequest = null;
+      }
 
       Curtain.hide();
+
+      if (notifyParent) {
+        parent.postMessage({
+            type: 'abort',
+            data: ''
+        }, fb.CONTACTS_APP_ORIGIN);
+      }
     }
 
 
-    // Invoked when timeoout or error and the user cancels all
+    // Invoked when timeout or error and the user cancels all
     function closeCb() {
       Curtain.hide();
     }
 
+    // Obtains a proposal with all friends
     function getRemoteAll() {
-      Curtain.show('wait', 'friends',{
-        oncancel: cancelCb
-      });
+      Curtain.oncancel = cancelCb;
+      Curtain.show('wait', 'friends');
 
-      fb.link.callerName = 'friends';
+      state = 'friends';
 
-      fb.utils.runQuery(ALL_QUERY.join(''), {
+      currentNetworkRequest = fb.utils.runQuery(ALL_QUERY.join(''), {
         success: fb.link.friendsReady,
         error: fb.link.errorHandler,
         timeout: fb.link.timeoutHandler
@@ -244,34 +255,25 @@ if (!fb.link) {
       }
     }
 
-    function cancelCbWhenRetry() {
-      window.postMessage({
-            type: 'close',
-            data: ''
-      }, fb.CONTACTS_APP_ORIGIN);
-
-      Curtain.hide();
-    }
-
     link.baseHandler = function(type) {
-      var callerName = link.callerName;
-      var callbacks  = {
-        oncancel: Curtain.hide
-      };
-
-      if (callerName === 'friends') {
-        callbacks.onretry = getRemoteAll;
-      } else if (callerName === 'proposal') {
-        callbacks.onretry = function getRemoteProposal() {
-          Curtain.show('wait', callerName, {
-            oncancel: cancelCbWhenRetry
-          });
+      if (state === 'friends') {
+        Curtain.onretry = getRemoteAll;
+        Curtain.oncancel = Curtain.hide;
+      } else if (state === 'proposal') {
+        Curtain.oncancel = function() {
+          cancelCb(true);
+        }
+        Curtain.onretry = function getRemoteProposal() {
+          Curtain.oncancel = function() {
+            cancelCb(true);
+          }
+          Curtain.show('wait', state);
 
           link.getRemoteProposal(access_token, contactid);
         }
       }
 
-       Curtain.show(type, callerName, callbacks);
+       Curtain.show(type, state);
     }
 
     link.timeoutHandler = function() {
@@ -324,6 +326,18 @@ if (!fb.link) {
       Curtain.hide();
     }
 
+    function setCurtainHandlers() {
+      Curtain.oncancel = function curtain_cancel() {
+        cancelCb(true);
+      };
+    }
+
+    link.start = function(contactId,at) {
+      setCurtainHandlers();
+
+      link.getProposal(contactId, at);
+    }
+
     function retryOnErrorCb() {
       UI.selected({
         target: {
@@ -336,7 +350,7 @@ if (!fb.link) {
 
     UI.selected = function(event) {
       Curtain.show('message', 'linking');
-      
+
       var element = event.target;
       var friendUid = UI.friendUid = element.dataset.uuid;
 
@@ -355,28 +369,27 @@ if (!fb.link) {
 
           importReq.onsuccess = function() {
             Curtain.hide(function() {
-              notifyParent(importReq.result)
+              notifyParent(importReq.result);
             });
           }
 
           importReq.onerror = function() {
             window.console.error('FB: Error while importing friend data');
-            Curtain.show('error', 'linking', {
-              onretry: retryOnErrorCb,
-              oncancel: Curtain.hide
-            });
+            Curtain.oncancel = Curtain.hide;
+            Curtain.onretry = retryOnErrorCb;
+            Curtain.show('error', 'linking');
           }
         }
       }
 
       req.onerror = function() {
         window.console.error('FB: Error while importing friend data');
-        Curtain.show('error', 'linking', {
-              onretry: retryOnErrorCb,
-              oncancel: Curtain.hide
-        });
+        Curtain.oncancel = Curtain.hide;
+        Curtain.onretry = retryOnErrorCb;
+        Curtain.show('error', 'linking');
       }
     }
+
 
     UI.end = function(event) {
       var msg = {
