@@ -35,7 +35,7 @@
 
   function onLoad(access_token) {
     // Getting the timeout config from the parent
-    if(parent.fb) {
+    if (parent.fb) {
       fb.operationsTimeout = parent.fb.operationsTimeout;
     }
 

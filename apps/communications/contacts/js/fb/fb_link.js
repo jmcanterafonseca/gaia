@@ -52,6 +52,7 @@ if (!fb.link) {
     var currentNetworkRequest = null;
     // State can be proposal or view All
     var state;
+    var _ = navigator.mozL10n.get;
 
     // Builds the first query for finding a contact to be linked to
     function buildQuery(contact) {
@@ -129,8 +130,6 @@ if (!fb.link) {
 
     // entry point for obtaining a remote proposal
     link.getRemoteProposal = function(acc_t, contid) {
-      access_token = acc_t;
-
       var cid = contid || contactid;
 
       var req = fb.utils.getContactData(cid);
@@ -216,23 +215,31 @@ if (!fb.link) {
 
     // Obtains a linking proposal to be shown to the user
     link.getProposal = function(cid, at) {
-      contactid = cid;
-      access_token = at;
-
       link.getRemoteProposal(at, contactid);
     }
 
     // Executed when the server response is available
     link.proposalReady = function(response) {
-      var inError = false;
-
       if (typeof response.error !== 'undefined') {
-        inError = true;
-        window.console.log('FB: Error while retrieving link data',
+        window.console.error('FB: Error while retrieving link data',
                                   response.error.code, response.error.message);
+
+        if (response.error.code != 190) {
+          setCurtainHandlersErrorProposal();
+          Curtain.show('error', 'proposal');
+        }
+        else {
+          // access token problem. A new OAuth 2.0 flow has to start
+          Curtain.hide();
+          window.asyncStorage.removeItem(fb.utils.TOKEN_DATA_KEY, function() {
+            link.start(contactid);
+          });
+        }
+
+        return;
       }
 
-      if ((inError || response.data.length === 0) && numQueries <= 1) {
+      if (response.data.length === 0 && numQueries <= 1) {
         getRemoteProposalByNames(access_token, cdata);
       }
       else {
@@ -246,12 +253,29 @@ if (!fb.link) {
         });
 
         utils.templates.append('#friends-list', data);
-        Curtain.hide(fb.utils.sendReadyEvent);
+
+        Curtain.hide(sendReadyEvent);
+      }
+    }
+
+    function sendReadyEvent() {
+      parent.postMessage({
+        type: 'ready', data: ''
+      }, fb.CONTACTS_APP_ORIGIN);
+    }
+
+    function setCurtainHandlersErrorProposal() {
+      Curtain.oncancel = function() {
+        cancelCb(true);
       }
 
-      // Guarantee that the user always return to a known state
-      if (numQueries > 1) {
-        Curtain.hide(fb.utils.sendReadyEvent);
+      Curtain.onretry = function getRemoteProposal() {
+        Curtain.oncancel = function() {
+          cancelCb(true);
+        }
+        Curtain.show('wait', state);
+
+        link.getRemoteProposal(access_token, contactid);
       }
     }
 
@@ -260,19 +284,8 @@ if (!fb.link) {
         Curtain.onretry = getRemoteAll;
         Curtain.oncancel = Curtain.hide;
       } else if (state === 'proposal') {
-        Curtain.oncancel = function() {
-          cancelCb(true);
-        }
-        Curtain.onretry = function getRemoteProposal() {
-          Curtain.oncancel = function() {
-            cancelCb(true);
-          }
-          Curtain.show('wait', state);
-
-          link.getRemoteProposal(access_token, contactid);
-        }
+        setCurtainHandlersErrorProposal();
       }
-
        Curtain.show(type, state);
     }
 
@@ -301,7 +314,7 @@ if (!fb.link) {
 
     link.friendsReady = function(response) {
       if (typeof response.error === 'undefined') {
-        viewButton.textContent = 'View Only Recommended';
+        viewButton.textContent = _('viewRecommend');
         viewButton.onclick = UI.viewRecommended;
 
         allFriends = response;
@@ -317,13 +330,29 @@ if (!fb.link) {
         clearList();
 
         utils.templates.append(friendsList, response.data);
+
+        Curtain.hide();
       }
       else {
         window.console.error('FB: Error while retrieving friends',
                               response.error.code, response.error.message);
-      }
 
-      Curtain.hide();
+        if (response.error.code !== 190) {
+          Curtain.onretry = getRemoteAll;
+          Curtain.oncancel = Curtain.hide;
+          Curtain.show('error', 'friends');
+        }
+        else {
+          // Error with the access token. It is very unlikely that this happens
+          // We only hide the curtain as the user will be seeing something
+          // Meaningful
+          Curtain.hide();
+
+          window.asyncStorage.removeItem(fb.utils.TOKEN_DATA_KEY, function() {
+            link.start(contactid);
+          });
+        }
+      }
     }
 
     function setCurtainHandlers() {
@@ -333,9 +362,19 @@ if (!fb.link) {
     }
 
     link.start = function(contactId, at) {
+      access_token = at;
+      contactid = contactId;
+
       setCurtainHandlers();
 
-      link.getProposal(contactId, at);
+      if (!at) {
+        fb.oauth.getAccessToken('proposal', function(at) {
+          link.getProposal(contactId, at);
+        });
+      }
+      else {
+        link.getProposal(contactId, at);
+      }
     }
 
     function retryOnErrorCb() {
@@ -424,7 +463,7 @@ if (!fb.link) {
     UI.viewRecommended = function(event) {
       // event.target === viewButton
       event.target.onclick = UI.viewAllFriends;
-      event.target.textContent = 'View All Facebook Friends';
+      event.target.textContent = _('viewAll');
 
       clearList();
       utils.templates.append(friendsList, currentRecommendation);

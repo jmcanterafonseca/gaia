@@ -14,10 +14,7 @@ if (!fb.utils) {
     Utils.ALARM_ID_KEY = 'nextAlarmId';
 
     var REDIRECT_LOGOUT_URI = fb.oauthflow.params['redirectLogout'];
-    var STORAGE_KEY = 'tokenData';
-
-    var STATUS_TIME = 1500;
-    var statusMsg = document.querySelector('#statusMsg');
+    var STORAGE_KEY = Utils.TOKEN_DATA_KEY = 'tokenData';
 
       // For controlling data synchronization
     Utils.setLastUpdate = function(value, cb) {
@@ -351,29 +348,6 @@ if (!fb.utils) {
           }.bind(this), 0);
         }
       }
-    }
-
-    Utils.sendReadyEvent = function() {
-      parent.postMessage({
-        type: 'ready', data: ''
-      }, fb.CONTACTS_APP_ORIGIN);
-    }
-
-    Utils.sendAuthenticatingEvent = function() {
-      parent.postMessage({
-        type: 'authenticating', data: ''
-      }, fb.CONTACTS_APP_ORIGIN);
-    }
-
-    Utils.showStatus = function(text) {
-      statusMsg.querySelector('p').textContent = text;
-      statusMsg.classList.add('visible');
-      statusMsg.addEventListener('transitionend', function tend() {
-        statusMsg.removeEventListener('transitionend', tend);
-        setTimeout(function hide() {
-          statusMsg.classList.remove('visible');
-        }, STATUS_TIME);
-      });
     }
 
     // FbContactsCleaner Object
