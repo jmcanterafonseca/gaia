@@ -80,9 +80,12 @@ if (typeof fb.oauthflow === 'undefined') {
       var redirect_uri = encodeURIComponent(params[OAUTH_REDIRECT] +
                                             '#state=' + state);
 
-      var scope = ['friends_about_me,friends_birthday,email,' ,
-                    'friends_education_history, friends_work_history,' ,
-                    'friends_status,friends_relationships,publish_stream'
+      var scope = [
+        'friends_about_me,' ,
+        'friends_birthday,' ,
+        'friends_hometown,' ,
+        'email,'            ,
+        'friends_work_history'
       ].join('');
       var scopeParam = encodeURIComponent(scope);
 
