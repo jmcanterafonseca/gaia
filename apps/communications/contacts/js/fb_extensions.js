@@ -20,6 +20,10 @@ if (typeof Contacts.extFb === 'undefined') {
       }
     }
 
+    extFb.importFBFromUrl = function importFromUrl(path) {
+      load(path, 'import');
+    }
+
     extFb.importFB = function(evt) {
       load('fb_import.html?contacts=1', 'friends');
     }
