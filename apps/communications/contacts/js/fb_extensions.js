@@ -21,7 +21,7 @@ if (typeof Contacts.extFb === 'undefined') {
     }
 
     extFb.importFBFromUrl = function importFromUrl(path) {
-      load(path, 'import');
+      load(path, 'friends');
     }
 
     extFb.importFB = function(evt) {

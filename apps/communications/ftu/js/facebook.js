@@ -4,6 +4,7 @@
 var fb = window.fb || {};
 // fb.Category: contact category
 fb.CATEGORY = 'facebook';
+fb.CONTACTS_APP_ORIGIN = 'app://communications.gaiamobile.org';
 
 var FacebookIntegration = {
   get fbExtensions() {
@@ -31,7 +32,7 @@ var FacebookIntegration = {
     switch (event.type) {
       case 'click':
         this.fbExtensions.classList.remove('hidden');
-        Contacts.extFb.importFBFromUrl('/contacts/fb_import.html');
+        Contacts.extFb.importFBFromUrl('/contacts/fb_import.html?contacts=1');
         break;
       case 'fb_imported':
         this.closeImport();
