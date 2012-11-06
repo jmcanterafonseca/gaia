@@ -32,7 +32,7 @@ var FacebookIntegration = {
     switch (event.type) {
       case 'click':
         this.fbExtensions.classList.remove('hidden');
-        Contacts.extFb.importFBFromUrl('/contacts/fb_import.html?contacts=1');
+        Contacts.extFb.importFBFromUrl('/contacts/fb_import.html');
         break;
       case 'fb_imported':
         this.closeImport();
