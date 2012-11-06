@@ -31,24 +31,12 @@ var FacebookIntegration = {
   handleEvent: function fb_he(event) {
     switch (event.type) {
       case 'click':
-        this.fbExtensions.classList.remove('hidden');
-        Contacts.extFb.importFBFromUrl('/contacts/fb_import.html');
+        FbLauncher.start();
         break;
       case 'fb_imported':
-        this.closeImport();
         this.updateContactsNumber();
         break;
     }
-  },
-
-  closeImport: function closeImport() {
-    var self = this;
-    this.fbExtensions.addEventListener('transitionend', function tclose() {
-      self.fbExtensions.removeEventListener('transitionend', tclose);
-      self.fbExtensions.src = null;
-    });
-
-    this.fbExtensions.className = 'closingImport';
   },
 
   updateContactsNumber: function fb_ucn() {
