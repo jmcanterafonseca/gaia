@@ -99,10 +99,7 @@ var UIManager = {
     this.timeConfiguration.addEventListener('input', this);
     this.dateConfiguration.addEventListener('input', this);
     this.buttonLetsGo.addEventListener('click', function() {
-      if (AppManager.currentActivity) {
-        AppManager.currentActivity.postResult({ status: 'first-time-over' });
-        window.close();
-      }
+      window.close();
     });
   },
   handleEvent: function ui_handleEvent(event) {

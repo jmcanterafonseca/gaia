@@ -12,8 +12,8 @@ var TimeManager = {
     this.mozTime.set(date);
   },
   getTimeZone: function tm_getTZ(gmt) {
-    var gmt = parseInt(gmt);
-    switch (gmt) {
+    var gmtInt = parseInt(gmt);
+    switch (gmtInt) {
       case -8:
         return 'GMT-08:00';
         break;
