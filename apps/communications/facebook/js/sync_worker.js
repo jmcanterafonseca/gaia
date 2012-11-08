@@ -86,7 +86,7 @@ importScripts('/contacts/js/fb/fb_query.js',
 
     // The index at which the timestamp is set
     var IDX_TS = 10;
-    UPDATED_QUERY[IDX_TS] = Math.round(ts / 1000);
+    UPDATED_QUERY[IDX_TS] = ts / 1000;
 
     // The index at which uids filter is set
     var IDX_UIDS = 7;
@@ -109,8 +109,6 @@ importScripts('/contacts/js/fb/fb_query.js',
       query1: UPDATED_QUERY.join(''),
       query2: REMOVED_QUERY.join('')
     };
-
-    debug('Queries: ', JSON.stringify(outQueries));
 
     return JSON.stringify(outQueries);
   }
@@ -160,12 +158,11 @@ importScripts('/contacts/js/fb/fb_query.js',
     // Timestamp is captured right now to avoid problems
     // with updates in between
     var qts = Date.now();
-
-    var updateList = response.data[0].fql_result_set;
-    var removeList = response.data[1].fql_result_set;
-    // removeList = [{target_id: '100001127136581'}];
-
     if (typeof response.error === 'undefined') {
+      var updateList = response.data[0].fql_result_set;
+      var removeList = response.data[1].fql_result_set;
+      // removeList = [{target_id: '100001127136581'}];
+
       wutils.postMessage({
         type: 'totals',
         data: {

@@ -47,13 +47,20 @@ if (!fb.sync) {
       }
       theWorker.onerror = function(e) {
         window.console.error('Worker Error', e.message, e.lineno, e.column);
+        if(typeof errorCallback === 'function') {
+          errorCallback();
+        }
       }
     }
 
     function workerMessage(m) {
       switch (m.type) {
         case 'error':
-           window.console.error('FB: Error reported by the worker', m.data);
+           window.console.error('FB: Error reported by the worker',
+                                JSON.stringify(m.data));
+           if(typeof errorCallback === 'function') {
+            errorCallback();
+           }
         break;
 
         case 'trace':
@@ -332,7 +339,7 @@ if (!fb.sync) {
       var toBeUpdated = {};
 
       fb.utils.getLastUpdate(function import_updates(lastUpdate) {
-        var lastUpdateTime = Math.round(lastUpdate / 1000);
+        var lastUpdateTime = lastUpdate / 1000;
 
         debug('Last update time: ', lastUpdateTime);
         fbContactsById = {};

@@ -46,8 +46,8 @@ fb.sync = Sync;
 
     function syncError() {
       isSyncOngoing = false;
-      window.console.error('Sync error. Setting an alarm for future');
-      // TODO. Determine what to do in this case
+      window.console.error('Sync error. Setting an alarm for next hour');
+      setNextAlarm(false, 1);
     }
 
     // First is checked if this is a sync alarm

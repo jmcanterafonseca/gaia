@@ -218,7 +218,7 @@ contacts.Settings = (function() {
             if (data) {
               navigator.mozAlarms.remove(data.id);
               window.asyncStorage.removeItem(fb.utils.ALARM_ID_KEY);
-              window.asyncStorage.removeItem(fb.utils.LAST_UPDATE_KEY);
+              window.asyncStorage.removeItem(fb.utils.LAST_UPDATED_KEY);
               window.asyncStorage.removeItem(fb.utils.CACHE_FRIENDS_KEY);
             }
           });
