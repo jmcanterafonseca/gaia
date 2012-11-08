@@ -76,10 +76,10 @@ fb.sync = Sync;
   function setNextAlarm(notifyParent, period, callback) {
     // Let's check whether there was a previous set alarm
     window.asyncStorage.getItem(ALARM_ID_KEY, function(data) {
-      if (data && data.value) {
+      if (data) {
         // If there was a previous alarm it has to be removed
-        fb.sync.debug('Removing existing alarm: ', data.value);
-        var req = navigator.mozAlarms.remove(data.value);
+        fb.sync.debug('Removing existing alarm: ', data);
+        navigator.mozAlarms.remove(Number(data));
       }
 
       doSetNextAlarm(notifyParent, period, callback);
@@ -87,49 +87,55 @@ fb.sync = Sync;
   }
 
   function doSetNextAlarm(notifyParent, hours, callback) {
+    function alarmSetErrorCb() {
+      if (notifyParent) {
+        window.setTimeout(function() {
+          parent.fb.sync.onAlarmError(req.error);
+        },0);
+      }
+      else {
+            window.console.error('<<FBSync>> Error while setting next alarm',
+                               req.error);
+      }
+    }
+
     fb.utils.getLastUpdate(function(timestamp) {
       var nextUpdate = timestamp + hours * 60 * 60 * 1000;
       var scheduledDate = new Date(nextUpdate);
 
       fb.sync.debug('Going to set a new alarm at: ', scheduledDate);
 
-      var req = navigator.mozAlarms.add(scheduledDate,
-                                        'honorTimezone', {
-        sync: true});
+      var req = navigator.mozAlarms.add(scheduledDate, 'honorTimezone', {
+        sync: true
+      });
 
       req.onsuccess = function() {
         // Set the last alarm id
-        window.asyncStorage.setItem(ALARM_ID_KEY, {
-          id: req.result
+        window.asyncStorage.setItem(ALARM_ID_KEY, String(req.result),
+          function success() {
+            if (notifyParent === true) {
+              window.setTimeout(function() {
+                parent.fb.sync.onAlarmScheduled(scheduledDate);
+              },0);
+            }
+
+            fb.sync.debug('Alarm correctly set!!');
+
+            if (typeof callback === 'function') {
+              callback();
+            }
+        },
+        function error() {
+          alarmSetErrorCb();
         });
-
-        if (notifyParent === true) {
-          window.setTimeout(function() {
-            parent.fb.sync.onAlarmScheduled(scheduledDate);
-          },0);
-        }
-
-        fb.sync.debug('Alarm correctly set!!');
-
-        if (typeof callback === 'function') {
-          callback();
-        }
       }
 
       req.onerror = function() {
-        if (notifyParent) {
-          window.setTimeout(function() {
-            parent.fb.sync.onAlarmError(req.error);
-          },0);
-        }
-        else {
-          window.console.error('<<FBSync>> Error while setting next alarm',
-                               req.error);
-        }
+        alarmSetErrorCb();
       }
 
     }); // Get last update
-  }
+  } // doSetNextAlarm
 
   // Everything starts
   Alarm.init();

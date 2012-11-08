@@ -26,6 +26,8 @@ if (!fb.sync) {
     var logLevel = fb.logLevel || parent.fb.logLevel || 'DEBUG';
     var isDebug = (logLevel === 'DEBUG');
 
+    var _ = navigator.mozL10n.get;
+
     var alarmFrame = null,
         currentAlarmRequest = null;
 
@@ -56,11 +58,22 @@ if (!fb.sync) {
     function workerMessage(m) {
       switch (m.type) {
         case 'error':
-           window.console.error('FB: Error reported by the worker',
-                                JSON.stringify(m.data));
-           if(typeof errorCallback === 'function') {
+          var error = m.data;
+          window.console.error('FB: Error reported by the worker',
+                                JSON.stringify(error));
+          if(typeof errorCallback === 'function') {
+            errorCallback(m.data);
+          }
+        break;
+
+        case 'token_error':
+          window.console.log('FB: Token error reported by the worker');
+          // Notification is added
+          NotificationHelper.send(_('facebook'), _('notificationLogin'),
+                                  '/contacts/style/images/f_logo.png');
+          if(typeof errorCallback === 'function') {
             errorCallback();
-           }
+          }
         break;
 
         case 'trace':
@@ -213,8 +226,6 @@ if (!fb.sync) {
       totalToChange = 0;
       changed = 0;
 
-      startWorker();
-
       // First only take into account those Friends already on the device
       // This work has to be done here and not by the worker as it has no
       // access to the Web APIs
@@ -225,8 +236,11 @@ if (!fb.sync) {
         var fbContacts = req.result;
 
         if (fbContacts.length === 0) {
+          debug('Nothing to be synchronized. No FB Contacts present');
           return;
         }
+
+        startWorker();
 
         // Contacts by id are cached for later update
         fbContactsById = {};
@@ -339,7 +353,7 @@ if (!fb.sync) {
       var toBeUpdated = {};
 
       fb.utils.getLastUpdate(function import_updates(lastUpdate) {
-        var lastUpdateTime = lastUpdate / 1000;
+        var lastUpdateTime = Math.round(lastUpdate / 1000);
 
         debug('Last update time: ', lastUpdateTime);
         fbContactsById = {};

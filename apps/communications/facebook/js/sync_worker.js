@@ -59,8 +59,8 @@ importScripts('/contacts/js/fb/fb_query.js',
   }
 
   function errorQueryCb(e) {
-    self.console.error('<<FB Sync>>: Error while trying to sync');
-    // Here it is needed to set a new alarm for the next n hours
+    self.console.error('<<FB Sync>>: Error while trying to sync', e);
+    postError(e);
   }
 
   function timeoutQueryCb(e) {
@@ -70,13 +70,18 @@ importScripts('/contacts/js/fb/fb_query.js',
       getFriendsToBeUpdated(Object.keys(uids), Object.keys(forcedUids));
     }
     else {
-      // Now set the alarm to do it in the near future
+      postError(e);
     }
   }
 
   function postError(e) {
+    var type = 'error';
+    if(e && e.code === 190) {
+      self.console.log('This is a token error notifying worker parent');
+      type = 'token_error';
+    }
     wutils.postMessage({
-      type: 'error',
+      type: type,
       data: e
     });
   }
@@ -86,7 +91,7 @@ importScripts('/contacts/js/fb/fb_query.js',
 
     // The index at which the timestamp is set
     var IDX_TS = 10;
-    UPDATED_QUERY[IDX_TS] = ts / 1000;
+    UPDATED_QUERY[IDX_TS] = Math.round(ts / 1000);
 
     // The index at which uids filter is set
     var IDX_UIDS = 7;
