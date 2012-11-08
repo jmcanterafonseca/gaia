@@ -17,9 +17,10 @@ fb.sync = Sync;
         fb.sync.debug('Alarm System Message Received!!!!!');
         navigator.mozSetMessageHandler('alarm', handleAlarm);
       }
-      // Workaround for a Gecko Bug!
+      // Workaround for Gecko Bug. mozHasPendingMessage does not work
+      // https://bugzilla.mozilla.org/show_bug.cgi?id=802876
       else if(parent.location === window.location) {
-        fb.sync.debug('We have been invoked due to an alarm msg');
+        fb.sync.debug('Fb Sync woke up. Alarm ok. mozHasPendingMsg failed');
         handleAlarm({
           data: {
             sync: true
