@@ -226,8 +226,8 @@ if (typeof Contacts.extFb === 'undefined') {
       var freq = fbContact.unlink();
 
       freq.onsuccess = function() {
-        contacts.List.refresh(cid);
         Contacts.updateContactDetail(cid);
+        contacts.List.refresh(cid);
         if (freq.result) {
           contacts.List.refresh(freq.result);
         }

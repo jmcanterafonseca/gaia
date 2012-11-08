@@ -538,6 +538,7 @@ fb.Contact = function(deviceContact, cid) {
         var fbNumReq = fb.utils.getNumberMozContacts(uid);
 
         fbNumReq.onsuccess = function() {
+          // Because we have already unlinked one
           if (fbNumReq.result >= 1) {
             out.done();
           } else {

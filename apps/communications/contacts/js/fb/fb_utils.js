@@ -77,18 +77,20 @@ if (!fb.utils) {
     Utils.getMozContact = function(uid) {
       var outReq = new Utils.Request();
 
-      getMozContactByUid(uid,
-        function onsuccess(e) {
-          if (e.target.result && e.target.result.length > 0) {
-            outReq.done(e.target.result[0]);
-          } else {
-            outReq.done(null);
+      window.setTimeout(function get_mozContact_ByUid() {
+        getMozContactByUid(uid,
+          function onsuccess(e) {
+            if (e.target.result && e.target.result.length > 0) {
+              outReq.done(e.target.result[0]);
+            } else {
+              outReq.done(null);
+            }
+          },
+          function onerror(e) {
+            outReq.failed(e.target.error);
           }
-        },
-        function onerror(e) {
-          outReq.failed(e.target.error);
-        }
-      );
+        );
+      }, 0);
 
       return outReq;
     };
@@ -97,18 +99,20 @@ if (!fb.utils) {
     Utils.getNumberMozContacts = function(uid) {
       var outReq = new Utils.Request();
 
-      getMozContactByUid(uid,
-        function onsuccess(e) {
-          if (e.target.result && e.target.result.length > 0) {
-            outReq.done(e.target.result.length);
-          } else {
-            outReq.done(0);
+      window.setTimeout(function get_mozContact_ByUid() {
+        getMozContactByUid(uid,
+          function onsuccess(e) {
+            if (e.target.result && e.target.result.length > 0) {
+              outReq.done(e.target.result.length);
+            } else {
+              outReq.done(0);
+            }
+          },
+          function onerror(e) {
+            outReq.failed(e.target.error);
           }
-        },
-        function onerror(e) {
-          outReq.failed(e.target.error);
-        }
-      );
+        );
+      },0);
 
       return outReq;
     };
