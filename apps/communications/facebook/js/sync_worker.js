@@ -110,6 +110,8 @@ importScripts('/contacts/js/fb/fb_query.js',
       query2: REMOVED_QUERY.join('')
     };
 
+    debug('Queries: ', JSON.stringify(outQueries));
+
     return JSON.stringify(outQueries);
   }
 

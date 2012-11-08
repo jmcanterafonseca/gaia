@@ -17,6 +17,15 @@ fb.sync = Sync;
         fb.sync.debug('Alarm System Message Received!!!!!');
         navigator.mozSetMessageHandler('alarm', handleAlarm);
       }
+      // Workaround for a Gecko Bug!
+      else if(parent.location === window.location) {
+        fb.sync.debug('We have been invoked due to an alarm msg');
+        handleAlarm({
+          data: {
+            sync: true
+          }
+        })
+      }
       else {
         setNextAlarm(true, fb.syncPeriod);
       }
