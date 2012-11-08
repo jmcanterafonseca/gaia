@@ -183,7 +183,7 @@ if (typeof Contacts.extFb === 'undefined') {
           close();
 
           contacts.List.refresh(contactId);
-          if (originalFbContact) {
+          if (originalFbContact && !fb.isFbLinked(originalFbContact)) {
             contacts.List.remove(originalFbContact.id);
           }
           Contacts.showContactDetail(contactId);
@@ -227,8 +227,8 @@ if (typeof Contacts.extFb === 'undefined') {
 
       freq.onsuccess = function() {
         contacts.List.refresh(cid);
+        Contacts.updateContactDetail(cid);
         if (freq.result) {
-          Contacts.updateContactDetail(cid);
           contacts.List.refresh(freq.result);
         }
       }
