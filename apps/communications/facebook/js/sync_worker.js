@@ -10,7 +10,7 @@ importScripts('/contacts/js/fb/fb_query.js',
       access_token,
       forceUpdateUids;
 
-  var retriedTimes = 0;
+  var timesExecuted = 0;
   var MAX_TIMES_TO_RETRY = 3;
 
   wutils.addEventListener('message', processMessage);
@@ -64,19 +64,21 @@ importScripts('/contacts/js/fb/fb_query.js',
   }
 
   function timeoutQueryCb(e) {
-    if (retriedTimes < MAX_TIMES_TO_RETRY) {
-      debug('Retrying ... for ', retriedTimes + 1, ' times');
-      retriedTimes++;
-      getFriendsToBeUpdated(Object.keys(uids), Object.keys(forcedUids));
+    if (timesExecuted < MAX_TIMES_TO_RETRY) {
+      debug('Retrying ... for ', timesExecuted, ' times');
+      timesExecuted++;
+      getFriendsToBeUpdated(Object.keys(uids), Object.keys(forceUpdateUids));
     }
     else {
-      postError(e);
+      postError({
+        type: 'timeout'
+      });
     }
   }
 
   function postError(e) {
     var type = 'error';
-    if(e && e.code === 190) {
+    if (e && e.code === 190) {
       self.console.log('This is a token error notifying worker parent');
       type = 'token_error';
     }
@@ -134,7 +136,7 @@ importScripts('/contacts/js/fb/fb_query.js',
         debug('These friends are forced to be updated: ' ,
               JSON.stringify(forceUpdateUids));
 
-      retriedTimes = 0;
+      timesExecuted = 1;
       getFriendsToBeUpdated(Object.keys(uids), Object.keys(forceUpdateUids));
     }
     else if (message.type === 'startWithData') {

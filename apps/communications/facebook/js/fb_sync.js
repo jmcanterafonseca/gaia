@@ -47,7 +47,7 @@ if (!fb.sync) {
       }
       theWorker.onerror = function(e) {
         window.console.error('Worker Error', e.message, e.lineno, e.column);
-        if(typeof errorCallback === 'function') {
+        if (typeof errorCallback === 'function') {
           errorCallback();
         }
       }
@@ -59,14 +59,14 @@ if (!fb.sync) {
           var error = m.data;
           window.console.error('FB: Error reported by the worker',
                                 JSON.stringify(error));
-          if(typeof errorCallback === 'function') {
+          if (typeof errorCallback === 'function') {
             errorCallback(m.data);
           }
         break;
 
         case 'token_error':
           debug('FB: Token error reported by the worker');
-          if(typeof errorCallback === 'function') {
+          if (typeof errorCallback === 'function') {
             errorCallback({
               type: 'invalidToken'
             });
@@ -75,7 +75,7 @@ if (!fb.sync) {
 
         case 'timeout_error':
           debug('Timeout error reported by the worker');
-          if(typeof errorCallback === 'function') {
+          if (typeof errorCallback === 'function') {
             errorCallback({
               type: 'timeout'
             });

@@ -302,7 +302,7 @@ if (typeof fb.importer === 'undefined') {
             var theUrl = friend.pic_big;
             // If timeout happened then the Url must be set to null to enable
             // later reconciliation through the sync process
-            if(photoTimeout === true) {
+            if (photoTimeout === true) {
               theUrl = null;
             }
             currentRequest.done({
@@ -693,7 +693,7 @@ if (typeof fb.importer === 'undefined') {
               fb.setFriendPictureUrl(fbInfo, cfdata.pic_big);
             }
           }
-          else if(typeof self.onPhotoTimeout === 'function') {
+          else if (typeof self.onPhotoTimeout === 'function') {
             self.onPhotoTimeout(cfdata.uid);
           }
 
