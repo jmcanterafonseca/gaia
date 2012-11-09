@@ -10,6 +10,7 @@ fb.sync = Sync;
 
   var ALARM_ID_KEY = fb.utils.ALARM_ID_KEY;
   var isSyncOngoing = false;
+  var _ = navigator.mozL10n.get;
 
   Alarm.init = function() {
     fb.init(function fb_alarm_init() {
@@ -44,10 +45,45 @@ fb.sync = Sync;
       });
     }
 
-    function syncError() {
+    function syncError(error) {
       isSyncOngoing = false;
-      window.console.error('Sync error. Setting an alarm for next hour');
-      setNextAlarm(false, 1);
+      var theError = error;
+      if(!theError) {
+        theError = {
+          type: 'default'
+        }
+      }
+      switch(theError.type) {
+        case 'timeout':
+          fb.sync.debug('Timeout error. Setting an alarm for next hour');
+          setNextAlarm(false, 1, window.close);
+        break;
+
+        case 'invalidToken':
+          fb.sync.debug('Invalid token!!!. Notifying the user');
+          // A new alarm is not set. It will be set once the user
+          // logs in Facebook one more time
+          navigator.mozApps.getSelf().onsuccess = function(evt) {
+            var app = evt.target.result;
+            var iconURL = NotificationHelper.getIconURI(app);
+            NotificationHelper.send(_('facebook'), _('notificationLogin'),
+                                   iconURL);
+          }
+          window.close();
+        break;
+
+        default:
+          window.console.error('Error reported in synchronization: ',
+                               JSON.stringify(theError));
+          navigator.mozApps.getSelf().onsuccess = function(evt) {
+            var app = evt.target.result;
+            var iconURL = NotificationHelper.getIconURI(app);
+            NotificationHelper.send(_('facebook'), _('syncError'), iconURL);
+
+          }
+          setNextAlarm(false, fb.syncPeriod, window.close);
+        break;
+      }
     }
 
     // First is checked if this is a sync alarm

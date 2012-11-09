@@ -26,8 +26,6 @@ if (!fb.sync) {
     var logLevel = fb.logLevel || parent.fb.logLevel || 'DEBUG';
     var isDebug = (logLevel === 'DEBUG');
 
-    var _ = navigator.mozL10n.get;
-
     var alarmFrame = null,
         currentAlarmRequest = null;
 
@@ -67,12 +65,20 @@ if (!fb.sync) {
         break;
 
         case 'token_error':
-          window.console.log('FB: Token error reported by the worker');
-          // Notification is added
-          NotificationHelper.send(_('facebook'), _('notificationLogin'),
-                                  '/contacts/style/images/f_logo.png');
+          debug('FB: Token error reported by the worker');
           if(typeof errorCallback === 'function') {
-            errorCallback();
+            errorCallback({
+              type: 'invalidToken'
+            });
+          }
+        break;
+
+        case 'timeout_error':
+          debug('Timeout error reported by the worker');
+          if(typeof errorCallback === 'function') {
+            errorCallback({
+              type: 'timeout'
+            });
           }
         break;
 
@@ -217,10 +223,10 @@ if (!fb.sync) {
 
 
     // Starts a synchronization
-    Sync.start = function(callbacks) {
-      if (callbacks) {
-        completionCallback = callbacks.success;
-        errorCallback = callbacks.error;
+    Sync.start = function(params) {
+      if (params) {
+        completionCallback = params.success;
+        errorCallback = params.error;
       }
 
       totalToChange = 0;
@@ -274,7 +280,8 @@ if (!fb.sync) {
                 uids: uids,
                 imgNeedsUpdate: forceUpdate,
                 timestamp: ts,
-                access_token: access_token
+                access_token: access_token,
+                operationsTimeout: fb.operationsTimeout
               }
             });
           });
@@ -413,7 +420,8 @@ if (!fb.sync) {
               type: 'startWithData',
               data: {
                 access_token: access_token,
-                uids: toBeUpdated
+                uids: toBeUpdated,
+                operationsTimeout: fb.operationsTimeout
               }
             });
           });

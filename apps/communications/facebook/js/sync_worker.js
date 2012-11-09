@@ -126,6 +126,7 @@ importScripts('/contacts/js/fb/fb_query.js',
       access_token = message.data.access_token;
       timestamp = message.data.timestamp;
       forceUpdateUids = message.data.imgNeedsUpdate;
+      fb.operationsTimeout = message.data.operationsTimeout;
 
       debug('Worker acks contacts to check: ', Object.keys(uids).length);
 
@@ -139,6 +140,7 @@ importScripts('/contacts/js/fb/fb_query.js',
     else if (message.type === 'startWithData') {
       debug('worker Acks start with data');
 
+      fb.operationsTimeout = message.data.operationsTimeout;
       uids = message.data.uids;
       access_token = message.data.access_token;
       getNewImgsForFriends(Object.keys(uids), access_token);
