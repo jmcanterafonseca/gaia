@@ -13,6 +13,7 @@ fb.sync = Sync;
 
   // This is the amount of hours to wait to retry a sync operation
   var DEFAULT_RETRY_PERIOD = 1;
+  var RETRY_PERIOD_TIMEOUT = 0.25;
   // Delay in closing the window
   var CLOSE_DELAY = 5000;
 
@@ -26,11 +27,15 @@ fb.sync = Sync;
       // https://bugzilla.mozilla.org/show_bug.cgi?id=802876
       else if (parent.location === window.location) {
         fb.sync.debug('Fb Sync woke up. Alarm ok. mozHasPendingMsg failed');
-        handleAlarm({
-          data: {
-            sync: true
-          }
-        });
+        // Unfortunately this does not also work
+        // navigator.mozSetMessageHandler('alarm', handleAlarm);
+        window.setTimeout(function() {
+          handleAlarm({
+            data: {
+              sync: true
+            }
+          });
+        },0);
       }
       else {
         setNextAlarm(true, fb.syncPeriod);
@@ -42,7 +47,7 @@ fb.sync = Sync;
     fb.sync.debug('Sync finished ok at ', new Date());
     isSyncOngoing = false;
 
-    doSetNextAlarm(false, fb.syncPeriod, function() {
+    setNextAlarm(false, fb.syncPeriod, function() {
       fb.sync.debug('Closing the app that did the sync');
       closeApp();
     });
@@ -59,11 +64,6 @@ fb.sync = Sync;
     }
 
     switch (theError.type) {
-      case 'timeout':
-        fb.sync.debug('Timeout error. Setting an alarm for next hour');
-        doSetNextAlarm(false, DEFAULT_RETRY_PERIOD, closeApp);
-      break;
-
       case 'invalidToken':
         fb.sync.debug('Invalid token!!!. Notifying the user');
         // A new alarm is not set. It will be set once the user
@@ -72,11 +72,16 @@ fb.sync = Sync;
           title: _('facebook'),
           body: _('notificationLogin'),
           iconURL: '/contacts/style/images/f_logo.png',
-          callback: closeApp
+          callback: handleInvalidToken
         });
       break;
 
-      default:
+      case 'timeout':
+        fb.sync.debug('Timeout in sync. Next sync scheduled in 15 minutes');
+        scheduleAt(RETRY_PERIOD_TIMEOUT, closeApp);
+      break;
+
+      case 'default':
         window.console.error('Error reported in synchronization: ',
                              JSON.stringify(theError));
         showNotification({
@@ -84,7 +89,7 @@ fb.sync = Sync;
           body: _('syncError'),
           iconURL: '/contacts/style/images/f_logo.png',
           callback: function() {
-            doSetNextAlarm(false, fb.syncPeriod, closeApp);
+            scheduleAt(fb.syncPeriod, closeApp);
           }
         });
       break;
@@ -99,41 +104,27 @@ fb.sync = Sync;
       isSyncOngoing = true;
       fb.sync.debug('Starting sync at: ', new Date());
 
-      // The next alarmid is removed
-      window.asyncStorage.removeItem(ALARM_ID_KEY);
-
-      fb.sync.start({
-        success: syncSuccess,
-        error: syncError
+      ackAlarm(function alarm_process() {
+        fb.sync.start({
+          success: syncSuccess,
+          error: syncError
+        });
       });
     }
     else if (isSyncOngoing === true) {
       fb.sync.debug('There is an ongoing synchronization. Trying it later');
-      setNextAlarm(false, DEFAULT_RETRY_PERIOD);
+      scheduleAt(DEFAULT_RETRY_PERIOD);
     }
     else if (!navigator.onLine) {
       fb.sync.debug('Navigator is not online. Setting an alarm for next hour');
-      setNextAlarm(false, DEFAULT_RETRY_PERIOD);
+      scheduleAt(DEFAULT_RETRY_PERIOD);
     }
     else {
       fb.sync.debug('Alarm message but apparently was not a sync message');
     }
   }
 
-  function setNextAlarm(notifyParent, period, callback) {
-    // Let's check whether there was a previous set alarm
-    window.asyncStorage.getItem(ALARM_ID_KEY, function(data) {
-      if (data) {
-        // If there was a previous alarm it has to be removed
-        fb.sync.debug('Removing existing alarm: ', data);
-        navigator.mozAlarms.remove(Number(data));
-      }
-
-      doSetNextAlarm(notifyParent, period, callback);
-    });
-  }
-
-  function alarmSetErrorCb(e) {
+  function alarmSetErrorCb(notifyParent, e) {
     if (notifyParent) {
       window.setTimeout(function() {
         parent.fb.sync.onAlarmError(e.target.error);
@@ -141,51 +132,101 @@ fb.sync = Sync;
     }
     else {
           window.console.error('<<FBSync>> Error while setting next alarm: ',
-                             e.target.error);
+                               e.target.error.name);
     }
   }
 
-  function doSetNextAlarm(notifyParent, hours, callback) {
+  function scheduleAt(hours, callback) {
+    var nextUpdate = Date.now() + hours * 60 * 60 * 1000;
+    var scheduledDate = new Date(nextUpdate);
+
+    fb.sync.debug('Forcing scheduling an alarm at: ', scheduledDate);
+
+    var req = addAlarm(scheduledDate);
+
+    req.onsuccess = function() {
+      fb.sync.debug('--> Next Sync forced to happen at: ', scheduledDate);
+
+      if (typeof callback === 'function') {
+        callback();
+      }
+    }
+
+    req.onerror = function(e) {
+      alarmSetErrorCb(false, e);
+    }
+  }
+
+  function ackAlarm(callback) {
+    // The next alarmid is removed
+    // Continuation is enabled even if we cannot remove the id
+    window.asyncStorage.removeItem(ALARM_ID_KEY, callback, callback);
+  }
+
+  // Adds an alarm at the specified datetime ensuring any existing alarm
+  // it is removed and ensuring the id is stored on the asyncStorage
+  function addAlarm(at) {
+    var outReq = new fb.utils.Request();
+
+    window.setTimeout(function do_add_alarm() {
+      window.asyncStorage.getItem(ALARM_ID_KEY, function set_alarm(id) {
+        if (id) {
+          navigator.mozAlarms.remove(Number(id));
+        }
+
+        var req = navigator.mozAlarms.add(at, 'honorTimezone', {
+          sync: true
+        });
+        // Setting the new alarm
+        req.onsuccess = function() {
+          window.asyncStorage.setItem(ALARM_ID_KEY, String(req.result),
+          function success_store() {
+            outReq.done(req.result);
+          },
+          function error_store(e) {
+            var errorParam = {
+              target: {
+                error: e || {
+                  name: 'AsyncStorageError'
+                }
+              }
+            };
+            outReq.failed(errorParam);
+          });
+        }
+
+        req.onerror = function(e) {
+          outReq.failed(e);
+        }
+      });
+    }, 0);
+
+    return outReq;
+  }
+
+  function setNextAlarm(notifyParent, hours, callback) {
     fb.utils.getLastUpdate(function(timestamp) {
       var nextUpdate = timestamp + hours * 60 * 60 * 1000;
       var scheduledDate = new Date(nextUpdate);
 
       fb.sync.debug('Going to set a new alarm at: ', scheduledDate);
 
-      var req = navigator.mozAlarms.add(scheduledDate, 'honorTimezone', {
-        sync: true
-      });
-
+      var req = addAlarm(scheduledDate);
       req.onsuccess = function() {
-        // Set the last alarm id
-        window.asyncStorage.setItem(ALARM_ID_KEY, String(req.result),
-          function success_alarm_id() {
-            if (notifyParent === true) {
-              window.setTimeout(function() {
-                parent.fb.sync.onAlarmScheduled(scheduledDate);
-              },0);
-            }
+        if (notifyParent === true) {
+          window.setTimeout(function() {
+            parent.fb.sync.onAlarmScheduled(scheduledDate);
+          },0);
+        }
 
-            fb.sync.debug('--> Next Sync will happen at: ', scheduledDate);
+        fb.sync.debug('--> Next Sync will happen at: ', scheduledDate);
 
-            if (typeof callback === 'function') {
-              callback();
-            }
-        },
-        function error_alarm_id(e) {
-          var errorParam = {
-            target: {
-              error: e || {
-                name: 'AsyncStorageError'
-              }
-            }
-          };
-          alarmSetErrorCb(errorParam);
-        });
+        if (typeof callback === 'function') {
+          callback();
+        }
       }
-
       req.onerror = function(e) {
-        alarmSetErrorCb(e);
+        alarmSetErrorCb(notifyParent, e);
       }
 
     }); // Get last update
@@ -206,6 +247,11 @@ fb.sync = Sync;
   function closeApp() {
     // Wait some seconds to avoid any kind of race condition or console error
     window.setTimeout(window.close, CLOSE_DELAY);
+  }
+
+  function handleInvalidToken() {
+    // TODO: Reset token and other stuff in order to better inform the user
+    closeApp();
   }
 
   // Everything starts

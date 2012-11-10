@@ -29,6 +29,10 @@ if (!fb.sync) {
     var alarmFrame = null,
         currentAlarmRequest = null;
 
+    // Delay in closing the iframe that schedules the alarm.
+    // Avoiding console.log issues in the logcat
+    var DELAY_ALARM_SCHED = 5000;
+
     function debug() {
       if (isDebug) {
         var theArgs = ['<<FBSync>>'];
@@ -212,6 +216,8 @@ if (!fb.sync) {
           window.setTimeout(window.contacts.List.load, 0);
         }
 
+        // Once sync has finished the last update date is set
+        // Thus we ensure next will happen in the next <period> hours
         fb.utils.setLastUpdate(nextTimestamp, completionCallback);
 
         if (theWorker) {
@@ -315,22 +321,24 @@ if (!fb.sync) {
       return currentAlarmRequest;
     }
 
+    function cleanAlarmSchedFrame() {
+      alarmFrame.src = null;
+      document.body.removeChild(alarmFrame);
+      alarmFrame = null;
+    }
 
     Sync.onAlarmScheduled = function(date) {
       debug('Next synch scheduled at: ', date);
       if (alarmFrame) {
-        document.body.removeChild(alarmFrame);
-        alarmFrame = null;
+        window.setTimeout(cleanAlarmSchedFrame, DELAY_ALARM_SCHED);
       }
-
       currentAlarmRequest.done(date);
     }
 
 
     Sync.onAlarmError = function(e) {
       if (alarmFrame) {
-        document.body.removeChild(alarmFrame);
-        alarmFrame = null;
+         window.setTimeout(cleanAlarmSchedFrame, DELAY_ALARM_SCHED);
       }
 
       window.console.error('<<FB Sync>> Error while scheduling a new sync: ',
