@@ -48,14 +48,11 @@ fb.sync = Sync;
     isSyncOngoing = false;
 
     setNextAlarm(false, fb.syncPeriod, function() {
-      fb.sync.debug('Closing the app that did the sync');
       closeApp();
     });
   } // syncSuccess function
 
   function syncError(error) {
-    window.console.log('***** Sync Error invoked *****');
-
     isSyncOngoing = false;
     var theError = error;
 
@@ -84,7 +81,6 @@ fb.sync = Sync;
       break;
 
       case 'defaultError':
-        window.console.log('**** Defaultt Error *********');
         window.console.error('Error reported in synchronization: ',
                              JSON.stringify(theError));
         showNotification({
@@ -103,7 +99,7 @@ fb.sync = Sync;
   function handleAlarm(message) {
     // First is checked if this is a sync alarm
     if (message.data && message.data.sync === true &&
-                  isSyncOngoing === false) {
+                  isSyncOngoing === false && navigator.onLine === true) {
       isSyncOngoing = true;
       fb.sync.debug('Starting sync at: ', new Date());
 
@@ -116,14 +112,15 @@ fb.sync = Sync;
     }
     else if (isSyncOngoing === true) {
       fb.sync.debug('There is an ongoing synchronization. Trying it later');
-      scheduleAt(DEFAULT_RETRY_PERIOD);
+      scheduleAt(DEFAULT_RETRY_PERIOD, closeApp);
     }
-    else if (!navigator.onLine) {
+    else if (navigator.onLine === false) {
       fb.sync.debug('Navigator is not online. Setting an alarm for next hour');
-      scheduleAt(DEFAULT_RETRY_PERIOD);
+      scheduleAt(DEFAULT_RETRY_PERIOD, closeApp);
     }
     else {
       fb.sync.debug('Alarm message but apparently was not a sync message');
+      closeApp();
     }
   }
 
