@@ -52,19 +52,23 @@ if (!fb.sync) {
       theWorker.onerror = function(e) {
         window.console.error('Worker Error', e.message, e.lineno, e.column);
         if (typeof errorCallback === 'function') {
-          errorCallback();
+          errorCallback({
+            type: 'default_error'
+          });
         }
       }
     }
 
     function workerMessage(m) {
       switch (m.type) {
-        case 'error':
-          var error = m.data;
+        case 'query_error':
+          var error = m.data || {};
           window.console.error('FB: Error reported by the worker',
                                 JSON.stringify(error));
           if (typeof errorCallback === 'function') {
-            errorCallback(m.data);
+            errorCallback({
+              name: 'defaultError'
+            });
           }
         break;
 
@@ -72,7 +76,7 @@ if (!fb.sync) {
           debug('FB: Token error reported by the worker');
           if (typeof errorCallback === 'function') {
             errorCallback({
-              type: 'invalidToken'
+              name: 'invalidToken'
             });
           }
         break;
@@ -81,7 +85,7 @@ if (!fb.sync) {
           debug('Timeout error reported by the worker');
           if (typeof errorCallback === 'function') {
             errorCallback({
-              type: 'timeout'
+              name: 'timeout'
             });
           }
         break;
@@ -295,9 +299,12 @@ if (!fb.sync) {
       }
 
       req.onerror = function() {
-        window.console.error('FB: Error while getting friends on the device');
+        window.console.error('FB: Error while getting friends on the device',
+                             req.error.name);
         if (typeof errorCallback === 'function') {
-          errorCallback(req.error);
+          errorCallback({
+            name: 'defaultError'
+          });
         }
       }
     }

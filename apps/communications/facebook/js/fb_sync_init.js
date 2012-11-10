@@ -54,16 +54,18 @@ fb.sync = Sync;
   } // syncSuccess function
 
   function syncError(error) {
+    window.console.log('***** Sync Error invoked *****');
+
     isSyncOngoing = false;
     var theError = error;
 
-    if (!theError) {
+    if (!theError || theError.name === 'undefined') {
       theError = {
-        type: 'default'
+        name: 'defaultError'
       };
     }
 
-    switch (theError.type) {
+    switch (theError.name) {
       case 'invalidToken':
         fb.sync.debug('Invalid token!!!. Notifying the user');
         // A new alarm is not set. It will be set once the user
@@ -81,7 +83,8 @@ fb.sync = Sync;
         scheduleAt(RETRY_PERIOD_TIMEOUT, closeApp);
       break;
 
-      case 'default':
+      case 'defaultError':
+        window.console.log('**** Defaultt Error *********');
         window.console.error('Error reported in synchronization: ',
                              JSON.stringify(theError));
         showNotification({
@@ -100,7 +103,7 @@ fb.sync = Sync;
   function handleAlarm(message) {
     // First is checked if this is a sync alarm
     if (message.data && message.data.sync === true &&
-                              isSyncOngoing === false && navigator.onLine) {
+                  isSyncOngoing === false) {
       isSyncOngoing = true;
       fb.sync.debug('Starting sync at: ', new Date());
 

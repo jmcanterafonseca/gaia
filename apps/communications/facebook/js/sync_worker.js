@@ -57,7 +57,10 @@ importScripts('/contacts/js/fb/fb_query.js',
 
   function errorQueryCb(e) {
     self.console.error('<<FB Sync>>: Error while trying to sync', e);
-    postError(e);
+    postError({
+      type: 'query_error',
+      data: {}
+    });
   }
 
   function timeoutQueryCb(e) {
@@ -67,7 +70,8 @@ importScripts('/contacts/js/fb/fb_query.js',
   }
 
   function postError(e) {
-    var type = 'error';
+    // Message type to propagate to the worker parent
+    var type = 'query_error';
     if (e && e.code === 190) {
       self.console.log('This is a token error. Notifying worker parent');
       type = 'token_error';
