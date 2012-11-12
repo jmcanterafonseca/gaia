@@ -498,6 +498,8 @@ if (typeof fb.importer === 'undefined') {
 
       selButton.textContent = 'Unselect All';
       selButton.onclick = UI.unSelectAll;
+
+      return false;
     }
 
     UI.back = function(e) {
@@ -515,6 +517,8 @@ if (typeof fb.importer === 'undefined') {
       selButton.onclick = UI.selectAll;
 
       selectedContacts = {};
+
+      return false;
     }
 
     /**
