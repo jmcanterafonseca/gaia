@@ -33,18 +33,16 @@ if (!fb.link) {
     // Conditions
     var MAIL_COND = ['strpos(email, ' , "'", null, "'", ') >= 0'];
     var CELL_COND = ['strpos(cell, ' , "'", null, "'", ') >= 0'];
-    var NAME_COND = ['strpos(lower(name), ' , "'", null,
-                                                              "'", ') >= 0'];
-
-    // Conditions over first name and last name (second query)
-    var FIRST_NAME_COND = ['strpos(lower(first_name), ' , "'", null,
-                                                              "'", ') >= 0'];
-    var LAST_NAME_COND = ['strpos(lower(last_name), ' , "'", null,
-                                                              "'", ') >= 0'];
 
     var ALL_QUERY = ['SELECT uid, name, email from user ',
     ' WHERE uid IN (SELECT uid1 FROM friend WHERE uid2=me()) ',
     ' ORDER BY name'];
+
+    var CONTAINS_QUERY = ['SELECT id FROM profile WHERE contains(',
+                          "'", null, "'", ')'
+    ];
+
+    var FILTER_SEARCH_INDEX = 3;
 
     var friendsList;
     var viewButton = document.querySelector('#view-all');
@@ -60,77 +58,52 @@ if (!fb.link) {
 
     // Builds the first query for finding a contact to be linked to
     function buildQuery(contact) {
+      var out;
       var filter = [];
-
-      if (contact.name && contact.name.length > 0 &&
-                                      contact.name[0].length > 0) {
-        // First the name condition is put there
-        NAME_COND[2] = contact.name[0].trim().toLowerCase();
-      }
-      else {
-         // The condition will be false by definition
-        NAME_COND[2] = 'A';
-      }
-
-      filter.push(NAME_COND.join(''));
 
       if (contact.tel && contact.tel.length > 0) {
         contact.tel.forEach(function(tel) {
-          filter.push(' OR ');
           CELL_COND[2] = tel.value.trim();
           filter.push(CELL_COND.join(''));
+          filter.push(' OR ');
         });
       }
 
       if (contact.email && contact.email.length > 0) {
         contact.email.forEach(function(email) {
-          filter.push(' OR ');
           MAIL_COND[2] = email.value.trim();
           filter.push(MAIL_COND.join(''));
+          filter.push(' OR ');
         });
       }
 
-      SEARCH_QUERY[3] = filter.join('');
-
-      return SEARCH_QUERY.join('');
-    }
-
-    // Builds the second query (name-based) for findinding a linking contact
-    function buildQueryNames(contact) {
-      var filter = [];
-
-      if (contact.givenName && contact.givenName.length > 0 &&
-                               contact.givenName[0].length > 0) {
-        // First the name condition is put there
-        FIRST_NAME_COND[2] = contact.givenName[0].trim().toLowerCase();
+      if(filter.length > 0) {
+        filter[filter.length - 1] = null;
+        SEARCH_QUERY[FILTER_SEARCH_INDEX] = filter.join('');
+        out = SEARCH_QUERY.join('');
       }
       else {
-         // The condition will be false by definition
-        FIRST_NAME_COND[2] = 'A';
+        out = null;
       }
-
-      filter.push(FIRST_NAME_COND.join(''));
-      filter.push(' OR ');
-
-      if (contact.familyName && contact.familyName.length > 0 &&
-                                contact.familyName[0].length > 0) {
-        // First the name condition is put there
-        LAST_NAME_COND[2] = contact.familyName[0].trim().toLowerCase();
-      }
-      else {
-         // The condition will be false by definition
-        LAST_NAME_COND[2] = 'A';
-      }
-
-      filter.push(LAST_NAME_COND.join(''));
-
-      SEARCH_QUERY[3] = filter.join('');
-
-      var out = SEARCH_QUERY.join('');
 
       return out;
     }
 
+    function buildQueryContains(contact) {
+      if (contact.name && contact.name.length > 0 &&
+                                      contact.name[0].length > 0) {
+        CONTAINS_QUERY[2] = contact.name[0].trim().toLowerCase();
+      }
+
+      SEARCH_QUERY[FILTER_SEARCH_INDEX] = ' uid IN (SELECT id from #query1)';
+
+      var queries = {
+        query1: CONTAINS_QUERY.join(''),
+        query2: SEARCH_QUERY.join('')
+      };
+
+      return JSON.stringify(queries);
+    }
 
     // entry point for obtaining a remote proposal
     link.getRemoteProposal = function(acc_tk, contid) {
@@ -143,7 +116,12 @@ if (!fb.link) {
           cdata = req.result;
           numQueries = 1;
           currentRecommendation = null;
-          doGetRemoteProposal(acc_tk, cdata, buildQuery(cdata));
+          var query = buildQuery(cdata);
+          if(!query) {
+            numQueries++;
+            query = buildQueryContains(cdata);
+          }
+          doGetRemoteProposal(acc_tk, cdata, query);
         }
         else {
           throw ('FB: Contact to be linked not found: ', cid);
@@ -156,7 +134,7 @@ if (!fb.link) {
 
     function getRemoteProposalByNames(acc_tk, contact) {
       numQueries++;
-      doGetRemoteProposal(acc_tk, cdata, buildQueryNames(contact));
+      doGetRemoteProposal(acc_tk, cdata, buildQueryContains(contact));
     }
 
     function getRemoteProposalAll(acc_tk) {
@@ -178,9 +156,9 @@ if (!fb.link) {
       */
       state = 'proposal';
       currentNetworkRequest = fb.utils.runQuery(query, {
-        success: fb.link.proposalReady,
-        error: fb.link.errorHandler,
-        timeout: fb.link.timeoutHandler
+        success: link.proposalReady,
+        error: link.errorHandler,
+        timeout: link.timeoutHandler
       }, acc_tk);
     }
 
@@ -227,7 +205,7 @@ if (!fb.link) {
 
     // Executed when the server response is available
     link.proposalReady = function(response) {
-      if (typeof response.error !== 'undefined') {
+      if (typeof response.error !== 'undefined' || !response.data) {
         window.console.error('FB: Error while retrieving link data',
                                   response.error.code, response.error.message);
 
@@ -243,12 +221,19 @@ if (!fb.link) {
         return;
       }
 
-      if (response.data.length === 0 && numQueries === 1) {
+      var data = response.data;
+      window.console.log(JSON.stringify(data));
+      // To deal with the multiquery for names
+      if(response.data.length === 2 && response.data[1].fql_result_set) {
+        data = response.data[1].fql_result_set;
+        window.console.log(JSON.stringify(data));
+      }
+
+      if (data.length === 0 && numQueries === 1) {
         getRemoteProposalByNames(access_token, cdata);
-      } else if (response.data.length === 0 && numQueries === 2) {
+      } else if (data.length === 0 && numQueries === 2) {
         getRemoteProposalAll(access_token);
       } else {
-        var data = response.data;
         currentRecommendation = data;
 
         data.forEach(function(item) {
@@ -506,7 +491,7 @@ if (!fb.link) {
       else {
         link.friendsReady(allFriends);
       }
-      
+
       return false;
     }
 
