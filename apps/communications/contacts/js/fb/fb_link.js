@@ -39,7 +39,9 @@ if (!fb.link) {
     ' ORDER BY name'];
 
     var CONTAINS_QUERY = ['SELECT id FROM profile WHERE contains(',
-                          "'", null, "'", ')'
+                          "'", null, "'", ')',
+                          ' LIMIT ',
+                          null
     ];
 
     var FILTER_SEARCH_INDEX = 3;
@@ -93,6 +95,8 @@ if (!fb.link) {
       if (contact.name && contact.name.length > 0 &&
                                       contact.name[0].length > 0) {
         CONTAINS_QUERY[2] = contact.name[0].trim().toLowerCase();
+        // No more than 10 recommended
+        CONTAINS_QUERY[CONTAINS_QUERY.length] = 10;
       }
 
       SEARCH_QUERY[FILTER_SEARCH_INDEX] = ' uid IN (SELECT id from #query1)';
