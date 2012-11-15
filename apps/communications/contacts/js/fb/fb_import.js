@@ -83,7 +83,6 @@ if (typeof fb.importer === 'undefined') {
     UI.end = function(event) {
       var msg = {
         type: 'window_close',
-        from: 'import',
         data: ''
       };
 
@@ -737,6 +736,15 @@ if (typeof fb.importer === 'undefined') {
     } // persistContactGroup
   } //contactsImporter
 
+    Importer.getContext = function() {
+      var out = 'contacts';
+
+      if(window.location.search.indexOf('ftu') !== -1) {
+        out = 'ftu';
+      }
+
+      return out;
+    }
 
     /**
      *  Imports all the selected contacts on the address book
@@ -753,7 +761,7 @@ if (typeof fb.importer === 'undefined') {
           window.setTimeout(function() {
             cImporter.continue();
           },0);
-        } else if (window.location.search.indexOf('ftu') !== -1) {
+        } else if (Importer.getContext() === 'ftu') {
           // .6 seconds delay in order to show the progress 100% to users
           window.setTimeout(function() {
             Curtain.hide(function onhide() {

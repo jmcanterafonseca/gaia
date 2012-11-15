@@ -272,14 +272,12 @@ if (typeof Contacts.extFb === 'undefined') {
 
         case 'window_close':
           close(data.message);
-          if (data.from === 'import') {
-            contacts.List.load();
-          }
-          notifySettings();
         break;
 
         case 'fb_imported':
           contacts.List.load();
+          notifySettings();
+
           Contacts.navigation.home(function finished() {
             extensionFrame.contentWindow.postMessage({
               type: 'contacts_loaded',
