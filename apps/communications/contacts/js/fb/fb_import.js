@@ -753,16 +753,39 @@ if (typeof fb.importer === 'undefined') {
           window.setTimeout(function() {
             cImporter.continue();
           },0);
-        }
-        else {
-          // 1 second delay in order to show the progress 100% to users
+        } else if (window.location.search.indexOf('ftu') !== -1) {
+          // .6 seconds delay in order to show the progress 100% to users
           window.setTimeout(function() {
             Curtain.hide(function onhide() {
               showStatus(_('friendsImported', {
                 numFriends: numFriends
               }));
             });
-          },600);
+          }, 600);
+
+          window.setTimeout(importedCB, 0);
+        } else {
+          parent.postMessage({
+            type: 'fb_imported',
+            data: ''
+          }, fb.CONTACTS_APP_ORIGIN);
+
+          window.addEventListener('message', function finished(e) {
+            if (e.data.type === 'contacts_loaded') {
+              // When the list of contacts is loaded and it's the current view
+              Curtain.hide(function onhide() {
+                // Please close me and display the number of friends imported
+                parent.postMessage({
+                  type: 'window_close',
+                  data: '',
+                  message: _('friendsImported', {
+                    numFriends: numFriends
+                  })
+                }, fb.CONTACTS_APP_ORIGIN);
+              });
+              window.removeEventListener('message', finished);
+            }
+          });
 
           window.setTimeout(importedCB, 0);
         }
