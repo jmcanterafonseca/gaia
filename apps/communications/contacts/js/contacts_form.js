@@ -32,6 +32,9 @@ contacts.Form = (function() {
   var REMOVED_CLASS = 'removed';
   var FB_CLASS = 'facebook';
 
+  // Remove icon button id
+  var IMG_DELETE_ID = 'img-delete-button';
+
   // The size we want our contact photos to be
   var PHOTO_WIDTH = 320;
   var PHOTO_HEIGHT = 320;
@@ -533,8 +536,8 @@ contacts.Form = (function() {
   var resetForm = function resetForm() {
     currentPhoto = null;
     thumbAction.querySelector('p').classList.remove('hide');
-    var removeIcon = thumbAction.querySelector('button');
-    if (removeIcon) {
+    var removeIcon = thumbAction.querySelector('button#' + IMG_DELETE_ID);
+    if(removeIcon) {
       thumbAction.removeChild(removeIcon);
     }
     saveButton.removeAttribute('disabled');
@@ -594,6 +597,7 @@ contacts.Form = (function() {
 
   var removeFieldIcon = function removeFieldIcon(selector) {
     var delButton = document.createElement('button');
+    delButton.id = IMG_DELETE_ID;
     delButton.className = 'fillflow-row-action';
     var delIcon = document.createElement('span');
     delIcon.setAttribute('role', 'button');
@@ -618,20 +622,23 @@ contacts.Form = (function() {
      // Ensure the removed and FB class names are conveniently reseted
     thumbAction.classList.remove(REMOVED_CLASS);
     thumbAction.classList.remove(FB_CLASS);
-    
-    var out = removeFieldIcon(thumbAction.id);
-    thumbAction.appendChild(out);
+
+    var out = thumbAction.querySelector('button#' + IMG_DELETE_ID);
+
+    if(!out) {
+      out = removeFieldIcon(thumbAction.id);
+      thumbAction.appendChild(out);
+    }
+    else {
+      // Ensure it is visible
+      out.classList.remove('hide');
+    }
+
     thumbAction.classList.add('with-photo');
 
     return out;
   }
 
-  var delNewIcon = function delNewIcon() {
-    var ele = thumbAction.querySelector('#add-img-edit');
-    if(ele) {
-      thumbAction.removeChild(ele);
-    }
-  }
 
   var pickImage = function pickImage() {
     var activity = new MozActivity({
