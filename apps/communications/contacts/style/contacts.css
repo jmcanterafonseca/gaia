@@ -359,15 +359,6 @@ fieldset legend.action:after {
   pointer-events: none;
 }
 
-.with-photo.removed.facebook img {
-  pointer-events: auto;
-  opacity: 0.95;
-}
-
-.with-photo.removed.facebook {
-  border: none;
-}
-
 .with-photo p {
   display: none;
 }

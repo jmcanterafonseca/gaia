@@ -619,12 +619,11 @@ contacts.Form = (function() {
   };
 
   var addRemoveIconToPhoto = function cf_addRemIconPhoto() {
-     // Ensure the removed and FB class names are conveniently reseted
+    // Ensure the removed and FB class names are conveniently reseted
     thumbAction.classList.remove(REMOVED_CLASS);
     thumbAction.classList.remove(FB_CLASS);
 
     var out = thumbAction.querySelector('button#' + IMG_DELETE_ID);
-
     if(!out) {
       out = removeFieldIcon(thumbAction.id);
       thumbAction.appendChild(out);
@@ -633,12 +632,10 @@ contacts.Form = (function() {
       // Ensure it is visible
       out.classList.remove('hide');
     }
-
     thumbAction.classList.add('with-photo');
 
     return out;
   }
-
 
   var pickImage = function pickImage() {
     var activity = new MozActivity({
