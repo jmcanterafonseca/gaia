@@ -144,12 +144,13 @@ contacts.Form = (function() {
 
     if (contact.photo && contact.photo.length > 0) {
       currentPhoto = contact.photo[0];
+      var button = addRemoveIconToPhoto();
       // Only can be removed a device contact photo
-      if (deviceContact.photo && deviceContact.photo.length > 0) {
-        addRemoveIconToPhoto();
-      }
-      else {
-
+      if (! (deviceContact.photo && deviceContact.photo.length > 0) ) {
+        button.classList.add('hide');
+        // Avoid saving the image to the Contacts DB
+        thumbAction.classList.add(REMOVED_CLASS);
+        thumbAction.classList.add(FB_CLASS);
       }
     }
     Contacts.updatePhoto(currentPhoto, thumb);
@@ -614,6 +615,10 @@ contacts.Form = (function() {
   };
 
   var addRemoveIconToPhoto = function cf_addRemIconPhoto() {
+     // Ensure the removed and FB class names are conveniently reseted
+    thumbAction.classList.remove(REMOVED_CLASS);
+    thumbAction.classList.remove(FB_CLASS);
+    
     var out = removeFieldIcon(thumbAction.id);
     thumbAction.appendChild(out);
     thumbAction.classList.add('with-photo');
