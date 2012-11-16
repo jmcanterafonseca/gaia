@@ -144,12 +144,12 @@ contacts.Form = (function() {
 
     if (contact.photo && contact.photo.length > 0) {
       currentPhoto = contact.photo[0];
-      // A FB Contact with only FB photo can add a new one
-      if (nonEditableValues['hasPhoto'] && (!deviceContact.photo ||
-                                            !deviceContact.photo.length > 0)) {
-        var button2 = addNewIconToPhoto();
-      } else {
+      // Only can be removed a device contact photo
+      if (deviceContact.photo && deviceContact.photo.length > 0) {
         addRemoveIconToPhoto();
+      }
+      else {
+
       }
     }
     Contacts.updatePhoto(currentPhoto, thumb);
@@ -613,20 +613,6 @@ contacts.Form = (function() {
     return delButton;
   };
 
-  var addPictureIcon = function addFieldIcon(selector) {
-    var addButton = document.createElement('button');
-    addButton.id = 'add-img-edit';
-    addButton.className = 'fillflow-row-action';
-    var addIcon = document.createElement('span');
-    addIcon.setAttribute('role', 'button');
-    addIcon.className = 'icon-addimage';
-    addButton.appendChild(addIcon);
-
-    addButton.onclick = pickImage;
-
-    return addButton;
-  }
-
   var addRemoveIconToPhoto = function cf_addRemIconPhoto() {
     var out = removeFieldIcon(thumbAction.id);
     thumbAction.appendChild(out);
@@ -640,9 +626,6 @@ contacts.Form = (function() {
     if(ele) {
       thumbAction.removeChild(ele);
     }
-  }
-
-  var addNewIconToPhoto = function cf_addPlusIconPhoto() {
   }
 
   var pickImage = function pickImage() {
