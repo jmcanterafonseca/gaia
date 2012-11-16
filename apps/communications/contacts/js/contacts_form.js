@@ -144,11 +144,12 @@ contacts.Form = (function() {
 
     if (contact.photo && contact.photo.length > 0) {
       currentPhoto = contact.photo[0];
-      // If the photo comes from FB it cannot be removed
-      var button = addRemoveIconToPhoto();
-      if (nonEditableValues['hasPhoto']) {
-        thumbAction.classList.add(REMOVED_CLASS);
-        button.classList.add('hide');
+      // A FB Contact with only FB photo can add a new one
+      if (nonEditableValues['hasPhoto'] && (!deviceContact.photo ||
+                                            !deviceContact.photo.length > 0)) {
+        var button2 = addNewIconToPhoto();
+      } else {
+        addRemoveIconToPhoto();
       }
     }
     Contacts.updatePhoto(currentPhoto, thumb);
@@ -612,12 +613,36 @@ contacts.Form = (function() {
     return delButton;
   };
 
+  var addPictureIcon = function addFieldIcon(selector) {
+    var addButton = document.createElement('button');
+    addButton.id = 'add-img-edit';
+    addButton.className = 'fillflow-row-action';
+    var addIcon = document.createElement('span');
+    addIcon.setAttribute('role', 'button');
+    addIcon.className = 'icon-addimage';
+    addButton.appendChild(addIcon);
+
+    addButton.onclick = pickImage;
+
+    return addButton;
+  }
+
   var addRemoveIconToPhoto = function cf_addRemIconPhoto() {
     var out = removeFieldIcon(thumbAction.id);
     thumbAction.appendChild(out);
     thumbAction.classList.add('with-photo');
 
     return out;
+  }
+
+  var delNewIcon = function delNewIcon() {
+    var ele = thumbAction.querySelector('#add-img-edit');
+    if(ele) {
+      thumbAction.removeChild(ele);
+    }
+  }
+
+  var addNewIconToPhoto = function cf_addPlusIconPhoto() {
   }
 
   var pickImage = function pickImage() {
@@ -644,6 +669,12 @@ contacts.Form = (function() {
                    currentPhoto = resized;
                  });
     }
+
+    activity.onerror = function() {
+      window.console.error('Error in the activity', activity.error);
+    }
+
+    return false;
   };
 
   function resizeBlob(blob, target_width, target_height, callback) {
