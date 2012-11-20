@@ -460,15 +460,15 @@ suite('Render contacts list', function() {
       assertTotal(0, 0);
     });
 
-    test('removing one element', function() {
+    test('removing one contact', function() {
       subject.load([]);
-      var newList = mockContacts;
+      var newList = new MockContactsList();
       subject.load(newList);
-      var originalAmount = container.querySelectorAll('.contact-item').length;
-      newList.pop();
-      subject.load(newList);
-      var deletedAmount = container.querySelectorAll('.contact-item').length;
-      assert.equal(originalAmount, deletedAmount+1);
+      var originalNumber = container.querySelectorAll('.contact-item').length;
+      subject.remove('2');
+      var numberAfterDel = container.querySelectorAll('.contact-item').length;
+      assert.equal(originalNumber, numberAfterDel + 1);
+      // There are contacts on the list so no contacts should be hidden
       assert.isTrue(noContacts.classList.contains('hide'));
     });
 
