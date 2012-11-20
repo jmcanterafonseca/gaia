@@ -460,6 +460,18 @@ suite('Render contacts list', function() {
       assertTotal(0, 0);
     });
 
+    test('removing one element', function() {
+      subject.load([]);
+      var newList = mockContacts;
+      subject.load(newList);
+      var originalAmount = container.querySelectorAll('.contact-item').length;
+      newList.pop();
+      subject.load(newList);
+      var deletedAmount = container.querySelectorAll('.contact-item').length;
+      assert.equal(originalAmount, deletedAmount+1);
+      assert.isTrue(noContacts.classList.contains('hide'));
+    });
+
     test('checking no contacts when coming from activity', function() {
       MockActivities.currentlyHandling = true;
       subject.load([]);
