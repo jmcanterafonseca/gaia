@@ -13,6 +13,9 @@ if (typeof fb.importer === 'undefined') {
     // Friends selected to be sync to the address book
     var selectedContacts = {};
 
+    // Friends unselected (will be removed from the Addr Book)
+    var unSelectedContacts = {};
+
     // Friends that are suitable to be selected
     var selectableFriends = {};
 
@@ -21,6 +24,7 @@ if (typeof fb.importer === 'undefined') {
 
     // Existing FB contacts
     var existingFbContacts = [];
+    var existingFbContactsByUid = {};
 
     var contactsLoaded = false, friendsLoaded = false;
 
@@ -191,12 +195,16 @@ if (typeof fb.importer === 'undefined') {
      *  Existing contacts are disabled
      *
      */
-    function disableExisting(friends) {
-      var newValue = myFriends.length - friends.length;
+    function disableExisting(deviceFriends) {
+      var newValue = myFriends.length - deviceFriends.length;
+
+      if(deviceFriends.length === 0) {
+        // Show 'import' or 'update' in the header action button
+      }
 
       var eleNumImport = document.querySelector('#num-friends');
       if (eleNumImport.value && eleNumImport.value.length > 0) {
-        var newValue = parseInt(eleNumImport.value) - friends.length;
+        var newValue = parseInt(eleNumImport.value) - deviceFriends.length;
       }
 
       eleNumImport.value = newValue;
@@ -205,8 +213,10 @@ if (typeof fb.importer === 'undefined') {
         numFriends: newValue
       });
 
-      friends.forEach(function(fbContact) {
+      deviceFriends.forEach(function(fbContact) {
         var uid = new fb.Contact(fbContact).uid;
+
+        existingFbContactsByUid[uid] = fbContact;
 
         delete selectableFriends[uid];
 
@@ -216,8 +226,6 @@ if (typeof fb.importer === 'undefined') {
         if (ele) {
           var input = ele.querySelector('input');
           input.checked = true;
-
-          ele.setAttribute('aria-disabled', 'true');
         }
       });
     }
@@ -459,6 +467,14 @@ if (typeof fb.importer === 'undefined') {
      *
      */
     UI.importAll = function(e) {
+      window.console.log('Selected Friends: ',
+                         Object.keys(selectedContacts).length,
+                         JSON.stringify(selectedContacts));
+
+      window.console.log('Unselected Friends: ',
+                         Object.keys(unSelectedContacts).length,
+                         JSON.stringify(unSelectedContacts));
+
       if (Object.keys(selectedContacts).length > 0) {
 
         Importer.importAll(function on_all_imported() {
@@ -479,8 +495,8 @@ if (typeof fb.importer === 'undefined') {
           selectedContacts = {};
         });
       }
-      else {
-        window.console.error('No friends selected. Doing nothing');
+      else if(Object.keys(unSelectedContacts).length > 0) {
+
       }
     }
 
@@ -515,6 +531,7 @@ if (typeof fb.importer === 'undefined') {
       selButton.onclick = UI.selectAll;
 
       selectedContacts = {};
+      unSelectedContacts = existingFbContactsByUid;
 
       return false;
     }
@@ -574,13 +591,22 @@ if (typeof fb.importer === 'undefined') {
         if (!checked) {
           ele.checked = true;
         }
-        selectedContacts[ele.name] = myFriendsByUid[ele.name];
+        if(unSelectedContacts[ele.name]) {
+          delete unSelectedContacts[ele.name];
+        }
+        else {
+                selectedContacts[ele.name] = myFriendsByUid[ele.name];
+        }
       }
       else {
           if (!checked) {
             ele.checked = false;
           }
           delete selectedContacts[ele.name];
+          // If this was an already imported friend it is added to unselect
+          if(existingFbContactsByUid[ele.name]) {
+            unSelectedContacts[ele.name] = existingFbContactsByUid[ele.name];
+          }
       }
     }
 

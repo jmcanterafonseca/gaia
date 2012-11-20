@@ -253,7 +253,7 @@ if (!fb.utils) {
         var req = Utils.getAllFbContacts();
 
         req.onsuccess = function() {
-          var cleaner = new FbContactsCleaner(req.result);
+          var cleaner = new Utils.FbContactsCleaner(req.result);
           // And now success notification is sent
           outReq.done(cleaner);
           // The cleaning activity should be starting immediately
@@ -375,7 +375,7 @@ if (!fb.utils) {
     }
 
     // FbContactsCleaner Object
-    function FbContactsCleaner(contacts) {
+    Utils.FbContactsCleaner = function(contacts) {
       this.lcontacts = contacts;
       var next = 0;
       var self = this;
