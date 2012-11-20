@@ -466,8 +466,8 @@ suite('Render contacts list', function() {
       subject.load(newList);
       var originalNumber = container.querySelectorAll('.contact-item').length;
       subject.remove('2');
-      var numberAfterDel = container.querySelectorAll('.contact-item').length;
-      assert.equal(originalNumber, numberAfterDel + 1);
+      var afterDelNumber = container.querySelectorAll('.contact-item').length;
+      assert.equal(originalNumber, afterDelNumber + 1);
       // There are contacts on the list so no contacts should be hidden
       assert.isTrue(noContacts.classList.contains('hide'));
     });
