@@ -206,20 +206,18 @@ if (typeof fb.importer === 'undefined') {
 
       deviceFriends.forEach(function(fbContact) {
         var uid = fb.getFriendUid(fbContact);
-
+        // We are updating those friends that are potentially selectable
+        delete selectableFriends[uid];
+        var ele = document.querySelector('[data-uuid="' + uid + '"]');
+        // This check is needed as there might be existing FB Contacts that
+        // are no longer friends
+        if (ele) {
+          setChecked(ele.querySelector('input[type="checkbox"]'), true);
+        }
         if (existingFbContactsByUid[uid]) {
           existingFbContactsByUid[uid].push(fbContact);
         } else {
           existingFbContactsByUid[uid] = [fbContact];
-          // We are updating those friends that are potentially selectable
-          delete selectableFriends[uid];
-
-          var ele = document.querySelector('[data-uuid="' + uid + '"]');
-          // This check is needed as there might be existing FB Contacts that
-          // are no longer friends
-          if (ele) {
-            setChecked(ele.querySelector('input[type="checkbox"]'), true);
-          }
         }
       });
 
@@ -514,6 +512,12 @@ if (typeof fb.importer === 'undefined') {
         unSelectedContacts = {};
         existingFbContactsByUid = {};
 
+        // Selectable friends needs to be reseted to its original state
+        selectableFriends = {};
+        myFriends.forEach(function(friend) {
+          selectableFriends[friend.uid] = friend;
+        });
+
         var req = fb.utils.getAllFbContacts();
         req.onsuccess = function() {
           existingFbContacts = req.result;
@@ -558,7 +562,7 @@ if (typeof fb.importer === 'undefined') {
     function cleanContacts(onsuccess, progress) {
       var contacts = [];
       // FbContactsCleaner expects an Array object
-      Object.keys(unSelectedContacts).forEach(function surfing(uid) {
+      Object.keys(unSelectedContacts).forEach(function iterator(uid) {
         var deviceContacts = unSelectedContacts[uid];
         for (var i = 0; i < deviceContacts.length; i++) {
           contacts.push(deviceContacts[i]);
@@ -691,32 +695,35 @@ if (typeof fb.importer === 'undefined') {
      *
      */
     UI.selection = function(e) {
+      var out = false;
       var target = e.target;
 
-      if (!target || !target.dataset.uuid) {
-        return false;
-      }
+      if (target && target.dataset.uuid) {
+        var uuid = target.dataset.uuid;
 
-      var uuid = target.dataset.uuid;
+        var checkbox = target.querySelector('input[type="checkbox"]');
+        setChecked(checkbox, !checkbox.checked);
 
-      var checkbox = target.querySelector('input[type="checkbox"]');
-      setChecked(checkbox, !checkbox.checked);
-
-      if (checkbox.checked === true) {
-        if (unSelectedContacts[uuid]) {
-          delete unSelectedContacts[uuid];
+        if (checkbox.checked === true) {
+          if (unSelectedContacts[uuid]) {
+            delete unSelectedContacts[uuid];
+          } else {
+            selectedContacts[uuid] = myFriendsByUid[uuid];
+          }
         } else {
-          selectedContacts[uuid] = myFriendsByUid[uuid];
+          delete selectedContacts[uuid];
+          // If this was an already imported friend it is added to unselect
+          if (existingFbContactsByUid[uuid]) {
+            unSelectedContacts[uuid] = existingFbContactsByUid[uuid];
+          }
         }
-      } else {
-        delete selectedContacts[uuid];
-        // If this was an already imported friend it is added to unselect
-        if (existingFbContactsByUid[uuid]) {
-          unSelectedContacts[uuid] = existingFbContactsByUid[uuid];
-        }
+
+        checkDisabledButtons();
+
+        out = true;
       }
 
-      checkDisabledButtons();
+      return out;
     }
 
     /**
