@@ -8,6 +8,7 @@
     <link href="/shared/style/status.css" rel="stylesheet">
     <link href="/shared/style/headers.css" rel="stylesheet">
     <link href="/shared/style/input_areas.css" rel="stylesheet">
+    <link href="/shared/style/switches.css" rel="stylesheet">
     <link href="/shared/style/buttons.css" rel="stylesheet">
     <link href="/shared/style/confirm.css" rel="stylesheet">
     <link href="/shared/style_unstable/lists.css" rel="stylesheet">
@@ -463,29 +464,51 @@
         </header>
 
         <article class="view-body">
-          <div class="view-body-inner">
-            <ul>
+          <section role="region" class="view-body-inner">
+            <ul  data-type="list">
               <li id="settingsOrder">
-                <label class="switch">
-                  <input type="checkbox" name="order.lastname" />
-                  <span></span>
-                </label>
-                <a data-l10n-id="contactsOrderBy">Order by last name</a>
-              </li>
-              <li id="settingsSIM">
-                <a data-l10n-id="importSim">Import from SIM</a>
-              </li>
-              <li id="settingsFb">
-                <!--
-                <label class="switch hide">
-                  <input type="checkbox" name="fb.imported" />
-                  <span></span>
-                </label>
-                -->
-                <a data-l10n-id="importFb">Import from Facebook</a>
+               <aside class="pack-end">
+                  <label>
+                    <input type="checkbox" data-type="switch" name="order.lastname" />
+                    <span></span>
+                  </label>
+                </aside>
+                <p data-l10n-id="contactsOrderBy">Order by last name</p>
               </li>
             </ul>
-          </div>
+            <header>
+              <h2>SIM</h2>
+            </header>
+            <ul  data-type="list">
+              <li id="settingsSIM">
+                <button class="icon icon-sim" data-l10n-id="importSim">
+                  Import from SIM
+                </button>
+              </li>
+            </ul>
+             <header>
+              <h2>Facebook</h2>
+            </header>
+            <ul  data-type="list">
+              <li id="settingsFb" class="fb-item">
+               <aside class="pack-end">
+                 <label>
+                    <input type="checkbox" data-type="switch" name="fb.imported" />
+                    <span></span>
+                  </label>
+               </aside>
+                <p data-l10n-id="importFb">Import from Facebook</p>
+                <p>No friends imported <span class="hide">(out of 256)</span></p>
+              </li>
+              <li>
+                <!-- icon-error/icon-sync -->
+                <button class="icon icon-sync">
+                  Update imported friends
+                </button>
+                <p class="fb-error hide">Password: Your password in Facebook has changed. Please, update it.</p>
+              </li>
+            </ul>
+          </section>
         </article>
       </section>
 
