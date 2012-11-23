@@ -265,6 +265,7 @@ if (typeof Contacts.extFb === 'undefined') {
         case 'authenticated':
           extensionFrame.src = currentURI;
           access_token = data.data;
+          notifySettings();
         break;
 
         case 'abort':

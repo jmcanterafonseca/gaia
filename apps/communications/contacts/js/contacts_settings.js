@@ -15,6 +15,7 @@ contacts.Settings = (function() {
       fbImportCheck,
       fbUpdateButton,
       fbTotalsMsg,
+      fbPwdRenewMsg,
       fbImportedValue,
       newOrderByLastName = null,
       ORDER_KEY = 'order.lastname';
@@ -35,6 +36,8 @@ contacts.Settings = (function() {
       orderByLastName = value || false;
       updateOrderingUI();
     }).bind(this));
+
+    fb.utils.getImportChecked(checkFbImported);
   };
 
   var updateOrderingUI = function updateOrderingUI() {
@@ -65,39 +68,52 @@ contacts.Settings = (function() {
     fbUpdateButton =  document.querySelector('#import-fb');
     fbUpdateButton.onclick = Contacts.extFb.importFB;
     fbTotalsMsg = document.querySelector('#fb-totals');
+    fbPwdRenewMsg = document.querySelector('#renew-pwd-msg');
 
     document.addEventListener('fb_imported', function onImported(evt) {
       // We just received an event saying we imported the contacts
-       fb.utils.getImportChecked(checkFbImported);
-       window.console.log('Settings Notified!!!');
+      fb.utils.getImportChecked(checkFbImported);
     });
-
-    fb.utils.getImportChecked(checkFbImported);
   };
 
   // Callback that will modify the ui depending if we imported or not
   // contacts from FB
   var checkFbImported = function checkFbImportedCb(value) {
     fbImportedValue = value;
-    if (fbImportedValue) {
+    if (fbImportedValue === 'logged-in') {
       fbSetEnabledState();
-      fbGetTotals();
     }
-    else {
+    else if(fbImportedValue === 'logged-out') {
       fbSetDisabledState();
+    }
+    else if(fbImportedValue === 'renew-pwd') {
+      fbSetEnabledState();
+      fbSetPasswordErrorState();
     }
   };
 
   function fbSetEnabledState() {
+    fbGetTotals();
+
     fbImportCheck.checked = true;
     fbUpdateButton.classList.remove('hide');
+    fbUpdateButton.classList.remove('icon-error');
+    fbUpdateButton.classList.add('icon-sync');
     fbTotalsMsg.classList.remove('hide');
+
+    fbPwdRenewMsg.classList.add('hide');
   }
 
   function fbSetDisabledState() {
     fbImportCheck.checked = false;
     fbUpdateButton.classList.add('hide');
     fbTotalsMsg.classList.add('hide');
+  }
+
+  function fbSetPasswordErrorState() {
+    fbUpdateButton.classList.add('icon-error');
+    fbUpdateButton.classList.remove('icon-sync');
+    fbPwdRenewMsg.classList.remove('hide');
   }
 
   // Get total number of contacts imported from fb
@@ -151,35 +167,45 @@ contacts.Settings = (function() {
     };
 
   var onFbEnable = function onFbEnable(evt) {
+    var WAIT_UNCHECK = 300;
+    var WAIT_CHECK_FEEDBACK = 150;
+
     evt.preventDefault();
     evt.stopPropagation();
 
-    if(fbImportedValue === false) {
+    if(fbImportedValue != 'logged-in') {
       fbImportCheck.checked = true;
-      window.setTimeout(function() { fbImportCheck.checked = false; },300);
-      window.setTimeout(function() { onFbImport(); },100);
+      // We need to uncheck just in case the user closes the window
+      // without logging in (we don't have any mechanism to know that fact)
+      window.setTimeout(function() {
+        fbImportCheck.checked = false;
+      },WAIT_UNCHECK);
+      // For starting we wait a few milisecs to give feedback on the checking
+      window.setTimeout(onFbImport,WAIT_CHECK_FEEDBACK);
     }
     else {
       fbImportCheck.checked = false;
-      var msg = _('cleanFbConfirmMsg');
-      var yesObject = {
-        title: _('remove'),
-        isDanger: true,
-        callback: function() {
-          ConfirmDialog.hide();
-          doFbUnlink();
-        }
-      };
+      window.setTimeout(function fb_remove_all() {
+        var msg = _('cleanFbConfirmMsg');
+        var yesObject = {
+          title: _('remove'),
+          isDanger: true,
+          callback: function() {
+            ConfirmDialog.hide();
+            doFbUnlink();
+          }
+        };
 
-      var noObject = {
-        title: _('cancel'),
-        callback: function onCancel() {
-          fbImportCheck.checked = true;
-          ConfirmDialog.hide();
-        }
-      };
+        var noObject = {
+          title: _('cancel'),
+          callback: function onCancel() {
+            fbImportCheck.checked = true;
+            ConfirmDialog.hide();
+          }
+        };
 
-      ConfirmDialog.show(null, msg, noObject, yesObject);
+        ConfirmDialog.show(null, msg, noObject, yesObject);
+      },WAIT_CHECK_FEEDBACK);
     }
   };
 
@@ -195,7 +221,7 @@ contacts.Settings = (function() {
         var logoutReq = fb.utils.logout();
 
         logoutReq.onsuccess = function() {
-          checkFbImported(false);
+          checkFbImported('logged-out');
           // And it is needed to clear any previously set alarm
           window.asyncStorage.getItem(fb.utils.ALARM_ID_KEY, function(data) {
             if (data) {
@@ -287,9 +313,8 @@ contacts.Settings = (function() {
   };
 
   var refresh = function refresh() {
-    if (document.getElementById('fbTotalsResult')) {
-      fbGetTotals();
-    }
+    getData();
+    checkOnline();
   };
 
   return {
