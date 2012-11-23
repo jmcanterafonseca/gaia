@@ -297,11 +297,16 @@ contacts.Settings = (function() {
   };
 
   var checkOnline = function() {
+    window.console.log('Check online');
     if (navigator.onLine === true) {
-      fbImportOption.firstChild.removeAttribute('aria-disabled');
+      fbImportOption.querySelector('li').removeAttribute('aria-disabled');
+      fbUpdateButton.removeAttribute('disabled');
     }
     else {
-      fbImportOption.firstChild.setAttribute('aria-disabled', 'true');
+      fbImportOption.querySelector('li.fb-item').setAttribute('aria-disabled',
+                                                              'true');
+      fbUpdateButton.removeAttribute('disabled');
+      fbUpdateButton.setAttribute('disabled','disabled');
     }
   };
 
