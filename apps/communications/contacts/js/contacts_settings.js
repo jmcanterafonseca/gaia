@@ -11,8 +11,10 @@ contacts.Settings = (function() {
   var orderCheckbox,
       orderByLastName,
       simImportLink,
-      fbImportLink,
-      labelLink,
+      fbImportOption,
+      fbImportCheck,
+      fbUpdateButton,
+      fbTotalsMsg,
       fbImportedValue,
       newOrderByLastName = null,
       ORDER_KEY = 'order.lastname';
@@ -57,13 +59,20 @@ contacts.Settings = (function() {
     simImportLink.addEventListener('click',
       onSimImport);
 
-    fbImportLink = document.querySelector('[data-l10n-id="importFb"]');
+    fbImportOption = document.querySelector('#settingsFb');
+    fbImportOption.onclick = onFbEnable;
+    fbImportCheck = document.querySelector('[name="fb.imported"]');
+    fbUpdateButton =  document.querySelector('#import-fb');
+    fbUpdateButton.onclick = Contacts.extFb.importFB;
+    fbTotalsMsg = document.querySelector('#fb-totals');
+
     document.addEventListener('fb_imported', function onImported(evt) {
       // We just received an event saying we imported the contacts
        fb.utils.getImportChecked(checkFbImported);
+       window.console.log('Settings Notified!!!');
     });
+
     fb.utils.getImportChecked(checkFbImported);
-    fbImportLink.addEventListener('click', onFbImport);
   };
 
   // Callback that will modify the ui depending if we imported or not
@@ -71,19 +80,25 @@ contacts.Settings = (function() {
   var checkFbImported = function checkFbImportedCb(value) {
     fbImportedValue = value;
     if (fbImportedValue) {
-      fbImportLink.textContent = _('facebook');
-      fbAddUnlinkOption();
+      fbSetEnabledState();
       fbGetTotals();
     }
     else {
-      if (labelLink) {
-        fbImportLink.textContent = _('importFb');
-        fbImportLink.parentNode.removeChild(labelLink);
-        labelLink = null;
-        cleanFbContactsMessage();
-      }
+      fbSetDisabledState();
     }
   };
+
+  function fbSetEnabledState() {
+    fbImportCheck.checked = true;
+    fbUpdateButton.classList.remove('hide');
+    fbTotalsMsg.classList.remove('hide');
+  }
+
+  function fbSetDisabledState() {
+    fbImportCheck.checked = false;
+    fbUpdateButton.classList.add('hide');
+    fbTotalsMsg.classList.add('hide');
+  }
 
   // Get total number of contacts imported from fb
   var fbGetTotals = function fbGetTotals() {
@@ -110,55 +125,14 @@ contacts.Settings = (function() {
   };
 
   var fbUpdateTotals = function fbUpdateTotals(imported, total) {
-
     // If the total is not available then an empty string is showed
     var theTotal = total || '';
-    var span;
 
-    if (!document.getElementById('fbTotalsResult')) {
-      var li = document.createElement('li');
-      li.id = 'fbTotalsResult';
-      li.classList.add('result');
-      span = document.createElement('span');
-      li.appendChild(span);
-
-      li.onclick = Contacts.extFb.importFB;
-
-      var after = document.getElementById('settingsFb');
-      after.parentNode.insertBefore(li, after.nextSibling);
-    }
-    else {
-      span = document.querySelector('#fbTotalsResult span');
-    }
-
-    span.textContent = _('facebook-import-msg', {
+    fbTotalsMsg.textContent = _('facebook-import-msg', {
       'imported': imported,
       'total': theTotal
     });
 
-  };
-
-  var cleanFbContactsMessage = function cleanFbContactsMessage() {
-    var fbTotalsMessage = document.getElementById('fbTotalsResult');
-    if (fbTotalsMessage) {
-      fbTotalsMessage.parentNode.removeChild(fbTotalsMessage);
-    }
-  };
-
-  // Insert the dom necessary to unlink your FB contacts
-  var fbAddUnlinkOption = function fbUnlinkOption() {
-    if (!labelLink) {
-      labelLink = document.createElement('label');
-      labelLink.classList.add('switch');
-      labelLink.innerHTML = '<input type="checkbox" checked="true" ' +
-        'name="fb.imported" />';
-      labelLink.innerHTML += '<span></span>';
-
-      fbImportLink.parentNode.insertBefore(labelLink, fbImportLink);
-
-      document.querySelector('[name="fb.imported"]').addEventListener('click',
-        onFbUnlink);
-    }
   };
 
   var onFbImport = function onFbImportClick(evt) {
@@ -176,28 +150,37 @@ contacts.Settings = (function() {
       after.parentNode.insertBefore(li, after.nextSibling);
     };
 
-  var onFbUnlink = function onFbUnlink(evt) {
+  var onFbEnable = function onFbEnable(evt) {
     evt.preventDefault();
     evt.stopPropagation();
 
-    var msg = _('cleanFbConfirmMsg');
-    var yesObject = {
-      title: _('remove'),
-      isDanger: true,
-      callback: function() {
-        ConfirmDialog.hide();
-        doFbUnlink();
-      }
-    };
+    if(fbImportedValue === false) {
+      fbImportCheck.checked = true;
+      window.setTimeout(function() { fbImportCheck.checked = false; },300);
+      window.setTimeout(function() { onFbImport(); },100);
+    }
+    else {
+      fbImportCheck.checked = false;
+      var msg = _('cleanFbConfirmMsg');
+      var yesObject = {
+        title: _('remove'),
+        isDanger: true,
+        callback: function() {
+          ConfirmDialog.hide();
+          doFbUnlink();
+        }
+      };
 
-    var noObject = {
-      title: _('cancel'),
-      callback: function onCancel() {
-        ConfirmDialog.hide();
-      }
-    };
+      var noObject = {
+        title: _('cancel'),
+        callback: function onCancel() {
+          fbImportCheck.checked = true;
+          ConfirmDialog.hide();
+        }
+      };
 
-    ConfirmDialog.show(null, msg, noObject, yesObject);
+      ConfirmDialog.show(null, msg, noObject, yesObject);
+    }
   };
 
   function doFbUnlink() {
@@ -290,13 +273,13 @@ contacts.Settings = (function() {
   var checkOnline = function() {
     var disableElement = document.querySelector('#fbTotalsResult');
     if (navigator.onLine === true) {
-      fbImportLink.parentNode.removeAttribute('aria-disabled');
+      fbImportOption.parentNode.removeAttribute('aria-disabled');
       if (disableElement) {
         disableElement.removeAttribute('aria-disabled');
       }
     }
     else {
-      fbImportLink.parentNode.setAttribute('aria-disabled', 'true');
+      fbImportOption.parentNode.setAttribute('aria-disabled', 'true');
       if (disableElement) {
         disableElement.setAttribute('aria-disabled', 'true');
       }

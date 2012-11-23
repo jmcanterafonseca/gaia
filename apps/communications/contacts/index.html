@@ -493,16 +493,16 @@
               <li id="settingsFb" class="fb-item">
                <aside class="pack-end">
                  <label>
-                    <input type="checkbox" data-type="switch" name="fb.imported" />
+                    <input type="checkbox" data-type="switch" name="fb.imported">
                     <span></span>
                   </label>
                </aside>
-                <p data-l10n-id="importFb">Import from Facebook</p>
-                <p>No friends imported <span class="hide">(out of 256)</span></p>
+                <p data-l10n-id="importFb2">Import from Facebook</p>
+                <p id="fb-totals" class="hide">No friends imported <span class="hide">(out of 256)</span></p>
               </li>
               <li>
                 <!-- icon-error/icon-sync -->
-                <button class="icon icon-sync">
+                <button id="import-fb" class="hide" class="icon icon-sync">
                   Update imported friends
                 </button>
                 <p class="fb-error hide">Password: Your password in Facebook has changed. Please, update it.</p>
@@ -535,7 +535,7 @@
     <section id="statusMsg" role="status">
       <p></p>
     </section>
-    
+
     <form id="confirmation-message" class="hide" role="dialog" data-type="confirm">
       <section>
         <h1>Confirmation title</h1>
