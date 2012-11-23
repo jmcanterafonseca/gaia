@@ -489,23 +489,23 @@
              <header>
               <h2>Facebook</h2>
             </header>
-            <ul  data-type="list">
-              <li id="settingsFb" class="fb-item">
+            <ul id="settingsFb" data-type="list" data-state="logged-out">
+              <li class="fb-item">
                <aside class="pack-end">
                  <label>
                     <input type="checkbox" data-type="switch" name="fb.imported">
-                    <span></span>
+                    <span id="span-check-fb"></span>
                   </label>
                </aside>
-                <p data-l10n-id="importFb2">Import from Facebook</p>
-                <p id="fb-totals" class="hide">No friends imported <span class="hide">(out of 256)</span></p>
+                <p data-l10n-id="importFb2">Enable Facebook</p>
+                <p id="fb-totals">No friends imported <span>(out of 256)</span></p>
               </li>
-              <li>
+              <li id="fb-update-option">
                 <!-- icon-error/icon-sync -->
-                <button data-l10n-id="fb-update-friends" id="import-fb" class="hide icon icon-sync">
+                <button data-l10n-id="fb-update-friends" id="import-fb" class="icon">
                   Update imported friends
                 </button>
-                <p id="renew-pwd-msg" data-l10n-id="renewPwdMsg" class="fb-error hide"></p>
+                <p id="renew-pwd-msg" data-l10n-id="renewPwdMsg" class="fb-error"></p>
               </li>
             </ul>
           </section>

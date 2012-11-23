@@ -449,13 +449,6 @@ section.view[data-state="active"] {
   background-image: url(/contacts/style/images/import_SIM.png);
 }
 
-#view-settings [data-type="list"] li button.icon-sync:before {
-  background-image: url(/contacts/style/images/sync_icon.png);
-}
-
-#view-settings [data-type="list"] li button.icon-error:before {
-  background-image: url(/contacts/style/images/error_icon.png);
-}
 
 /* Error message */
 #view-settings .view-body-inner .fb-error {

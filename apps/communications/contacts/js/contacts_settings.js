@@ -62,9 +62,11 @@ contacts.Settings = (function() {
     simImportLink.addEventListener('click',
       onSimImport);
 
+    document.querySelector('#settingsFb > .fb-item').onclick = onFbEnable;
     fbImportOption = document.querySelector('#settingsFb');
-    fbImportOption.onclick = onFbEnable;
+
     fbImportCheck = document.querySelector('[name="fb.imported"]');
+
     fbUpdateButton =  document.querySelector('#import-fb');
     fbUpdateButton.onclick = Contacts.extFb.importFB;
     fbTotalsMsg = document.querySelector('#fb-totals');
@@ -80,6 +82,7 @@ contacts.Settings = (function() {
   // contacts from FB
   var checkFbImported = function checkFbImportedCb(value) {
     fbImportedValue = value;
+    fbImportOption.dataset.state = fbImportedValue;
     if (fbImportedValue === 'logged-in') {
       fbSetEnabledState();
     }
@@ -88,7 +91,6 @@ contacts.Settings = (function() {
     }
     else if(fbImportedValue === 'renew-pwd') {
       fbSetEnabledState();
-      fbSetPasswordErrorState();
     }
   };
 
@@ -96,24 +98,10 @@ contacts.Settings = (function() {
     fbGetTotals();
 
     fbImportCheck.checked = true;
-    fbUpdateButton.classList.remove('hide');
-    fbUpdateButton.classList.remove('icon-error');
-    fbUpdateButton.classList.add('icon-sync');
-    fbTotalsMsg.classList.remove('hide');
-
-    fbPwdRenewMsg.classList.add('hide');
   }
 
   function fbSetDisabledState() {
     fbImportCheck.checked = false;
-    fbUpdateButton.classList.add('hide');
-    fbTotalsMsg.classList.add('hide');
-  }
-
-  function fbSetPasswordErrorState() {
-    fbUpdateButton.classList.add('icon-error');
-    fbUpdateButton.classList.remove('icon-sync');
-    fbPwdRenewMsg.classList.remove('hide');
   }
 
   // Get total number of contacts imported from fb
@@ -167,45 +155,55 @@ contacts.Settings = (function() {
     };
 
   var onFbEnable = function onFbEnable(evt) {
-    var WAIT_UNCHECK = 300;
-    var WAIT_CHECK_FEEDBACK = 150;
+    window.console.log('Here!!!', fbImportedValue);
+    var WAIT_UNCHECK = 400;
 
     evt.preventDefault();
     evt.stopPropagation();
 
-    if(fbImportedValue != 'logged-in') {
+    if(fbImportedValue === 'logged-out') {
       fbImportCheck.checked = true;
-      // We need to uncheck just in case the user closes the window
-      // without logging in (we don't have any mechanism to know that fact)
-      window.setTimeout(function() {
-        fbImportCheck.checked = false;
-      },WAIT_UNCHECK);
       // For starting we wait a few milisecs to give feedback on the checking
-      window.setTimeout(onFbImport,WAIT_CHECK_FEEDBACK);
+      window.addEventListener('transitionend', function transendCheck(e) {
+        window.console.log(e.target.id);
+        if(e.target.id === 'span-check-fb') {
+          window.console.log('Here!!!');
+          window.removeEventListener('transitionend', transendCheck);
+          onFbImport();
+          // We need to uncheck just in case the user closes the window
+          // without logging in (we don't have any mechanism to know that fact)
+          window.setTimeout(function() {
+            fbImportCheck.checked = false;
+          },WAIT_UNCHECK);
+        }
+      });
     }
     else {
       fbImportCheck.checked = false;
-      window.setTimeout(function fb_remove_all() {
-        var msg = _('cleanFbConfirmMsg');
-        var yesObject = {
-          title: _('remove'),
-          isDanger: true,
-          callback: function() {
-            ConfirmDialog.hide();
-            doFbUnlink();
-          }
-        };
+      window.addEventListener('transitionend',function fb_remove_all(e) {
+        if(e.target.id === 'span-check-fb') {
+          window.removeEventListener('transitionend', fb_remove_all);
+          var msg = _('cleanFbConfirmMsg');
+          var yesObject = {
+            title: _('remove'),
+            isDanger: true,
+            callback: function() {
+              ConfirmDialog.hide();
+              doFbUnlink();
+            }
+          };
 
-        var noObject = {
-          title: _('cancel'),
-          callback: function onCancel() {
-            fbImportCheck.checked = true;
-            ConfirmDialog.hide();
-          }
-        };
+          var noObject = {
+            title: _('cancel'),
+            callback: function onCancel() {
+              fbImportCheck.checked = true;
+              ConfirmDialog.hide();
+            }
+          };
 
-        ConfirmDialog.show(null, msg, noObject, yesObject);
-      },WAIT_CHECK_FEEDBACK);
+          ConfirmDialog.show(null, msg, noObject, yesObject);
+        }
+      });
     }
   };
 
@@ -226,11 +224,13 @@ contacts.Settings = (function() {
           window.asyncStorage.getItem(fb.utils.ALARM_ID_KEY, function(data) {
             if (data) {
               navigator.mozAlarms.remove(Number(data));
-              window.asyncStorage.removeItem(fb.utils.ALARM_ID_KEY);
-              window.asyncStorage.removeItem(fb.utils.LAST_UPDATED_KEY);
-              window.asyncStorage.removeItem(fb.utils.CACHE_FRIENDS_KEY);
             }
+            window.asyncStorage.removeItem(fb.utils.ALARM_ID_KEY);
           });
+
+          window.asyncStorage.removeItem(fb.utils.LAST_UPDATED_KEY);
+          window.asyncStorage.removeItem(fb.utils.CACHE_FRIENDS_KEY);
+
           contacts.List.load();
           Contacts.hideOverlay();
         };
@@ -297,18 +297,11 @@ contacts.Settings = (function() {
   };
 
   var checkOnline = function() {
-    var disableElement = document.querySelector('#fbTotalsResult');
     if (navigator.onLine === true) {
-      fbImportOption.parentNode.removeAttribute('aria-disabled');
-      if (disableElement) {
-        disableElement.removeAttribute('aria-disabled');
-      }
+      fbImportOption.firstChild.removeAttribute('aria-disabled');
     }
     else {
-      fbImportOption.parentNode.setAttribute('aria-disabled', 'true');
-      if (disableElement) {
-        disableElement.setAttribute('aria-disabled', 'true');
-      }
+      fbImportOption.firstChild.setAttribute('aria-disabled', 'true');
     }
   };
 

@@ -48,3 +48,27 @@ p.facebook.removed input {
 .with-photo.removed.facebook {
   border: none;
 }
+
+#settingsFb[data-state="logged-out"] #fb-totals {
+  display: none;
+}
+
+#settingsFb[data-state="logged-out"] > #fb-update-option > #import-fb {
+  display: none;
+}
+
+#settingsFb[data-state="logged-out"] > #fb-update-option > #renew-pwd-msg {
+  display: none;
+}
+
+#settingsFb[data-state="logged-in"] > #fb-update-option > #renew-pwd-msg {
+  display: none;
+}
+
+#settingsFb[data-state="renew-pwd"] > #fb-update-option > #import-fb:before {
+  background-image: url(/contacts/style/images/error_icon.png);
+}
+
+#settingsFb[data-state="logged-in"] > #fb-update-option > #import-fb:before {
+  background-image: url(/contacts/style/images/sync_icon.png);
+}
