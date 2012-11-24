@@ -208,8 +208,7 @@ if (!fb.utils) {
           // In this case is needed to know whether the access_token has
           // been invalidated
           Utils.getCachedNumFbFriends(function(value) {
-            window.console.log('Cached num friends', value);
-            if(value) {
+            if (value) {
               out = 'renew-pwd';
               if (typeof callback === 'function') {
                 callback(out);

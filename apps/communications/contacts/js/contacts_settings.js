@@ -67,7 +67,7 @@ contacts.Settings = (function() {
 
     fbImportCheck = document.querySelector('[name="fb.imported"]');
 
-    fbUpdateButton =  document.querySelector('#import-fb');
+    fbUpdateButton = document.querySelector('#import-fb');
     fbUpdateButton.onclick = Contacts.extFb.importFB;
     fbTotalsMsg = document.querySelector('#fb-totals');
     fbPwdRenewMsg = document.querySelector('#renew-pwd-msg');
@@ -86,10 +86,10 @@ contacts.Settings = (function() {
     if (fbImportedValue === 'logged-in') {
       fbSetEnabledState();
     }
-    else if(fbImportedValue === 'logged-out') {
+    else if (fbImportedValue === 'logged-out') {
       fbSetDisabledState();
     }
-    else if(fbImportedValue === 'renew-pwd') {
+    else if (fbImportedValue === 'renew-pwd') {
       fbSetEnabledState();
     }
   };
@@ -132,11 +132,24 @@ contacts.Settings = (function() {
     // If the total is not available then an empty string is showed
     var theTotal = total || '';
 
-    fbTotalsMsg.textContent = _('facebook-import-msg', {
+    var totalsMsgContent = _('facebook-import-msg', {
       'imported': imported,
       'total': theTotal
     });
 
+    // This is to support the case of a long literal, particularly
+    // when 0 friends are imported
+    var msgPart1 = totalsMsgContent;
+    var msgPart2 = null;
+    if (imported === 0) {
+      var position = totalsMsgContent.indexOf('(');
+      if (position != -1) {
+        msgPart1 = totalsMsgContent.substring(0, position - 1);
+        msgPart2 = '<span>' + totalsMsgContent.substring(position) + '</span>';
+      }
+    }
+
+    fbTotalsMsg.innerHTML = msgPart1 + (msgPart2 || '');
   };
 
   var onFbImport = function onFbImportClick(evt) {
@@ -155,19 +168,16 @@ contacts.Settings = (function() {
     };
 
   var onFbEnable = function onFbEnable(evt) {
-    window.console.log('Here!!!', fbImportedValue);
     var WAIT_UNCHECK = 400;
 
     evt.preventDefault();
     evt.stopPropagation();
 
-    if(fbImportedValue === 'logged-out') {
+    if (fbImportedValue === 'logged-out') {
       fbImportCheck.checked = true;
       // For starting we wait a few milisecs to give feedback on the checking
       window.addEventListener('transitionend', function transendCheck(e) {
-        window.console.log(e.target.id);
-        if(e.target.id === 'span-check-fb') {
-          window.console.log('Here!!!');
+        if (e.target.id === 'span-check-fb') {
           window.removeEventListener('transitionend', transendCheck);
           onFbImport();
           // We need to uncheck just in case the user closes the window
@@ -180,8 +190,8 @@ contacts.Settings = (function() {
     }
     else {
       fbImportCheck.checked = false;
-      window.addEventListener('transitionend',function fb_remove_all(e) {
-        if(e.target.id === 'span-check-fb') {
+      window.addEventListener('transitionend', function fb_remove_all(e) {
+        if (e.target.id === 'span-check-fb') {
           window.removeEventListener('transitionend', fb_remove_all);
           var msg = _('cleanFbConfirmMsg');
           var yesObject = {
@@ -297,7 +307,6 @@ contacts.Settings = (function() {
   };
 
   var checkOnline = function() {
-    window.console.log('Check online');
     if (navigator.onLine === true) {
       fbImportOption.querySelector('li').removeAttribute('aria-disabled');
       fbUpdateButton.removeAttribute('disabled');
@@ -306,7 +315,7 @@ contacts.Settings = (function() {
       fbImportOption.querySelector('li.fb-item').setAttribute('aria-disabled',
                                                               'true');
       fbUpdateButton.removeAttribute('disabled');
-      fbUpdateButton.setAttribute('disabled','disabled');
+      fbUpdateButton.setAttribute('disabled', 'disabled');
     }
   };
 
