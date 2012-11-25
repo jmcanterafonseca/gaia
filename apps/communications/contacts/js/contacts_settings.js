@@ -23,10 +23,6 @@ contacts.Settings = (function() {
   // Initialise the settings screen (components, listeners ...)
   var init = function initialize() {
     initContainers();
-
-    getData();
-
-    checkOnline();
   };
 
   // Get the different values that we will show in the app
@@ -72,9 +68,19 @@ contacts.Settings = (function() {
     fbTotalsMsg = document.querySelector('#fb-totals');
     fbPwdRenewMsg = document.querySelector('#renew-pwd-msg');
 
-    document.addEventListener('fb_imported', function onImported(evt) {
+    document.addEventListener('fb_changed', function onFbChanged(evt) {
+      // We just received an event saying something might be changed
+      fbGetTotals(false);
+    });
+
+    document.addEventListener('fb_token_ready', function onFbCTokenReady(evt) {
       // We just received an event saying we imported the contacts
       fb.utils.getImportChecked(checkFbImported);
+    });
+
+    document.addEventListener('fb_token_error', function() {
+      fbImportedValue = 'renew-pwd';
+      fbImportOption.dataset.state = fbImportedValue;
     });
   };
 
@@ -82,7 +88,9 @@ contacts.Settings = (function() {
   // contacts from FB
   var checkFbImported = function checkFbImportedCb(value) {
     fbImportedValue = value;
+    // Changing the state thus the CSS will select the correct values
     fbImportOption.dataset.state = fbImportedValue;
+
     if (fbImportedValue === 'logged-in') {
       fbSetEnabledState();
     }
@@ -105,7 +113,7 @@ contacts.Settings = (function() {
   }
 
   // Get total number of contacts imported from fb
-  var fbGetTotals = function fbGetTotals() {
+  var fbGetTotals = function fbGetTotals(requestRemoteData) {
     var req = fb.utils.getNumFbContacts();
 
     req.onsuccess = function() {
@@ -119,6 +127,11 @@ contacts.Settings = (function() {
           fbUpdateTotals(friendsOnDevice, number);
         }
       };
+
+      // Do not ask for remote data if not necessary
+      if (requestRemoteData === false) {
+        callbackListener.remote = null;
+      }
 
       fb.utils.numFbFriendsData(callbackListener);
     };
@@ -141,7 +154,7 @@ contacts.Settings = (function() {
     // when 0 friends are imported
     var msgPart1 = totalsMsgContent;
     var msgPart2 = null;
-    if (imported === 0) {
+    if (imported <= 1) {
       var position = totalsMsgContent.indexOf('(');
       if (position != -1) {
         msgPart1 = totalsMsgContent.substring(0, position - 1);
@@ -175,7 +188,7 @@ contacts.Settings = (function() {
 
     if (fbImportedValue === 'logged-out') {
       fbImportCheck.checked = true;
-      // For starting we wait a few milisecs to give feedback on the checking
+      // For starting we wait for the switch transition to give feedback
       window.addEventListener('transitionend', function transendCheck(e) {
         if (e.target.id === 'span-check-fb') {
           window.removeEventListener('transitionend', transendCheck);
@@ -190,6 +203,7 @@ contacts.Settings = (function() {
     }
     else {
       fbImportCheck.checked = false;
+      // For starting we wait for the switch transition to give feedback
       window.addEventListener('transitionend', function fb_remove_all(e) {
         if (e.target.id === 'span-check-fb') {
           window.removeEventListener('transitionend', fb_remove_all);

@@ -185,7 +185,7 @@ if (!fb.utils) {
     // Obtains the number locally
     Utils.getCachedNumFbFriends = function(callback) {
       window.asyncStorage.getItem(CACHE_FRIENDS_KEY, function(data) {
-        if (typeof callback === 'function') {
+        if (typeof callback === 'function' && typeof data === 'number') {
           callback(data);
         }
       });
@@ -239,17 +239,18 @@ if (!fb.utils) {
         }
       }
 
-      var remoteCallbacks = {
-        success: auxCallback,
-        error: null,
-        timeout: null
-      };
-
-      Utils.getCachedAccessToken(function(access_token) {
-        if (access_token) {
-          Utils.getNumFbFriends(remoteCallbacks, access_token);
-        }
-      });
+      if (typeof remoteCb === 'function' && navigator.onLine === true) {
+        var remoteCallbacks = {
+          success: auxCallback,
+          error: null,
+          timeout: null
+        };
+        Utils.getCachedAccessToken(function(access_token) {
+          if (access_token) {
+            Utils.getNumFbFriends(remoteCallbacks, access_token);
+          }
+        });
+      }
     };
 
     // Clears all Fb data (use with caution!!)

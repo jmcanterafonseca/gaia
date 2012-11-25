@@ -407,9 +407,15 @@ if (typeof fb.importer === 'undefined') {
           // There was a problem with the access token
           Curtain.hide();
           window.asyncStorage.removeItem(fb.utils.TOKEN_DATA_KEY,
-                                         Importer.start);
-        }
-      }
+            function token_removed() {
+              Importer.start();
+              parent.postMessage({
+                type: 'token_error',
+                data: ''
+              },fb.CONTACTS_APP_ORIGIN);
+          });
+        } // else
+      } // else
     }
 
     function cancelCb() {
