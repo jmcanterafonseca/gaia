@@ -303,8 +303,11 @@ if (typeof Contacts.extFb === 'undefined') {
           if (closeRequested) {
             unload();
           }
-          contacts.List.load();
-          notifySettings();
+          // Check whether there has been changes or not
+          if(data.data > 0) {
+            contacts.List.load();
+            notifySettings();
+          }
         break;
 
         case 'item_selected':

@@ -140,14 +140,14 @@ if (typeof fb.importer === 'undefined') {
     }
 
     // Callback executed when a synchronization has finished successfully
-    function syncSuccess() {
+    function syncSuccess(numChanged) {
       window.console.log('Synchronization ended!!!');
       syncOngoing = false;
 
       fb.sync.scheduleNextSync();
       var msg = {
         type: 'sync_finished',
-        data: ''
+        data: numChanged || ''
       };
       parent.postMessage(msg, fb.CONTACTS_APP_ORIGIN);
     }

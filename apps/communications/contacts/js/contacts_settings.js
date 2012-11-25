@@ -151,7 +151,7 @@ contacts.Settings = (function() {
     });
 
     // This is to support the case of a long literal, particularly
-    // when 0 friends are imported
+    // when 0 or 1 friends are imported
     var msgPart1 = totalsMsgContent;
     var msgPart2 = null;
     if (imported <= 1) {
