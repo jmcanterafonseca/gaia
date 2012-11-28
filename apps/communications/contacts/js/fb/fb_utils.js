@@ -388,20 +388,47 @@ if (!fb.utils) {
 
     // FbContactsCleaner Object
     Utils.FbContactsCleaner = function(contacts) {
+      // Chunk size for cleaning contacts in batches
+      var CHUNK_SIZE = 5;
+
       this.lcontacts = contacts;
+      // Points to the next in the array of contacts
       var next = 0;
+      // Num of partial executions
+      var numExecuted = 0;
+
       var self = this;
+
+      // Use only CHUNK_SIZE objects at a maximum
+      var fbContacts = new Array(CHUNK_SIZE);
+      for(var c = 0; c < fbContacts.length; c++) {
+        fbContacts[c] = new fb.Contact();
+      }
 
       this.start = function() {
         if (self.lcontacts.length > 0) {
-          cleanContact(self.lcontacts[0]);
+          cleanContacts(nextChunk(self.lcontacts));
         }
         else if (typeof self.onsuccess === 'function') {
                 window.setTimeout(self.onsuccess, 0);
         }
       }
 
+      // Returns the next chunk of contacts to be deleted
+      function nextChunk() {
+        var out;
+        if(self.lcontacts.length < next + CHUNK_SIZE) {
+          out = self.lcontacts.slice(next, next + CHUNK_SIZE);
+        }
+        else {
+          out = self.lcontacts.slice(next);
+        }
+
+        return out;
+      }
+
       function successHandler() {
+        numExecuted++;
         if (typeof self.oncleaned === 'function') {
           // Avoiding race condition so the cleaned element is cached
           var cleaned = next + 1;
@@ -413,15 +440,14 @@ if (!fb.utils) {
       }
 
       function errorHandler() {
+        numExecuted++;
         if (typeof self.onerror === 'function') {
           self.onerror(self.lcontacts[next], e.target.error);
         }
       }
 
-      function cleanContact(contact) {
-        var fbContact = new fb.Contact(contact);
-
-        if (fb.isFbLinked(contact)) {
+      function cleanContact(fbContact) {
+        if (fbContact.isLinked(fbContact)) {
           var req = fbContact.unlink('hard');
           req.onsuccess = successHandler;
           req.onerror = errorHandler;
@@ -433,17 +459,30 @@ if (!fb.utils) {
         }
       }
 
+      function cleanContacts(contactsArray) {
+        var c = 0;
+        contactsArray.forEach(function(contact) {
+          var fbContact = fbContacts[c++];
+          // Object is reused
+          fbContact.init(contact);
+          cleanContact(fbContact);
+        });
+      }
+
       function continuee() {
         next++;
-        if (next < self.lcontacts.length) {
-          cleanContact(self.lcontacts[next]);
-        }
-        else {
-              // End has been reached
-              if (typeof self.onsuccess === 'function') {
-                window.setTimeout(self.onsuccess, 0);
-              }
-        }
+        if(numExecuted === CHUNK_SIZE || next === self.lcontacts.length) {
+          numExecuted = 0;
+          if (next < self.lcontacts.length) {
+            cleanContacts(nextChunk(self.lcontacts));
+          }
+          else {
+                // End has been reached
+                if (typeof self.onsuccess === 'function') {
+                  window.setTimeout(self.onsuccess, 0);
+                }
+          }
+        } // numExecuted === CHUNK_SIZE
       } // function
     } // FbContactsCleaner
 

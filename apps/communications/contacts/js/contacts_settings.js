@@ -271,11 +271,14 @@ contacts.Settings = (function() {
           Contacts.hideOverlay();
           window.console.error('Contacts: Error while FB logout: ',
                               e.target.error);
+          // Returning to a known state. It seems the user will still we logged
+          checkFbImported('logged-in');
         };
       };
 
       req.result.oncleaned = function(num) {
         // Nothing done here for the moment
+        window.console.log('Contact cleaned: ', num);
       };
 
       req.result.onerror = function(error) {

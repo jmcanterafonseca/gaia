@@ -98,9 +98,24 @@ fb.Contact = function(deviceContact, cid) {
     return dcontact;
   }
 
+  this.init = function(deviceContact,cid) {
+    devContact = deviceContact;
+    contactid = cid;
+  }
+
   // Sets the data for an imported FB Contact
   this.setData = function(data) {
     contactData = data;
+  }
+
+  this.isLinked = function() {
+    var out;
+
+    if(devContact) {
+      out = fb.isFbLinked(devContact);
+    }
+
+    return out;
   }
 
   Object.defineProperty(this, 'uid', {
