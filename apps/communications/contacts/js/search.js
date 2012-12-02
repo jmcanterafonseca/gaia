@@ -13,7 +13,10 @@ contacts.Search = (function() {
       contactNodesAndText = null,
       searchableNodes,
       prevTextToSearch = '',
-      CHUNK_SIZE = 10;
+      timeoutId = null,
+      timeout2,
+      CHUNK_SIZE = 10,
+      LOAD_IMG_DELY = 1000;
 
   var init = function load(_conctactsListView, _groupFavorites) {
     conctactsListView = _conctactsListView;
@@ -26,35 +29,38 @@ contacts.Search = (function() {
   //Search mode instructions
   var exitSearchMode = function exitSearchMode(evt) {
     evt.preventDefault();
-    searchNoResult.classList.add('hide');
-    conctactsListView.classList.remove('searching');
-    searchBox.value = '';
-    inSearchMode = false;
-    // Show elements that were hidden for the search
-    if (favoriteGroup) {
-      favoriteGroup.classList.remove('hide');
-    }
+    window.setTimeout(function exit_search() {
+      searchNoResult.classList.add('hide');
+      conctactsListView.classList.remove('searching');
+      searchBox.value = '';
+      inSearchMode = false;
+      // Show elements that were hidden for the search
+      if (favoriteGroup) {
+        favoriteGroup.classList.remove('hide');
+      }
 
-    // Bring back to visibilitiy the contacts
-    var allContacts = getContactsDom();
-    resetContactGroup(allContacts,0);
+      // Bring back to visibilitiy the contacts
+      var allContacts = getContactsDom();
+      resetContactGroup(allContacts, 0);
 
-    // Resetting state
-    contactNodes = null;
-    contactNodesAndText = null;
-    prevTextToSearch = '';
-    searchableNodes = null;
+      // Resetting state
+      contactNodes = null;
+      contactNodesAndText = null;
+      prevTextToSearch = '';
+      searchableNodes = null;
+    },0);
 
     return false;
   };
 
   function resetContactGroup(nodes,from) {
-    for(var i = from; i < from + CHUNK_SIZE && i < nodes.length; i++) {
-      nodes[i].classList.remove('search');
-      nodes[i].classList.remove('hide');
+    for (var i = from; i < from + CHUNK_SIZE && i < nodes.length; i++) {
+      var node = nodes[i];
+      node.classList.remove('search');
+      node.classList.remove('hide');
     }
 
-    if(i < nodes.length) {
+    if (i < nodes.length) {
       window.setTimeout(function() {
         resetContactGroup(nodes, from + CHUNK_SIZE);
       },0);
@@ -62,23 +68,29 @@ contacts.Search = (function() {
   }
 
   var enterSearchMode = function searchMode() {
-    if (!inSearchMode) {
-      conctactsListView.classList.add('searching');
-      cleanContactsList();
-      inSearchMode = true;
-    }
+    window.setTimeout(function enter_search() {
+      if (!inSearchMode) {
+        inSearchMode = true;
+        conctactsListView.classList.add('searching');
+        cleanContactsList();
+      }
+    }, 0);
     return false;
   };
 
   var search = function performSearch() {
+    timeout2 = window.setTimeout(function do_search() {
+    window.clearTimeout(timeout2);
+    window.clearTimeout(timeoutId);
+
     var textToSearch = normalizeText(searchBox.value.trim());
     var pattern = new RegExp(textToSearch, 'i');
     var count = 0;
 
-    var contactsToSearch = getContactsToSearch(textToSearch,prevTextToSearch);
+    var contactsToSearch = getContactsToSearch(textToSearch, prevTextToSearch);
     searchableNodes = [];
     var firstTime = false;
-    if(!contactNodesAndText) {
+    if (!contactNodesAndText) {
       contactNodesAndText = [];
       firstTime = true;
     }
@@ -88,7 +100,7 @@ contacts.Search = (function() {
       var text = contactsToSearch[i].text || getSearchText(contactsToSearch[i]);
       // It allows a lazy initialization of the contactNodesAndText array
       // Avoiding to iterate two times over the Contact nodes on the DOM
-      if(firstTime === true) {
+      if (firstTime === true) {
         contactNodesAndText.push({
           node: contactsToSearch[i],
           text: text
@@ -110,10 +122,14 @@ contacts.Search = (function() {
       searchNoResult.classList.remove('hide');
     } else {
       searchNoResult.classList.add('hide');
-      document.dispatchEvent(new CustomEvent('onupdate'));
+      // Being more responsive by only loading the imgs after a certain delay
+      timeoutId = window.setTimeout(function notify_img_loader() {
+        document.dispatchEvent(new CustomEvent('onupdate'));
+      }, LOAD_IMG_DELY);
     }
 
     prevTextToSearch = textToSearch;
+    },1000);
   };
 
   function getSearchText(contact) {
@@ -130,7 +146,7 @@ contacts.Search = (function() {
   };
 
   var getContactsDom = function contactsDom() {
-    if(!contactNodes) {
+    if (!contactNodes) {
       var itemsSelector = ".contact-item:not([data-uuid='#id#'])," +
                         ".block-item:not([data-uuid='#id#'])";
       contactNodes = list.querySelectorAll(itemsSelector);
@@ -145,7 +161,7 @@ contacts.Search = (function() {
 
   var getContactsToSearch = function getContactsToSearch(newText, prevText) {
     var out;
-    if(newText.length >= prevText.length && prevText.length > 0) {
+    if (newText.length >= prevText.length && prevText.length > 0) {
       // Only those nodes which are not hidden are returned
       out = searchableNodes;
     } else {
