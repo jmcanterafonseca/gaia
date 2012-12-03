@@ -30,14 +30,21 @@ fbFriends.List = (function() {
       var friends = groups[group];
       // For each friend in the group
       friends.forEach(function(friend) {
+        window.console.log('*** ', JSON.stringify(friend), '***');
         var searchInfo = [];
-        var searchable = ['givenName', 'familyName', 'org'];
+        var searchable = ['givenName', 'familyName'];
         searchable.forEach(function(field) {
           if (friend[field] && friend[field][0]) {
             searchInfo.push(friend[field][0]);
           }
         });
+        // Enabling searching by email
+        if(friend['email1']) {
+          searchInfo.push(friend['email1']);
+        }
+
         friend.search = normalizeText(searchInfo.join(' '));
+        window.console.log(friend.search);
         // New friend appended
         utils.templates.append(ele, friend);
         // We check wether this friend was in the AB or not before
