@@ -79,8 +79,6 @@ contacts.Search = (function() {
   };
 
   var search = function performSearch() {
-    timeout2 = window.setTimeout(function do_search() {
-    window.clearTimeout(timeout2);
     window.clearTimeout(timeoutId);
 
     var textToSearch = normalizeText(searchBox.value.trim());
@@ -129,7 +127,6 @@ contacts.Search = (function() {
     }
 
     prevTextToSearch = textToSearch;
-    },1000);
   };
 
   function getSearchText(contact) {
