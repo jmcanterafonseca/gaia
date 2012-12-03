@@ -215,7 +215,7 @@ contacts.Search = (function() {
   var getContactsDom = function contactsDom() {
     if (!contactNodes) {
       var itemsSelector = ".contact-item:not([data-uuid='#id#'])," +
-                        ".block-item:not([data-uuid='#id#'])";
+                        ".block-item:not([data-uuid='#uid#'])";
       contactNodes = list.querySelectorAll(itemsSelector);
     }
 
