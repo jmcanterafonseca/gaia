@@ -142,15 +142,21 @@
         <div id='fixed-container' class='fixed-title'></div>
 
         <section id="search-view" class="view">
-        <form id="searchview-container" class="search" role="search">
-          <button id='cancel-search' data-l10n-id="cancel" type="submit">Cancel</button>
-          <p>
-            <label for="search-contact">
-              <input data-cancelable required type="search" name="search" class="textfield" placeholder="Search" id="search-contact" data-l10n-id="search-contact" />
-              <button type="reset" class="hide">Clear</button>
-            </label>
-          </p>
-        </form>
+          <form id="searchview-container" class="search" role="search">
+            <button id='cancel-search' data-l10n-id="cancel" type="submit">Cancel</button>
+            <p>
+              <label for="search-contact">
+                <input data-cancelable required type="search" name="search" class="textfield" placeholder="Search"
+                       id="search-contact" data-l10n-id="search-contact" />
+                <button type="reset" class="hide">Clear</button>
+              </label>
+            </p>
+          </form>
+
+          <section id="groups-list-search" data-type="list">
+            <ul id="search-list">
+            </ul>
+          </section>
         </section>
       </section>
 
@@ -159,7 +165,8 @@
         <header id='details-view-header'>
           <button id="details-back" class="negative"><span class="icon icon-back" data-l10n-id="back">back</span></button>
           <menu type="toolbar">
-            <button role="menuitem" id="edit-contact-button"><span class="icon icon-edit" data-l10n-id="edit" data-l10n-id="edit">edit</span></button>
+            <button role="menuitem" id="edit-contact-button"><span class="icon icon-edit"
+                                                                   data-l10n-id="edit" data-l10n-id="edit">edit</span></button>
           </menu>
           <h1 id='contact-name-title'></h1>
           <sup id='favorite-star' class='hide'></sup>

@@ -19,6 +19,7 @@ contacts.Search = (function() {
       currentSet = {},
       inScrolling = false,
       mustStopAddReamining = false,
+      theClones = {},
       CHUNK_SIZE = 10,
       SEARCH_PAGE_SIZE = 10;
 
@@ -60,12 +61,15 @@ contacts.Search = (function() {
     currentTextToSearch = '';
     searchableNodes = null;
     currentSet = {};
+    theClones = {};
   }
 
   function addRemainingResults(nodes,from) {
     for (var i = from; i < from + CHUNK_SIZE && i < nodes.length; i++) {
       var node = nodes[i].node;
-      searchList.appendChild(node);
+      var clon = getClone(node);
+      theClones[node.dataset.uuid] = clon;
+      searchList.appendChild(clon);
     }
 
     if (i < nodes.length && !mustStopAddReamining) {
@@ -82,10 +86,27 @@ contacts.Search = (function() {
     window.console.log('--- Search blur invoked ----');
     inScrolling = true;
 
-    if(conctactsListView.classList.contains('nonemptysearch') && !inScrolling) {
+    if (conctactsListView.classList.contains('nonemptysearch') &&
+        !inScrolling) {
       // All the searchable nodes have to be added
       addRemainingResults(searchableNodes, SEARCH_PAGE_SIZE);
     }
+  }
+
+  function getClone(node) {
+    var id = node.dataset.uuid;
+    var out = theClones[id];
+
+    if (!out) {
+      out = node.cloneNode();
+      cacheClone(id, out);
+    }
+
+    return out;
+  }
+
+  function cacheClone(id, clone) {
+    theClones[id] = clone;
   }
 
   var enterSearchMode = function searchMode() {
@@ -101,33 +122,34 @@ contacts.Search = (function() {
 
   function doSearch(contacts, from, searchText, pattern, state) {
     var end = from + CHUNK_SIZE;
-    for(var c = from; c < end && c < contacts.length; c++) {
+    for (var c = from; c < end && c < contacts.length; c++) {
       var contact = contacts[c].node || contacts[c];
       var contactText = contacts[c].text || getSearchText(contacts[c]);
 
       if (!pattern.test(contactText)) {
         // contact.classList.add('hide');
         window.console.log('Adding classlist hide for contact: ', contact.dataset.uuid, currentTextToSearch);
-        if(contact.dataset.uuid in currentSet) {
+        if (contact.dataset.uuid in currentSet) {
           try {
-            searchList.removeChild(contact);
+            searchList.removeChild(currentSet[contact.dataset.uuid]);
           }
-          catch(e) { }
+          catch (e) { }
           delete currentSet[contact.dataset.uuid];
         }
       } else {
-        if(state.count === 0) {
+        if (state.count === 0) {
           conctactsListView.classList.add('nonemptysearch');
           searchNoResult.classList.add('hide');
         }
         // Only an initial page of elements is loaded in the search list
-        if((state.count + Object.keys(currentSet).length)
+        if ((state.count + Object.keys(currentSet).length)
            < SEARCH_PAGE_SIZE && !(contact.dataset.uuid in currentSet)) {
-          currentSet[contact.dataset.uuid] = true;
-          searchList.appendChild(contact);
+          var clonedNode = getClone(contact);
+          currentSet[contact.dataset.uuid] = clonedNode;
+          searchList.appendChild(clonedNode);
         }
         else {
-          window.console.log('#### not adding more ####')
+          window.console.log('#### not adding more ####');
         }
         // contact.classList.remove('hide');
         state.searchables.push({
@@ -138,12 +160,12 @@ contacts.Search = (function() {
       }
     }
 
-    if(c < contacts.length && currentTextToSearch === searchText) {
+    if (c < contacts.length && currentTextToSearch === searchText) {
       window.setTimeout(function do_search() {
         doSearch(contacts, from + CHUNK_SIZE, searchText,
                  pattern, state);
       }, 0);
-    } else if(c >= contacts.length) {
+    } else if (c >= contacts.length) {
       if (state.count === 0) {
         searchNoResult.classList.remove('hide');
         searchableNodes = null;
@@ -161,7 +183,7 @@ contacts.Search = (function() {
 
     currentTextToSearch = normalizeText(searchBox.value.trim());
 
-    if(currentTextToSearch.length === 0) {
+    if (currentTextToSearch.length === 0) {
       conctactsListView.classList.remove('nonemptysearch');
       resetState();
     }
@@ -172,7 +194,7 @@ contacts.Search = (function() {
       var state = {
         count: 0,
         searchables: []
-      }
+      };
       doSearch(contactsToSearch, 0, currentTextToSearch, pattern, state);
     }
   };

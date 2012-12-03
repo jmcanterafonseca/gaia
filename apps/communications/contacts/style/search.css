@@ -84,7 +84,8 @@ form.search button[type="submit"] {
   border-bottom: 0.1rem solid #DBD9D9;
 }
 
-#view-contacts-list.searching #groups-list-search {
+#view-contacts-list.searching #groups-list-search,
+#content.searching #groups-list-search {
   opacity: 0;
 }
 
@@ -118,7 +119,8 @@ form.search button[type="submit"] {
   pointer-events: none;
 }
 
-#content.searching.nonemptysearch #groups-list-search {
+#content.searching.nonemptysearch #groups-list-search,
+#view-contacts-list.searching.nonemptysearch #groups-list-search {
   position: absolute;
   opacity: 1;
   background: red;
@@ -127,7 +129,8 @@ form.search button[type="submit"] {
   height: calc(100% - 3rem);
 }
 
-#content.searching.nonemptysearch #search-list {
+#content.searching.nonemptysearch #search-list,
+#view-contacts-list.searching.nonemptysearch #search-list {
   height: 45rem;
   overflow: auto;
 }
