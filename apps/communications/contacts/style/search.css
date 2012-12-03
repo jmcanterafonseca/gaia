@@ -84,6 +84,10 @@ form.search button[type="submit"] {
   border-bottom: 0.1rem solid #DBD9D9;
 }
 
+#view-contacts-list.searching #groups-list-search {
+  opacity: 0;
+}
+
 #no-result {
   margin-top: -moz-calc((100% - 0.5rem) / 2);
   text-align: center;
@@ -107,6 +111,27 @@ form.search button[type="submit"] {
 .facebook.searching #groups-list h2 {
   display: none;
 }
+
+
+#content.searching #groups-list-search {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#content.searching.nonemptysearch #groups-list-search {
+  position: absolute;
+  opacity: 1;
+  background: red;
+  pointer-events: auto;
+  top: 3rem;
+  height: calc(100% - 3rem);
+}
+
+#content.searching.nonemptysearch #search-list {
+  height: 45rem;
+  overflow: auto;
+}
+
 
 #content.searching #main {
   height: 100%;

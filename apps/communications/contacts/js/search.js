@@ -8,19 +8,28 @@ contacts.Search = (function() {
       conctactsListView,
       list,
       searchBox,
+      searchList,
       searchNoResult,
       contactNodes = null,
+      // On the steady state holds the list result of the current search
       searchableNodes = null,
       currentTextToSearch = '',
       prevTextToSearch = '',
-      CHUNK_SIZE = 10;
+      // Pointer to the nodes which are currently on the result list
+      currentSet = {},
+      inScrolling = false,
+      mustStopAddReamining = false,
+      CHUNK_SIZE = 10,
+      SEARCH_PAGE_SIZE = 10;
 
   var init = function load(_conctactsListView, _groupFavorites) {
     conctactsListView = _conctactsListView;
     favoriteGroup = _groupFavorites;
     searchBox = document.getElementById('search-contact');
+    searchList = document.querySelector('#search-list');
     searchNoResult = document.getElementById('no-result');
     list = document.getElementById('groups-list');
+    searchList.parentNode.addEventListener('scroll', onSearchBlur);
   }
 
   //Search mode instructions
@@ -29,6 +38,7 @@ contacts.Search = (function() {
     window.setTimeout(function exit_search() {
       searchNoResult.classList.add('hide');
       conctactsListView.classList.remove('searching');
+      conctactsListView.classList.remove('nonemptysearch');
       searchBox.value = '';
       inSearchMode = false;
       // Show elements that were hidden for the search
@@ -36,31 +46,45 @@ contacts.Search = (function() {
         favoriteGroup.classList.remove('hide');
       }
 
-      // Bring back to visibilitiy the contacts
-      var allContacts = getContactsDom();
-      resetContactGroup(allContacts, 0);
-
       // Resetting state
       contactNodes = null;
-      prevTextToSearch = '';
-      currentTextToSearch = '';
-      searchableNodes = null;
+
+      resetState();
     },0);
 
     return false;
   };
 
-  function resetContactGroup(nodes,from) {
+  function resetState() {
+    prevTextToSearch = '';
+    currentTextToSearch = '';
+    searchableNodes = null;
+    currentSet = {};
+  }
+
+  function addRemainingResults(nodes,from) {
     for (var i = from; i < from + CHUNK_SIZE && i < nodes.length; i++) {
-      var node = nodes[i];
-      node.classList.remove('search');
-      node.classList.remove('hide');
+      var node = nodes[i].node;
+      searchList.appendChild(node);
     }
 
-    if (i < nodes.length) {
-      window.setTimeout(function reset_contact_group() {
-        resetContactGroup(nodes, from + CHUNK_SIZE);
+    if (i < nodes.length && !mustStopAddReamining) {
+      window.setTimeout(function add_remaining() {
+        addRemainingResults(nodes, from + CHUNK_SIZE);
       },0);
+    }
+    else {
+      inScrolling = false;
+    }
+  }
+
+  function onSearchBlur(e) {
+    window.console.log('--- Search blur invoked ----');
+    inScrolling = true;
+
+    if(conctactsListView.classList.contains('nonemptysearch') && !inScrolling) {
+      // All the searchable nodes have to be added
+      addRemainingResults(searchableNodes, SEARCH_PAGE_SIZE);
     }
   }
 
@@ -79,18 +103,32 @@ contacts.Search = (function() {
     var end = from + CHUNK_SIZE;
     for(var c = from; c < end && c < contacts.length; c++) {
       var contact = contacts[c].node || contacts[c];
-      contact.classList.add('search');
       var contactText = contacts[c].text || getSearchText(contacts[c]);
 
       if (!pattern.test(contactText)) {
-        contact.classList.add('hide');
+        // contact.classList.add('hide');
         window.console.log('Adding classlist hide for contact: ', contact.dataset.uuid, currentTextToSearch);
+        if(contact.dataset.uuid in currentSet) {
+          try {
+            searchList.removeChild(contact);
+          }
+          catch(e) { }
+          delete currentSet[contact.dataset.uuid];
+        }
       } else {
         if(state.count === 0) {
           conctactsListView.classList.add('nonemptysearch');
           searchNoResult.classList.add('hide');
         }
-        document.querySelector('#search-list').appendChild(contact);
+        // Only an initial page of elements is loaded in the search list
+        if((state.count + Object.keys(currentSet).length)
+           < SEARCH_PAGE_SIZE && !(contact.dataset.uuid in currentSet)) {
+          currentSet[contact.dataset.uuid] = true;
+          searchList.appendChild(contact);
+        }
+        else {
+          window.console.log('#### not adding more ####')
+        }
         // contact.classList.remove('hide');
         state.searchables.push({
           node: contact,
@@ -110,7 +148,6 @@ contacts.Search = (function() {
         searchNoResult.classList.remove('hide');
         searchableNodes = null;
       } else {
-        // Being more responsive by only loading the imgs after a certain delay
         document.dispatchEvent(new CustomEvent('onupdate'));
         searchableNodes = state.searchables;
       }
@@ -123,15 +160,21 @@ contacts.Search = (function() {
     prevTextToSearch = currentTextToSearch;
 
     currentTextToSearch = normalizeText(searchBox.value.trim());
-    var pattern = new RegExp(currentTextToSearch, 'i');
 
-    var contactsToSearch = getContactsToSearch(currentTextToSearch,
-                                               prevTextToSearch);
-    var state = {
-      count: 0,
-      searchables: []
+    if(currentTextToSearch.length === 0) {
+      conctactsListView.classList.remove('nonemptysearch');
+      resetState();
     }
-    doSearch(contactsToSearch, 0, currentTextToSearch, pattern, state);
+    else {
+      var pattern = new RegExp(currentTextToSearch, 'i');
+      var contactsToSearch = getContactsToSearch(currentTextToSearch,
+                                               prevTextToSearch);
+      var state = {
+        count: 0,
+        searchables: []
+      }
+      doSearch(contactsToSearch, 0, currentTextToSearch, pattern, state);
+    }
   };
 
   function getSearchText(contact) {
@@ -159,13 +202,15 @@ contacts.Search = (function() {
 
   var getContactsToSearch = function getContactsToSearch(newText, prevText) {
     var out;
-    if (newText.length === (prevText.length + 1) &&
+    if (newText.length > prevText.length &&
         prevText.length > 0 && newText.startsWith(prevText)) {
       // Only those nodes which are not hidden are returned
       window.console.log('**** Reusing searchables ****');
       out = searchableNodes || getContactsDom();
     } else {
       searchableNodes = null;
+      searchList.innerHTML = '';
+      currentSet = {};
       out = getContactsDom();
     }
 
