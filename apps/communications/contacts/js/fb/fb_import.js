@@ -68,6 +68,7 @@ if (typeof fb.importer === 'undefined') {
     var headerElement = document.querySelector('header');
     var friendsMsgElement = document.querySelector('#friends-msg');
     var scrollableElement = document.querySelector('#mainContent');
+    var imgLoader;
 
     var BLOCK_SIZE = 5;
 
@@ -182,6 +183,9 @@ if (typeof fb.importer === 'undefined') {
      *
      */
     function friendsAvailable() {
+      imgLoader = new ImageLoader('#mainContent',
+                                ".block-item:not([data-uuid='#uid#'])");
+
       Curtain.hide(sendReadyEvent);
 
       friendsLoaded = true;

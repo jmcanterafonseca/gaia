@@ -53,7 +53,6 @@ fbFriends.List = (function() {
 
     groupsList.removeChild(groupsList.children[0]); // Deleting template
     FixedHeader.init('#mainContent', '#fixed-container', '.fb-import-list header');
-    ImageLoader.init('#mainContent', ".block-item:not([data-uuid='#uid#'])");
 
     if (typeof cb === 'function') {
       window.setTimeout(function() { cb(); }, 0);

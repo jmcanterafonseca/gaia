@@ -12,6 +12,7 @@ contacts.List = (function() {
       scrollable,
       settingsView,
       noContacts,
+      imgLoader,
       orderByLastName = null,
       emptyList = true;
 
@@ -40,12 +41,11 @@ contacts.List = (function() {
     FixedHeader.init('#groups-container', '#fixed-container', selector);
 
     initAlphaScroll();
-    ImageLoader.init('#groups-container', 'li');
+    imgLoader = new ImageLoader('#groups-container', 'li');
 
     contacts.Search.init(conctactsListView, favoriteGroup, function(e) {
-      contacts.Search.exitSearchMode();
       onClickHandler(e);
-    } );
+    });
   }
 
   var initAlphaScroll = function initAlphaScroll() {
@@ -228,7 +228,7 @@ contacts.List = (function() {
         renderFavorites(favorites);
         cleanLastElements(counter);
         FixedHeader.refresh();
-        ImageLoader.reload();
+        imgLoader.reload();
         Contacts.hideOverlay();
         emptyList = false;
         return;
@@ -244,7 +244,7 @@ contacts.List = (function() {
       }
 
       window.setTimeout(function() {
-        ImageLoader.reload();
+        imgLoader.reload();
         renderChunks(index + 1);
       }, 0);
     }
@@ -479,7 +479,7 @@ contacts.List = (function() {
     }
     toggleNoContactsScreen(false);
     FixedHeader.refresh();
-    ImageLoader.reload();
+    imgLoader.reload();
   }
 
   // Fills the contact data to display if no givenName and familyName
@@ -608,12 +608,14 @@ contacts.List = (function() {
   }
 
   function onClickHandler(evt) {
-    window.console.log('Click Handler invoked');
+    window.console.log('Click Handler invoked', evt.target.id, evt.target.tagName);
 
-    var dataset = evt.target.dataset || evt.target.parentNode.dataset;
-    if (dataset && 'uuid' in dataset) {
+    var dataset = evt.target.dataset || {};
+    var parentDataset = evt.target.parentNode.dataset || {};
+    var uuid = dataset.uuid || parentDataset.uuid;
+    if (uuid) {
       callbacks.forEach(function(callback) {
-        callback(dataset.uuid);
+        callback(uuid);
       });
     }
     evt.preventDefault();

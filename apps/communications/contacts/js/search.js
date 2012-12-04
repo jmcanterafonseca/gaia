@@ -17,30 +17,34 @@ contacts.Search = (function() {
       prevTextToSearch = '',
       // Pointer to the nodes which are currently on the result list
       currentSet = {},
-      inScrolling = false,
       mustStopAddReamining = false,
       theClones = {},
       CHUNK_SIZE = 10,
+      // This value might change for other form factors
       SEARCH_PAGE_SIZE = 7,
-      clickHandler;
+      imgLoader;
 
   var init = function load(_conctactsListView, _groupFavorites, _clickHandler) {
     conctactsListView = _conctactsListView;
     favoriteGroup = _groupFavorites;
-    clickHandler = _clickHandler;
     searchBox = document.getElementById('search-contact');
     searchList = document.querySelector('#search-list');
-    if(typeof clickHandler === 'function') {
-      searchList.addEventListener('click',clickHandler);
+    if (typeof _clickHandler === 'function') {
+      searchList.addEventListener('click', _clickHandler);
     }
     searchNoResult = document.getElementById('no-result');
     list = document.getElementById('groups-list');
-    searchList.parentNode.addEventListener('scroll', onSearchBlur);
+    searchBox.addEventListener('blur', function() {
+      window.setTimeout(onSearchBlur,0);
+    });
+
+    imgLoader = new ImageLoader('#search-list', 'li');
   }
 
   //Search mode instructions
   var exitSearchMode = function exitSearchMode(evt) {
-    if(evt) {
+    mustStopAddReamining = true;
+    if (evt) {
       evt.preventDefault();
     }
     window.setTimeout(function exit_search() {
@@ -82,20 +86,17 @@ contacts.Search = (function() {
 
     if (i < nodes.length && !mustStopAddReamining) {
       window.setTimeout(function add_remaining() {
+        imgLoader.reload();
         addRemainingResults(nodes, from + CHUNK_SIZE);
       },0);
-    }
-    else {
-      inScrolling = false;
     }
   }
 
   function onSearchBlur(e) {
     window.console.log('--- Search blur invoked ----');
-    inScrolling = true;
 
     if (conctactsListView.classList.contains('nonemptysearch') &&
-        !inScrolling) {
+        !mustStopAddReamining) {
       // All the searchable nodes have to be added
       addRemainingResults(searchableNodes, SEARCH_PAGE_SIZE);
     }
@@ -177,6 +178,7 @@ contacts.Search = (function() {
         searchableNodes = null;
       } else {
         document.dispatchEvent(new CustomEvent('onupdate'));
+        imgLoader.reload();
         searchableNodes = state.searchables;
       }
     } else {

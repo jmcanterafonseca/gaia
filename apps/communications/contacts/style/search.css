@@ -90,7 +90,8 @@ form.search button[type="submit"] {
 }
 
 #no-result {
-  margin-top: -moz-calc((100% - 0.5rem) / 2);
+  color: black;
+  margin-top: -moz-calc((100% - 7.3rem) / 2);
   text-align: center;
   margin-left: -0.8rem;
 }
