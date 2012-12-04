@@ -21,13 +21,18 @@ contacts.Search = (function() {
       mustStopAddReamining = false,
       theClones = {},
       CHUNK_SIZE = 10,
-      SEARCH_PAGE_SIZE = 10;
+      SEARCH_PAGE_SIZE = 7,
+      clickHandler;
 
-  var init = function load(_conctactsListView, _groupFavorites) {
+  var init = function load(_conctactsListView, _groupFavorites, _clickHandler) {
     conctactsListView = _conctactsListView;
     favoriteGroup = _groupFavorites;
+    clickHandler = _clickHandler;
     searchBox = document.getElementById('search-contact');
     searchList = document.querySelector('#search-list');
+    if(typeof clickHandler === 'function') {
+      searchList.addEventListener('click',clickHandler);
+    }
     searchNoResult = document.getElementById('no-result');
     list = document.getElementById('groups-list');
     searchList.parentNode.addEventListener('scroll', onSearchBlur);
@@ -35,7 +40,9 @@ contacts.Search = (function() {
 
   //Search mode instructions
   var exitSearchMode = function exitSearchMode(evt) {
-    evt.preventDefault();
+    if(evt) {
+      evt.preventDefault();
+    }
     window.setTimeout(function exit_search() {
       searchNoResult.classList.add('hide');
       conctactsListView.classList.remove('searching');
@@ -49,6 +56,7 @@ contacts.Search = (function() {
 
       // Resetting state
       contactNodes = null;
+      searchList.innerHTML = '';
 
       resetState();
     },0);
@@ -127,8 +135,6 @@ contacts.Search = (function() {
       var contactText = contacts[c].text || getSearchText(contacts[c]);
 
       if (!pattern.test(contactText)) {
-        // contact.classList.add('hide');
-        window.console.log('Adding classlist hide for contact: ', contact.dataset.uuid, currentTextToSearch);
         if (contact.dataset.uuid in currentSet) {
           try {
             searchList.removeChild(currentSet[contact.dataset.uuid]);
@@ -142,7 +148,7 @@ contacts.Search = (function() {
           searchNoResult.classList.add('hide');
         }
         // Only an initial page of elements is loaded in the search list
-        if ((state.count + Object.keys(currentSet).length)
+        if (Object.keys(currentSet).length
            < SEARCH_PAGE_SIZE && !(contact.dataset.uuid in currentSet)) {
           var clonedNode = getClone(contact);
           currentSet[contact.dataset.uuid] = clonedNode;
@@ -225,7 +231,7 @@ contacts.Search = (function() {
   var getContactsToSearch = function getContactsToSearch(newText, prevText) {
     var out;
     if (newText.length > prevText.length &&
-        prevText.length > 0 && newText.startsWith(prevText)) {
+        prevText.length > 0 && newText.indexOf(prevText) === 0) {
       // Only those nodes which are not hidden are returned
       window.console.log('**** Reusing searchables ****');
       out = searchableNodes || getContactsDom();

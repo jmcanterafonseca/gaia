@@ -42,7 +42,10 @@ contacts.List = (function() {
     initAlphaScroll();
     ImageLoader.init('#groups-container', 'li');
 
-    contacts.Search.init(conctactsListView, favoriteGroup);
+    contacts.Search.init(conctactsListView, favoriteGroup, function(e) {
+      contacts.Search.exitSearchMode();
+      onClickHandler(e);
+    } );
   }
 
   var initAlphaScroll = function initAlphaScroll() {
@@ -605,7 +608,9 @@ contacts.List = (function() {
   }
 
   function onClickHandler(evt) {
-    var dataset = evt.target.parentNode.dataset;
+    window.console.log('Click Handler invoked');
+
+    var dataset = evt.target.dataset || evt.target.parentNode.dataset;
     if (dataset && 'uuid' in dataset) {
       callbacks.forEach(function(callback) {
         callback(dataset.uuid);

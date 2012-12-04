@@ -85,7 +85,22 @@ if (typeof fb.importer === 'undefined') {
       };
 
       utils.alphaScroll.init(params);
-      contacts.Search.init(document.getElementById('content'));
+      contacts.Search.init(document.getElementById('content'), null, function(e) {
+        window.console.log('Import handler invoked');
+
+        var target = e.target;
+        var uid = target.dataset.uuid;
+        var checkbox = target.querySelector('input[type="checkbox"]');
+        checkbox.checked = !checkbox.checked;
+
+        var realNode = contactList.querySelector(
+                            '[data-uuid=' + '"' + uid + '"' + "]");
+        var realCheckbox = realNode.querySelector('input[type="checkbox"]');
+
+        UI.selection({
+          target: realNode
+        });
+      });
     }
 
     UI.end = function(event) {
@@ -912,4 +927,3 @@ if (typeof fb.importer === 'undefined') {
 
   })(document);
 }
-
