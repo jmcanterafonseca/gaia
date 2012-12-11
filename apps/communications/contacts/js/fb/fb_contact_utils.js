@@ -210,18 +210,6 @@ fb.getAddress = function(fbdata) {
   return out;
 };
 
-// Returns the mozContact associated to a UID in FB
-fb.getMozContact = function(uid, onsuccess, onerror) {
-  var filter = {
-    filterBy: ['category'],
-    filterValue: uid,
-    filterOp: 'contains'
-  };
-
-  var req = navigator.mozContacts.find(filter);
-  req.onsuccess = onsuccess;
-  req.onerror = onerror;
-};
 
 fb.mergeContact = function(devContact, fbContact) {
   var out = {};
@@ -246,23 +234,57 @@ fb.mergeContact = function(devContact, fbContact) {
 };
 
 fb.getContactByNumber = function(number, onsuccess, onerror) {
-  var DB_NAME = 'Gaia_Facebook_Friends';
-  var STORE_NAME = 'FBPhones';
-  var indexedDB = window.mozIndexedDB || window.webkitIndexedDB ||
-  window.indexedDB;
-  var req = indexedDB.open(DB_NAME, 1.0);
+  var req = fb.contacts.getByPhone(number);
 
   req.onsuccess = function(e) {
-    database = e.target.result;
-    var database;
-    var transaction = database.transaction([STORE_NAME], 'readonly');
-    var objectStore = transaction.objectStore(STORE_NAME);
-    var areq = objectStore.get(number);
-
-    areq.onsuccess = function(e) {
-      if (e.target.result)
-        onsuccess(e.target.result);
-    };
-    areq.onerror = onerror;
+    onsuccess(e.target.result);
   };
+
+  req.onerror = onerror;
 };
+
+// Only will be executed in the case of not loading fb.utils previously
+// i.e. dialer and call log FB integration
+var fb = window.fb || {};
+fb.utils = window.fb.utils || {};
+
+// Returns the mozContact associated to a UID in FB
+fb.utils.getMozContactByUid = function(uid, onsuccess, onerror) {
+  var filter = {
+    filterBy: ['category'],
+    filterValue: uid,
+    filterOp: 'contains'
+  };
+
+  var req = navigator.mozContacts.find(filter);
+  req.onsuccess = onsuccess;
+  req.onerror = onerror;
+};
+
+ /**
+  *   Request auxiliary object to support asynchronous calls
+  *
+  */
+fb.utils.Request = function() {
+  this.done = function(result) {
+    this.result = result;
+    if (typeof this.onsuccess === 'function') {
+      var ev = {};
+      ev.target = this;
+      window.setTimeout(function() {
+        this.onsuccess(ev);
+      }.bind(this), 0);
+    }
+  }
+
+  this.failed = function(error) {
+    this.error = error;
+    if (typeof this.onerror === 'function') {
+      var ev = {};
+      ev.target = this;
+      window.setTimeout(function() {
+        this.onerror(ev);
+      }.bind(this), 0);
+    }
+  }
+}
