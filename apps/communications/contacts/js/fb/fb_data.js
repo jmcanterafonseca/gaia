@@ -11,6 +11,7 @@ if (!window.fb.contacts) {
 
     var database;
     var STORE_NAME = 'FBFriends';
+    var STORE_NAME_PHONES = 'FBPhones';
 
 
     /**
@@ -18,7 +19,9 @@ if (!window.fb.contacts) {
      *
      */
     function createStore(e) {
-      e.target.result.createObjectStore(STORE_NAME, { keyPath: 'uid' });
+      var database = e.target.result;
+      database.createObjectStore(STORE_NAME, { keyPath: 'uid' });
+      database.createObjectStore(STORE_NAME_PHONES, { keyPath: 'tel.value' });
     }
 
 
@@ -67,6 +70,17 @@ if (!window.fb.contacts) {
 
         var req = objectStore.put(obj);
         req.onsuccess = function(e) {
+          if (obj.tel && obj.tel.length) {
+            obj.tel.forEach(function savePhone(tel) {
+              var phonesTrans = database.transaction([STORE_NAME_PHONES], 'readwrite');
+              var phonesStore = phonesTrans.objectStore(STORE_NAME_PHONES);
+              var out = {
+                tel: tel,
+                contact: obj
+              };
+              var req = phonesStore.put(out);
+            })
+          }
           retRequest.done(e.target.result);
         }
 

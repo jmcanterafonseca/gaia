@@ -209,3 +209,60 @@ fb.getAddress = function(fbdata) {
 
   return out;
 };
+
+// Returns the mozContact associated to a UID in FB
+fb.getMozContact = function(uid, onsuccess, onerror) {
+  var filter = {
+    filterBy: ['category'],
+    filterValue: uid,
+    filterOp: 'contains'
+  };
+
+  var req = navigator.mozContacts.find(filter);
+  req.onsuccess = onsuccess;
+  req.onerror = onerror;
+};
+
+fb.mergeContact = function(devContact, fbContact) {
+  var out = {};
+  for (var elem in devContact) {
+    out[elem] = devContact[elem];
+    if (fbContact[elem] && fbContact[elem].length) {
+      var devElem = devContact[elem] || [];
+      var fbElem = fbContact[elem];
+      if (devElem.toString() != fbElem.toString()) {
+        out[elem] = devElem.concat(fbContact[elem]);
+      }
+    }
+  }
+
+  for (var elem in fbContact) {
+    if (!out[elem]) {
+      out[elem] = fbContact[elem];
+    }
+  }
+
+  return out;
+};
+
+fb.getContactByNumber = function(number, onsuccess, onerror) {
+  var DB_NAME = 'Gaia_Facebook_Friends';
+  var STORE_NAME = 'FBPhones';
+  var indexedDB = window.mozIndexedDB || window.webkitIndexedDB ||
+  window.indexedDB;
+  var req = indexedDB.open(DB_NAME, 1.0);
+
+  req.onsuccess = function(e) {
+    database = e.target.result;
+    var database;
+    var transaction = database.transaction([STORE_NAME], 'readonly');
+    var objectStore = transaction.objectStore(STORE_NAME);
+    var areq = objectStore.get(number);
+
+    areq.onsuccess = function(e) {
+      if (e.target.result)
+        onsuccess(e.target.result);
+    };
+    areq.onerror = onerror;
+  };
+};

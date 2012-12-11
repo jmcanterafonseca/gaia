@@ -3,7 +3,10 @@
 
 'use strict';
 
+var fbContacts = {};
+
 var Contacts = {
+
   findByNumber: function findByNumber(number, callback) {
     var options;
     var variants;
@@ -29,7 +32,6 @@ var Contacts = {
       };
     }
 
-
     var mozContacts = navigator.mozContacts;
     if (!mozContacts)
       callback(null);
@@ -37,7 +39,28 @@ var Contacts = {
     var request = mozContacts.find(options);
     request.onsuccess = function findCallback() {
       if (request.result.length === 0) {
-        callback(null);
+        // Searching each variant on the fbContacts
+        // cache
+        var contact = null;
+        var matchingTel = null;
+
+        variants.forEach(function(variant) {
+          fb.getContactByNumber(variant, function success(result) {
+            var contact = result.contact;
+            var matchingTel = result.tel;
+            fb.getMozContact(contact.uid, function merge(e) {
+              var devContact = e.target.result[0];
+              var finalContact = fb.mergeContact(devContact, contact);
+              callback(finalContact, matchingTel);
+            }, function error() {
+              console.error('Error getting mozContact');
+              callback(null);
+            });
+          }, function error() {
+            console.error('Error getting FB contacts');
+            callback(null);
+          });
+        });
         return;
       }
 
