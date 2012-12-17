@@ -41,6 +41,7 @@
     <link rel="stylesheet" href="style/shared/core/css/root.css">
 
     <!-- Building Blocks -->
+    <link href="/shared/style_unstable/progress_activity.css" rel="stylesheet">
     <link href="/shared/style/status.css" rel="stylesheet">
     <link href="/shared/style/headers.css" rel="stylesheet">
     <link href="/shared/style/input_areas.css" rel="stylesheet">
@@ -85,8 +86,8 @@
         <section id='mainContent' data-state="selection">
           <form id="search-container" role="search" class="search">
             <p>
-              <label for="search-contact">
-                <input type="search" name="search" class="textfield" placeholder="Search" data-l10n-id="search-contact" />
+              <label for="search" id="search-start">
+                <input type="search" name="search" class="textfield" placeholder="Search" data-l10n-id="search-contact">
               </label>
             </p>
           </form>
@@ -127,26 +128,32 @@
       </section> <!-- main -->
 
       <section id='fixed-container' class='fixed-title-fb'></section>
-
-      <section id="search-view" class="view">
-        <form id="searchview-container" role="search" class="search">
-           <button id='done-search' type="submit" data-l10n-id="done-search">Done</button>
-           <p>
-             <label for="search-contact">
-               <input data-cancelable required type="search" name="search" class="textfield"
-                    placeholder="Search" id="search-contact"  data-l10n-id="search-contact">
-               <button type="reset" class="hide">Clear</button>
-             </label>
-           </p>
-        </form>
-        <section id="groups-list-search" data-type="list">
-          <p id="no-result" class="hide" data-l10n-id="noResults">No contacts found</p>
-          <ol id="search-list">
-          </ol>
-        </section>
-      </section> <!-- search-view section -->
-
     </section> <!-- role="region" -->
+
+    <section id="search-view" class="view" role="region">
+      <form id="searchview-container" role="search" class="search">
+         <button id='done-search' type="submit" data-l10n-id="done-search">Done</button>
+         <p>
+           <label for="search-contact">
+             <input data-cancelable required type="search" name="search" class="textfield"
+                  placeholder="Search" id="search-contact"  data-l10n-id="search-contact">
+             <button type="reset" class="hide">Clear</button>
+           </label>
+         </p>
+      </form>
+      <section id="groups-list-search" data-type="list">
+        <ol id="search-list">
+        </ol>
+      </section>
+
+      <section>
+        <p id="no-result" class="hide" data-l10n-id="noResults">No contacts found</p>
+        <p id="search-progress" class="hidden" role="status">
+          <progress  class="small"></progress>
+        </p>
+      </section>
+
+    </section> <!-- search-view section -->
 
     <section id="statusMsg" role="status">
       <p></p>
