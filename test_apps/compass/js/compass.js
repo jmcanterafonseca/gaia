@@ -1,6 +1,8 @@
 // Compass application for B2G
 // Contributed by José Manuel Cantera (jmcf@tid.es)
 
+window.console.log('Starting loading script: ', window.performance.now());
+
 (function() {
   var canvas,
       ctx,
@@ -164,9 +166,13 @@
     paint();
   }
 
+  window.console.log('Starting painting: ', window.performance.now());
   // Everything starts
   init();
   paint();
   window.addEventListener('deviceorientation', orientationDataChanged, true);
+
+  window.console.log('Nav Start: ', window.performance.now(),
+                     window.performance.timing.navigationStart);
 
 })();
