@@ -36,26 +36,23 @@ function ValueSelector(title, list) {
 
     body = document.body;
 
-    el = document.createElement('section');
-    el.setAttribute('class', 'valueselector');
-    el.setAttribute('role', 'region');
+    el = document.createElement('form');
+    el.setAttribute('role', 'dialog');
 
-    strPopup = '<div role="dialog">';
-    strPopup += '  <div class="center">';
-    strPopup += '    <h3>No Title</h3>';
-    strPopup += '    <ul>';
-    strPopup += '      <li>';
-    strPopup += '        <label>';
-    strPopup += '          <input type="radio" name="option">';
-    strPopup += '          <span>Dummy element</span>';
-    strPopup += '        </label>';
-    strPopup += '      </li>';
-    strPopup += '    </ul>';
-    strPopup += '  </div>';
-    strPopup += '  <menu>';
-    strPopup += '    <button>' + _('cancel') + '</button>';
-    strPopup += '  </menu>';
-    strPopup += '</div>';
+    strPopup =  '<section class="left">';
+    strPopup += '  <h1>No Title</h1>';
+    strPopup += '  <ul role="listbox">';
+    strPopup += '    <li role="option">';
+    strPopup += '      <label for="option">';
+    strPopup += '        <input type="radio" name="option">';
+    strPopup += '        <span>Dummy element</span>';
+    strPopup += '      </label>';
+    strPopup += '    </li>';
+    strPopup += '  </ul>';
+    strPopup += '</section>';
+    strPopup += '<menu>';
+    strPopup += '  <button class="full">' + _('cancel') + '</button>';
+    strPopup += '</menu>';
 
     el.innerHTML += strPopup;
     body.appendChild(el);
@@ -88,7 +85,7 @@ function ValueSelector(title, list) {
   }
 
   render = function() {
-    var title = el.querySelector('h3'),
+    var title = el.querySelector('h1'),
         list = el.querySelector('ul');
 
     title.innerHTML = data.title;
@@ -101,10 +98,16 @@ function ValueSelector(title, list) {
           span = document.createElement('span'),
           text = document.createTextNode(data.list[i].label);
 
+      li.setAttribute('role', 'option');
+      input.setAttribute('type', 'radio');
+
       span.appendChild(text);
       span.addEventListener('click', data.list[i].callback, false);
-      input.setAttribute('type', 'radio');
-      input.setAttribute('name', 'option');
+
+      var optionName = 'option' + i;
+      input.setAttribute('name', optionName);
+      label.setAttribute('for', optionName);
+
       label.appendChild(input);
       label.appendChild(span);
       li.appendChild(label);
