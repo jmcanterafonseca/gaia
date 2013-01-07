@@ -44,7 +44,9 @@ if (!fb.link) {
     var LAST_NAME_COND = ['strpos(lower(last_name), ' , "'", null,
                                                               "'", ') >= 0'];
 
-    var ALL_QUERY = ['SELECT uid, name, email from user ',
+    var ALL_QUERY = ['SELECT uid, name, email, first_name',
+    ' last_name, middle_name',
+    'FROM  user ',
     ' WHERE uid IN (SELECT uid1 FROM friend WHERE uid2=me()) ',
     ' ORDER BY name'];
 
@@ -134,6 +136,21 @@ if (!fb.link) {
       return out;
     }
 
+    function buildQueryAccents() {
+      var queries = {};
+
+      ACCENTS_QUERY[1] = ACCENTS_QUERY[ACCENTS_QUERY.length - 1] = 'last_name';
+      queries.query1 = ACCENTS_QUERY.join('');
+
+      ACCENTS_QUERY[1] = ACCENTS_QUERY[ACCENTS_QUERY.length - 1] = 'first_name';
+      queries.query2 = 'select name, first_name from #query1 order by first_name';
+
+      ACCENTS_QUERY[1] =
+                    ACCENTS_QUERY[ACCENTS_QUERY.length - 1] = 'middle_name';
+      queries.query3 = ACCENTS_QUERY.join('');
+
+      return JSON.stringify(queries);
+    }
 
     // entry point for obtaining a remote proposal
     link.getRemoteProposal = function(acc_tk, contid) {
@@ -249,7 +266,14 @@ if (!fb.link) {
       if (response.data.length === 0 && numQueries === 1) {
         getRemoteProposalByNames(access_token, cdata);
       } else if (response.data.length === 0 && numQueries === 2) {
-        getRemoteProposalAll(access_token);
+        // Need to check whether the target contact has special chars
+        var normalizedName = utils.text.normalize(cdata.name);
+        if(normalizedName !== cdata.name) {
+          doQueryAccents();
+        }
+        else {
+          getRemoteProposalAll(access_token);
+        }
       } else {
         var data = response.data;
         currentRecommendation = data;
@@ -277,6 +301,36 @@ if (!fb.link) {
         imgLoader.reload();
 
         Curtain.hide(sendReadyEvent);
+      }
+    }
+
+    function doQueryAccents() {
+      state = 'proposal';
+      currentNetworkRequest = fb.utils.runQuery(buildQueryAccents(), {
+        success: queryAccentsReady,
+        error: fb.link.errorHandler,
+        timeout: fb.link.timeoutHandler
+      }, access_token);
+    }
+
+    function queryAccentsReady(response) {
+      if (typeof response.error !== 'undefined' || !response.data) {
+        window.console.error('FB: Error while retrieving link data',
+                                  response.error.code, response.error.message);
+        return;
+      }
+
+      if(response.data.length === 3) {
+        var familyName = cdata.familyName[0].trim();
+        var normalizedFamilyName = utils.text.normalize(familyName);
+        if(normalizedFamilyName !== familyName &&
+           response.data[0].fql_result_set) {
+          var data = response.data[0].fql_result_set;
+          var searchResult = binarySearch(normalizedFamilyName, data,
+                                          'last_name', function(d) {
+                                            return utils.text.normalize(d);
+                                          });
+        }
       }
     }
 
@@ -363,7 +417,7 @@ if (!fb.link) {
         });
 
         clearList();
-        
+
         var fragment = document.createDocumentFragment();
         utils.templates.append(friendsList, response.data, fragment);
         friendsList.appendChild(fragment);
