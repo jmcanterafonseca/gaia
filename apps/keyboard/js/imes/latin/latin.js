@@ -99,17 +99,15 @@
     case 'text':
     case 'textarea':
     case 'search':
-      switch (mode) {
-      case 'verbatim':
-      case 'latin':
-      case 'latin-prose':
+      if(mode.indexOf('verbatim') || mode.indexOf('latin') ||
+         mode.indexOf('latin-prose')) {
         return mode;
-      default:
-        return (type === 'textarea') ? 'latin-prose' : 'latin';
+      } else {
+        return (type === 'textarea') ? ['latin-prose'] : ['latin'];
       }
 
     default:
-      return 'verbatim';
+      return ['verbatim'];
     }
   }
 
@@ -117,7 +115,7 @@
   // we need to provide useful typing assistance.
   function activate(lang, suggestionsEnabled, state) {
     language = lang;
-    inputMode = getInputMode(state.type, state.inputmode);
+    inputMode = getInputMode(state.type, state.inputmode.match(/\w+/g));
     inputText = state.value;
     cursor = state.selectionStart;
     if (state.selectionEnd > state.selectionStart)
@@ -127,8 +125,8 @@
 
     // Figure out what kind of input assistance we're providing for this
     // activation.
-    capitalizing = punctuating = (inputMode === 'latin-prose');
-    suggesting = (suggestionsEnabled && inputMode !== 'verbatim');
+    capitalizing = punctuating = (inputMode.indexOf('latin-prose') != -1);
+    suggesting = (suggestionsEnabled && inputMode.indexOf('verbatim') === -1);
 
     // If we are going to offer suggestions, set up the worker thread.
     if (suggesting)
