@@ -1,0 +1,86 @@
+/* Custom FB item */
+#view-settings [data-type="list"] .fb-item,
+#import_contacts [data-type="list"] .fb-item {
+  height: auto;
+  min-height: 6rem;
+}
+
+#view-settings [data-type="list"] .fb-item p,
+#import_contacts [data-type="list"] .fb-item p {
+  padding-left: 3.3rem;
+}
+
+#view-settings [data-type="list"] .fb-item p span,
+#view-settings [data-type="list"] .fb-item p span {
+  display: block;
+  padding-bottom: 0.4rem;
+}
+
+#view-settings [data-type="list"] .fb-item p:first-of-type,
+#import_contacts [data-type="list"] .fb-item p:first-of-type {
+  background: url(/contacts/style/fb/profile_icon.png) no-repeat left calc(50% + 0.5rem);
+}
+
+#view-settings [data-type="list"] .fb-item aside,
+#import_contacts [data-type="list"] .fb-item aside {
+  width: 6.5rem;
+  height: 6rem;
+  pointer-events: none;
+}
+
+#view-settings [data-type="list"] .fb-item aside label,
+#import_contacts [data-type="list"] .fb-item aside label {
+  position: absolute;
+  right: 0;
+}
+
+#view-settings [data-type="list"] .fb-item[aria-disabled="true"],
+#import_contacts [data-type="list"] .fb-item[aria-disabled="true"] {
+  pointer-events: none;
+}
+
+#view-settings [data-type="list"] .fb-item[aria-disabled="true"]:after,
+#import_contacts [data-type="list"] .fb-item[aria-disabled="true"]:after {
+  display: none;
+}
+
+#view-settings [data-type="list"] .fb-item[aria-disabled="true"] aside,
+#import_contacts [data-type="list"] .fb-item[aria-disabled="true"] aside {
+  opacity: 0.3;
+}
+
+/* Extending BB lists components*/
+#view-settings [data-type="list"] li aside,
+#import_contacts [data-type="list"] li aside {
+  pointer-events: auto;
+}
+
+#view-settings [data-type="list"] li aside label,
+#view-settings [data-type="list"] li aside label {
+  height: 100%;
+  width: 6.5rem;
+}
+
+/* Extending BB buttons Icons at left side*/
+#view-settings [data-type="list"] li button,
+#import_contacts [data-type="list"] li button {
+  margin: 1rem 0;
+}
+
+#view-settings [data-type="list"] li button.icon,
+#import_contacts [data-type="list"] li button.icon {
+  padding: 0 1rem 0 4rem;
+}
+
+#view-settings [data-type="list"] li button.icon:before,
+#import_contacts [data-type="list"] li button.icon:before  {
+  right: auto;
+  left: 0.5rem;
+}
+
+/* Extending icon types*/
+#view-settings [data-type="list"] li button.icon-sim:before,
+#import_contacts [data-type="list"] li button.icon-sim:before {
+  background-image: url(/contacts/style/images/import_SIM.png);
+  background-size: 1.6rem;
+}

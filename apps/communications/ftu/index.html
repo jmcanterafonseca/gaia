@@ -18,6 +18,7 @@
   <link rel="stylesheet" type="text/css" href="/ftu/css/style.css">
   <link rel="stylesheet" type="text/css" href="/ftu/css/fb_extensions.css">
   <link rel="stylesheet" type="text/css" href="/facebook/style/curtain_frame.css">
+  <link rel="stylesheet" type="text/css" href="/contacts/style/import_settings.css" >
 
   <title>Welcome to Browser OS</title>
 
@@ -221,25 +222,29 @@
         </form>
       </section>
       <section role="region" id="import_contacts">
-        <article data-type="list">
-          <ul>
-            <li id="sim-import-button">
-              <p data-l10n-id="importSim2">SIM card</p>
-              <p id="sim-import-feedback" data-l10n-id="notImportedYet">Not imported yet</p>
-            </li>
-          </ul>
-        </article>
+        <ul data-type="list">
+          <li >
+            <button id="sim-import-button" class="icon icon-sim" data-l10n-id="importSim">
+              Import from SIM
+            </button>
+            <p style="display: none" id="sim-import-feedback" data-l10n-id="notImportedYet">Not imported yet</p>
+          </li>
+        </ul>
         <header>
           <h2 data-l10n-id="otherAccount">Other accounts</h2>
         </header>
-        <article data-type="list">
-          <ul>
-            <li id="fb_import" class="disabled">
-              <p data-l10n-id="importFb2">Facebook</p>
-              <p id="fb_import_feedback" data-l10n-id="notImportedYet">Not imported yet</p>
-            </li>
-          </ul>
-        </article>
+        <ul data-type="list">
+          <li id="fb_import" class="fb-item">
+            <aside class="pack-end">
+              <label>
+                  <input type="checkbox" data-type="switch" name="fb.imported">
+                  <span id="span-check-fb"></span>
+              </label>
+            </aside>
+            <p data-l10n-id="importFb2">Enable Facebook</p>
+            <p id="fb-totals"></p>
+          </li>
+        </ul>
       </section>
       <section role="region" id="about-your-rights">
         <p data-l10n-id="about-your-rights-0">

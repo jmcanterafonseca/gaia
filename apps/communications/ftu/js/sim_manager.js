@@ -176,7 +176,7 @@ var SimManager = {
     UIManager.loadingHeader.innerHTML = _('simContacts-importing');
     UIManager.loadingOverlay.classList.add('show-overlay');
     var importButton = UIManager.simImportButton;
-    importButton.classList.add('disabled');
+    importButton.setAttribute('disabled','disabled');
 
     importSIMContacts(
       function() {
@@ -193,4 +193,3 @@ var SimManager = {
     }.bind(this));
   }
 };
-

@@ -552,14 +552,6 @@ html, body {
   margin-bottom: 0;
 }
 
-#sim-import-button {
-  background: url('images/import_sim.png') center left no-repeat;
-}
-
-#fb_import {
-  background: url('images/import_fb.png') center left no-repeat;
-}
-
 /*
   About your rights
 */
@@ -950,4 +942,3 @@ i.hack-first-child {
   margin-top: -0.2rem;
   background: #FFFFFF;
 }
-

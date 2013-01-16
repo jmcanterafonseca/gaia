@@ -193,21 +193,21 @@ var Navigation = {
         var simOption = document.getElementById('sim-import-button');
         // If there is an unlocked SIM we activate import from SIM
         if (SimManager.available()) {
-          simOption.classList.remove('disabled');
+          simOption.removeAttribute('disabled');
         } else {
-          simOption.classList.add('disabled');
+          simOption.setAttribute('disabled','disabled');
         }
         // If we have 3G or Wifi activate FB import
         if(!WifiManager.api){
           // Desktop
-          fbOption.classList.remove('disabled');
+          fbOption.removeAttribute('aria-disabled');
           return;
         }
         if (WifiManager.api.connection.status === 'connected' ||
             DataMobile.isDataAvailable) {
-          fbOption.classList.remove('disabled');
+          fbOption.removeAttribute('aria-disabled');
         } else {
-          fbOption.classList.add('disabled');
+          fbOption.setAttribute('aria-disabled', 'true');
         }
         break;
       case '#welcome_browser':
