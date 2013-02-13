@@ -95,7 +95,7 @@ fb.Contact = function(deviceContact, cid) {
   }
 
   // For saving an imported FB contact
-  this.save = function() {
+  this.save = function(saveLocal) {
     var outReq = new fb.utils.Request();
 
     if (contactData && navigator.mozContacts) {
@@ -104,11 +104,11 @@ fb.Contact = function(deviceContact, cid) {
         if (photoList && photoList.length > 0 && photoList[0]) {
           utils.squareImage(photoList[0], function squared(squared_image) {
             photoList[0] = squared_image;
-            doSave(outReq);
+            doSave(outReq, saveLocal);
           });
         }
         else {
-          doSave(outReq);
+          doSave(outReq, saveLocal);
         }
       },0);
     }
@@ -119,7 +119,21 @@ fb.Contact = function(deviceContact, cid) {
     return outReq;
   };
 
-  function doSave(outReq) {
+  function doSave(outReq, saveLocal) {
+    if(saveLocal === false) {
+      var fbReq = persistToFbCache(contactData);
+
+      fbReq.onsuccess = function() {
+        outReq.done(fbReq.result);
+      };
+      fbReq.onerror = function() {
+        window.console.error('FB: Error while saving on indexedDB');
+        outReq.failed(fbReq.error);
+      };
+
+      return;
+    }
+
     var contactObj = new mozContact();
     // Info to be saved on mozContacts
     var contactInfo = {};

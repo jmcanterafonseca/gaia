@@ -297,7 +297,7 @@ if (typeof fb.importer === 'undefined') {
       currentRequest.failed(e);
     }
 
-    Importer.importFriend = function(uid, acc_tk) {
+    Importer.importFriend = function(uid, acc_tk, saveDeviceContact) {
       access_token = acc_tk;
 
       currentRequest = new fb.utils.Request();
@@ -305,7 +305,9 @@ if (typeof fb.importer === 'undefined') {
       window.setTimeout(function do_importFriend() {
         var oneFriendQuery = buildFriendQuery(uid);
         currentNetworkRequest = fb.utils.runQuery(oneFriendQuery, {
-                            success: Importer.importDataReady,
+                            success: function() {
+                              Importer.importDataReady(saveDeviceContact);
+                            },
                             error: friendImportError,
                             timeout: friendImportTimeout
         }, access_token);
@@ -315,7 +317,7 @@ if (typeof fb.importer === 'undefined') {
     };
 
     // Invoked when friend data to be imported is ready
-    Importer.importDataReady = function(response) {
+    Importer.importDataReady = function(response, saveDeviceContact) {
       if (typeof response.error === 'undefined') {
         // Just in case this is the first contact imported
         nextUpdateTime = Date.now();
@@ -325,7 +327,7 @@ if (typeof fb.importer === 'undefined') {
         if (friend) {
           fillData(friend);
 
-          var cimp = new ContactsImporter([friend]);
+          var cimp = new ContactsImporter([friend], saveDeviceContact);
           cimp.start();
           cimp.onsuccess = function() {
             var theUrl = friend.pic_big;
@@ -769,7 +771,7 @@ if (typeof fb.importer === 'undefined') {
      *
      *
      */
-    var ContactsImporter = function(pcontacts, progress) {
+    var ContactsImporter = function(pcontacts, progress, saveDeviceContact) {
       // The selected contacts
       var mcontacts = pcontacts;
       // The uids of the selected contacts
@@ -887,7 +889,7 @@ if (typeof fb.importer === 'undefined') {
           var fbContact = new fb.Contact();
           fbContact.setData(cfdata);
 
-          var request = fbContact.save();
+          var request = fbContact.save(saveDeviceContact);
 
           request.onsuccess = function() {
             numResponses++;

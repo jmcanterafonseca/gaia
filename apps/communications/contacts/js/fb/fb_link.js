@@ -514,7 +514,7 @@ if (!fb.link) {
         else {
           state = 'linking';
           var importReq = fb.importer.importFriend(friendUidToLink,
-                                                   access_token);
+                                                   access_token, false);
 
           importReq.onsuccess = function() {
             Curtain.hide(function() {
