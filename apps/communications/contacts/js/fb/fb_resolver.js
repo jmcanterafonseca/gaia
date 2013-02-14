@@ -3,25 +3,25 @@
 var fb = this.fb || {};
 
 fb.resolver = function(item, loader) {
-  var fbUid = item.dataset.fbUid;
   var status = item.dataset.status;
+  var isFbContact = 'fbUid' in item.dataset;
 
-  if (fbUid && status !== 'pending' && status !== 'loaded') {
-    var fbUid = item.dataset.fbUid;
-    var fbReq = fb.contacts.get(fbUid);
+  if (isFbContact && status !== 'pending' && status !== 'loaded') {
+    var fbReq = fb.contacts.get(item.dataset.fbUid);
     item.dataset.status = 'pending';
 
     fbReq.onsuccess = function() {
-      if(fbReq.result.photo && fbReq.result.photo[0]) {
+      var photo = fbReq.result.photo;
+      if(photo && photo[0]) {
         var photoTemplate = document.createElement('aside');
         photoTemplate.className = 'pack-end';
         var image = document.createElement('img');
         photoTemplate.appendChild(image);
-        image.dataset.src = window.URL.createObjectURL(fbReq.result.photo[0]);
+        image.dataset.src = window.URL.createObjectURL(photo[0]);
         item.firstElementChild.insertBefore(photoTemplate,
                                   item.firstElementChild.firstElementChild);
         item.dataset.status = 'loaded';
-        loader.update();
+        document.dispatchEvent(new CustomEvent('onupdate'));
       }
       else {
         item.dataset.status = 'loaded';
@@ -32,7 +32,7 @@ fb.resolver = function(item, loader) {
       item.dataset.status = 'error';
     }
   }
-  else if(status === 'loaded') {
+  else if(status === 'loaded' || !isFbContact) {
     loader.defaultLoad(item);
   }
 }

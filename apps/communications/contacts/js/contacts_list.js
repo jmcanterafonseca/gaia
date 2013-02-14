@@ -141,7 +141,10 @@ contacts.List = (function() {
     contactContainer.className = 'contact-item';
     contactContainer.dataset.uuid = utils.text.escapeHTML(contact.id, true);
     // Facebook UID
-    contactContainer.dataset.fbUid = getFriendUid(contact);
+    var uid = getFriendUid(contact);
+    if(typeof uid != 'undefined') {
+      contactContainer.dataset.fbUid = uid;
+    }
     var timestampDate = contact.updated || contact.published || new Date();
     contactContainer.dataset.updated = timestampDate.getTime();
     var link = document.createElement('a');
