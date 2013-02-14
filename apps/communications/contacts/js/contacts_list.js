@@ -38,6 +38,7 @@ contacts.List = (function() {
     FixedHeader.init('#groups-container', '#fixed-container', selector);
 
     imgLoader = new ImageLoader('#groups-container', 'li');
+    imgLoader.setResolver(fb.resolver);
 
     contacts.Search.init(conctactsListView, favoriteGroup, function(e) {
       onClickHandler(e);

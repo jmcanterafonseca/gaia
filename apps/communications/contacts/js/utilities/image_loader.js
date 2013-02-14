@@ -3,7 +3,8 @@
 if (!window.ImageLoader) {
   var ImageLoader = function ImageLoader(pContainer, pItems) {
     var container, items, itemsSelector, scrollLatency = 100, scrollTimer,
-        lastViewTop = 0, itemHeight, total, imgsLoading = 0;
+        lastViewTop = 0, itemHeight, total, imgsLoading = 0,
+        loadImage = defaultLoadImage, self = this;
 
     var forEach = Array.prototype.forEach;
 
@@ -36,6 +37,10 @@ if (!window.ImageLoader) {
       window.setTimeout(update, 0);
     }
 
+    function setResolver(pResolver) {
+      loadImage = pResolver;
+    }
+
     function onScroll() {
       window.clearTimeout(scrollTimer);
       if (imgsLoading > 0) {
@@ -46,13 +51,21 @@ if (!window.ImageLoader) {
       scrollTimer = window.setTimeout(update, scrollLatency);
     }
 
-    function doImageLoad(item, imgNode) {
-       ++imgsLoading;
+    /**
+     *  Loads the image contained in a DOM Element.
+     */
+    function defaultLoadImage(item) {
+      var image = item.querySelector('img[data-src]');
+      if (!image) {
+        return;
+      }
+
+      ++imgsLoading;
       var tmp = new Image();
-      var src = tmp.src = imgNode.dataset.src;
+      var src = tmp.src = image.dataset.src;
       tmp.onload = function onload() {
         --imgsLoading;
-        imgNode.src = src;
+        image.src = src;
         if (tmp.complete) {
           item.dataset.visited = 'true';
         }
@@ -62,56 +75,6 @@ if (!window.ImageLoader) {
       tmp.onabort = tmp.onerror = function onerror() {
         item.dataset.visited = 'false';
         tmp = null;
-      }
-    }
-
-    /**
-     *  Loads the image contained in a DOM Element.
-     */
-    function loadImage(item) {
-      window.console.log('Visited: ', item.dataset.visited, 'Pending: ',item.dataset.pending);
-
-      if (!item.dataset.visited && item.dataset.fbUid &&
-          typeof item.dataset.pending === 'undefined') {
-        var fbUid = item.dataset.fbUid;
-        var fbReq = fb.contacts.get(fbUid);
-        item.dataset.pending = 'true';
-
-        fbReq.onsuccess = function() {
-          if(fbReq.result.photo && fbReq.result.photo[0]) {
-            var photoTemplate = document.createElement('aside');
-            photoTemplate.className = 'pack-end';
-            image = document.createElement('img');
-            photoTemplate.appendChild(image);
-            image.dataset.src = window.URL.createObjectURL(fbReq.result.photo[0]);
-            item.firstElementChild.insertBefore(photoTemplate,
-                                      item.firstElementChild.firstElementChild);
-            item.dataset.pending = 'false';
-            item.dataset.visited = 'false';
-            update();
-          }
-          else {
-            item.dataset.visited = 'true';
-            item.dataset.pending = 'false';
-          }
-        }
-
-        fbReq.onerror = function() {
-          item.dataset.visited = 'false';
-          delete item.dataset.pending;
-        }
-      }
-      else if(item.dataset.visited !== 'true'
-              && item.dataset.pending !== 'true') {
-        window.console.log('Image about to be loaded', item.dataset.visited, item.dataset.pending);
-        var image = item.querySelector('img[data-src]');
-        if(image) {
-          doImageLoad(item, image);
-        }
-      }
-      else {
-        window.console.log('Visited: ', item.dataset.visited, 'Pending: ',item.dataset.pending);
-        window.console.log('Nothing loaded');
       }
     }
 
@@ -139,7 +102,7 @@ if (!window.ImageLoader) {
 
           if (item.dataset.visited !== 'true' &&
               item.offsetTop <= viewTop + containerHeight) {
-            loadImage(item); // Inside
+            loadImage(item, self); // Inside
           }
         }
       }
@@ -157,11 +120,14 @@ if (!window.ImageLoader) {
         }
 
         if (item.dataset.visited !== 'true') {
-          loadImage(item);
+          loadImage(item, self);
         }
       }
     } // update
 
     this.reload = load;
+    this.update = update;
+    this.setResolver = setResolver;
+    this.defaultLoad = defaultLoadImage;
   };
 }
