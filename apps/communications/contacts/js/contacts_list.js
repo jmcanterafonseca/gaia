@@ -145,6 +145,9 @@ contacts.List = (function() {
     if(typeof uid != 'undefined') {
       contactContainer.dataset.fbUid = uid;
     }
+    else {
+      window.console.log('Not found', contact.givenName);
+    }
     var timestampDate = contact.updated || contact.published || new Date();
     contactContainer.dataset.updated = timestampDate.getTime();
     var link = document.createElement('a');
@@ -275,21 +278,21 @@ contacts.List = (function() {
 
     var numberOfChunks = Math.floor(length / CHUNK_SIZE);
 
+    var appendContact = function appendContact(contact) {
+      var renderedContact = renderContact(contact, fbContacts);
+      appendToList(contact, renderedContact);
+      if (isFavorite(contact)) {
+        var favContact = renderedContact.cloneNode(true);
+        favorites.push(favContact);
+        contactsPhoto.push({
+          contact: contact,
+          link: favContact.firstChild
+        });
+      }
+    };
+
     // Performance testing
     function renderChunks(index) {
-      var appendContact = function appendContact(contact) {
-        var renderedContact = renderContact(contact, fbContacts);
-        appendToList(contact, renderedContact);
-        if (isFavorite(contact)) {
-          var favContact = renderedContact.cloneNode(true);
-          favorites.push(favContact);
-          contactsPhoto.push({
-            contact: contact,
-            link: favContact.firstChild
-          });
-        }
-      };
-
       if (index === 0) {
         PerformanceHelper.dispatchPerfEvent('contacts-first-chunk');
       }
@@ -323,7 +326,10 @@ contacts.List = (function() {
       }
 
       window.setTimeout(function() {
-        imgLoader.reload();
+        // Only during the first chunk the imageLoader is called
+        if(index === 0) {
+          imgLoader.reload();
+        }
         renderChunks(index + 1);
       }, 0);
     }
