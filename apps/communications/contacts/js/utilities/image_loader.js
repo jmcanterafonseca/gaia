@@ -46,21 +46,13 @@ if (!window.ImageLoader) {
       scrollTimer = window.setTimeout(update, scrollLatency);
     }
 
-    /**
-     *  Loads the image contained in a DOM Element.
-     */
-    function loadImage(item) {
-      var image = item.querySelector('img[data-src]');
-      if (!image) {
-        return;
-      }
-
-      ++imgsLoading;
+    function doImageLoad(item, imgNode) {
+       ++imgsLoading;
       var tmp = new Image();
-      var src = tmp.src = image.dataset.src;
+      var src = tmp.src = imgNode.dataset.src;
       tmp.onload = function onload() {
         --imgsLoading;
-        image.src = src;
+        imgNode.src = src;
         if (tmp.complete) {
           item.dataset.visited = 'true';
         }
@@ -70,6 +62,42 @@ if (!window.ImageLoader) {
       tmp.onabort = tmp.onerror = function onerror() {
         item.dataset.visited = 'false';
         tmp = null;
+      }
+    }
+
+    /**
+     *  Loads the image contained in a DOM Element.
+     */
+    function loadImage(item) {
+      if (!item.dataset.visited && item.dataset.fbUid) {
+        var fbUid = item.dataset.fbUid;
+        var fbReq = fb.contacts.get(fbUid);
+
+        item.dataset.visited = true;
+        fbReq.onsuccess = function() {
+          if(fbReq.result.photo && fbReq.result.photo[0]) {
+            var photoTemplate = document.createElement('aside');
+            photoTemplate.className = 'pack-end';
+            image = document.createElement('img');
+            photoTemplate.appendChild(image);
+            image.dataset.src = window.URL.createObjectURL(fbReq.result.photo[0]);
+            item.firstElementChild.insertBefore(photoTemplate, item.firstElementChild.firstElementChild);
+            doImageLoad(item, image);
+          }
+          else {
+            item.dataset.visited = true;
+          }
+        }
+
+        fbReq.onerror = function() {
+
+        }
+      }
+      else if(!item.dataset.visited) {
+        var image = item.querySelector('img[data-src]');
+        if(image) {
+          doImageLoad(item, image);
+        }
       }
     }
 

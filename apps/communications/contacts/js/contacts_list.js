@@ -74,7 +74,7 @@ contacts.List = (function() {
     }
 
     initOrder(function onInitOrder() {
-      getContactsByGroup(onError, contacts);  
+      getContactsByGroup(onError, contacts);
     });
   };
 
@@ -111,6 +111,21 @@ contacts.List = (function() {
     headers[group] = contactsContainer;
   };
 
+  function getFriendUid(devContact) {
+    var out = devContact.uid;
+
+    if (!out) {
+      if (devContact.category) {
+        var idx = devContact.category.indexOf(fb.CATEGORY);
+        if (idx !== -1) {
+          out = devContact.category[idx + 2];
+        }
+      }
+    }
+
+    return out;
+  }
+
   var renderContact = function renderContact(contact, fbContacts) {
     if (fbContacts && fb.isFbContact(contact)) {
       var fbContact = new fb.Contact(contact);
@@ -124,6 +139,8 @@ contacts.List = (function() {
     var contactContainer = document.createElement('li');
     contactContainer.className = 'contact-item';
     contactContainer.dataset.uuid = utils.text.escapeHTML(contact.id, true);
+    // Facebook UID
+    contactContainer.dataset.fbUid = getFriendUid(contact);
     var timestampDate = contact.updated || contact.published || new Date();
     contactContainer.dataset.updated = timestampDate.getTime();
     var link = document.createElement('a');
@@ -335,7 +352,7 @@ contacts.List = (function() {
 
   var lazyLoadFacebookData = function lazyLoadFacebookData() {
     Contacts.loadFacebook(function() {
-      
+      /*
       var fbReq = fb.contacts.getAll();
       fbReq.onsuccess = function() {
         for (var i = 0; i < contactsPhoto.length; i++) {
@@ -354,7 +371,7 @@ contacts.List = (function() {
       };
       fbReq.onerror = function() {
         console.log('Error getting fb');
-      };
+      }; */
     });
   };
 
@@ -652,7 +669,7 @@ contacts.List = (function() {
         if (fb.isFbContact(contact)) {
           var fbContact = new fb.Contact(contact);
           enrichedContact = fbContact.merge(fbData);
-        }        
+        }
         addToList(contact, enrichedContact);
         if(callback) {
           callback(id);
