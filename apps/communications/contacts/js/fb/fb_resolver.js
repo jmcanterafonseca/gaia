@@ -2,18 +2,22 @@
 
 var fb = this.fb || {};
 
-var FB_SCRIPTS_NEEDED = ['/contacts/js/fb/fb_contact_utils.js', '/contacts/js/fb/fb_data.js'];
+var FB_SCRIPTS_NEEDED = ['/contacts/js/fb/fb_contact_utils.js',
+                         '/contacts/js/fb/fb_data.js'];
 
 fb.resolver = function(item, loader) {
   var status = item.dataset.status;
   var isFbContact = 'fbUid' in item.dataset;
 
-  if (isFbContact && status !== 'pending' && status !== 'loaded') {
-    var fbReq = fb.contacts.get(item.dataset.fbUid);
-    item.dataset.status = 'pending';
+  window.console.log(isFbContact);
 
-    var loadReq = utils.scriptManager.load(FB_SCRIPTS_NEEDED);
+  if (isFbContact && status !== 'pending' && status !== 'loaded') {
+    item.dataset.status = 'pending';
+    
+    var loadReq = utils.script.load(FB_SCRIPTS_NEEDED);
+
     loadReq.onsuccess = function() {
+      var fbReq = fb.contacts.get(item.dataset.fbUid);
       fbReq.onsuccess = function() {
         var photo = fbReq.result.photo;
         if(photo && photo[0]) {

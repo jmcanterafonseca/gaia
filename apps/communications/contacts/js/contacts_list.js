@@ -117,7 +117,7 @@ contacts.List = (function() {
 
     if (!out) {
       if (devContact.category) {
-        var idx = devContact.category.indexOf(fb.CATEGORY);
+        var idx = devContact.category.indexOf('facebook');
         if (idx !== -1) {
           out = devContact.category[idx + 2];
         }
@@ -142,11 +142,12 @@ contacts.List = (function() {
     contactContainer.dataset.uuid = utils.text.escapeHTML(contact.id, true);
     // Facebook UID
     var uid = getFriendUid(contact);
+    window.console.log('UID', JSON.stringify(contact.category));
     if(typeof uid != 'undefined') {
       contactContainer.dataset.fbUid = uid;
     }
     else {
-      window.console.log('Not found', contact.givenName);
+      // window.console.log('Not found', contact.givenName);
     }
     var timestampDate = contact.updated || contact.published || new Date();
     contactContainer.dataset.updated = timestampDate.getTime();
@@ -329,6 +330,7 @@ contacts.List = (function() {
         // Only during the first chunk the imageLoader is called
         if(index === 0) {
           imgLoader.reload();
+          window.console.log('Img Loader called!!!');
         }
         renderChunks(index + 1);
       }, 0);
