@@ -69,11 +69,14 @@ if (!window.ImageLoader) {
      *  Loads the image contained in a DOM Element.
      */
     function loadImage(item) {
-      if (!item.dataset.visited && item.dataset.fbUid) {
+      window.console.log('Visited: ', item.dataset.visited, 'Pending: ',item.dataset.pending);
+
+      if (!item.dataset.visited && item.dataset.fbUid &&
+          typeof item.dataset.pending === 'undefined') {
         var fbUid = item.dataset.fbUid;
         var fbReq = fb.contacts.get(fbUid);
+        item.dataset.pending = 'true';
 
-        item.dataset.visited = true;
         fbReq.onsuccess = function() {
           if(fbReq.result.photo && fbReq.result.photo[0]) {
             var photoTemplate = document.createElement('aside');
@@ -81,23 +84,34 @@ if (!window.ImageLoader) {
             image = document.createElement('img');
             photoTemplate.appendChild(image);
             image.dataset.src = window.URL.createObjectURL(fbReq.result.photo[0]);
-            item.firstElementChild.insertBefore(photoTemplate, item.firstElementChild.firstElementChild);
-            doImageLoad(item, image);
+            item.firstElementChild.insertBefore(photoTemplate,
+                                      item.firstElementChild.firstElementChild);
+            item.dataset.pending = 'false';
+            item.dataset.visited = 'false';
+            update();
           }
           else {
-            item.dataset.visited = true;
+            item.dataset.visited = 'true';
+            item.dataset.pending = 'false';
           }
         }
 
         fbReq.onerror = function() {
-
+          item.dataset.visited = 'false';
+          delete item.dataset.pending;
         }
       }
-      else if(!item.dataset.visited) {
+      else if(item.dataset.visited !== 'true'
+              && item.dataset.pending !== 'true') {
+        window.console.log('Image about to be loaded', item.dataset.visited, item.dataset.pending);
         var image = item.querySelector('img[data-src]');
         if(image) {
           doImageLoad(item, image);
         }
+      }
+      else {
+        window.console.log('Visited: ', item.dataset.visited, 'Pending: ',item.dataset.pending);
+        window.console.log('Nothing loaded');
       }
     }
 
