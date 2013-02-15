@@ -4,6 +4,12 @@ var utils = this.utils || {};
 
 (function() {
   var scr = utils.script = {};
+
+  function getFileId(resourceSrc) {
+    var fileIdSplit = resourceSrc.split('/');
+    return fileIdSplit[fileIdSplit.length - 1];
+  }
+
   // order can be one of 'sequential', 'concurrent'
   utils.script.Loader = function(psourcesArray, porder) {
     var numLoaded = 0;
@@ -13,11 +19,20 @@ var utils = this.utils || {};
     var totalToBeLoaded = sourcesArray.length;
     var order = porder || 'concurrent';
 
+    function addEventListeners(node) {
+      node.addEventListener('load', resourceLoaded);
+      node.addEventListener('error', resourceError);
+    }
+
+    function removeEventListeners(node) {
+      node.removeEventListener('load', resourceLoaded);
+      node.removeEventListener('error', resourceError);
+    }
+
     function loadScript(scriptSrc) {
       var scriptNode = document.createElement('script');
       scriptNode.src = scriptSrc;
-      scriptNode.addEventListener('load', resourceLoaded);
-      scriptNode.addEventListener('error', resourceError);
+      addEventListeners(scriptNode);
 
       document.head.appendChild(scriptNode);
     }
@@ -28,8 +43,7 @@ var utils = this.utils || {};
       styleNode.rel = 'stylesheet';
       styleNode.type = 'text/css';
 
-      styleNode.addEventListener('load',resourceLoaded);
-      styleNode.addEventListener('error',resourceError);
+      addEventListeners(styleNode);
       document.head.appendChild(styleNode);
     }
 
@@ -39,8 +53,8 @@ var utils = this.utils || {};
         var node = document.head.querySelector('script[src=' + '"' +
                                                resourceSrc + '"]');
         if(node) {
-          node.addEventListener('load',resourceLoaded);
-          node.addEventListener('error', resourceError);
+          // Would be nice if Firefox would have a readyState attribute as IE
+          addEventListeners(node);
         }
         else {
           loadScript(resourceSrc);
@@ -50,8 +64,8 @@ var utils = this.utils || {};
         var node = document.head.querySelector('link[href=' + '"'
                                                + resourceSrc + '"]');
         if(node) {
-          node.addEventListener('load',resourceLoaded);
-          node.addEventListener('error', resourceError);
+          // Would be nice if Firefox would have a readyState attribute as IE
+          addEventListeners(node);
         }
         else {
           loadStyle(resourceSrc);
@@ -60,12 +74,11 @@ var utils = this.utils || {};
     }
 
     function resourceLoaded(e) {
-      e.target.removeEventListener('error',resourceLoaded);
-      e.target.removeEventListener('load',resourceError);
+      removeEventListeners(e.target);
       numLoaded++;
       if(typeof self.onresourceloaded === 'function') {
         window.setTimeout(function cb_loaded() {
-          self.onresourceloaded(e.target.src);
+          self.onresourceloaded(e.target.src || e.target.href);
         }, 0);
       }
       nextToBeLoaded++;
@@ -83,8 +96,8 @@ var utils = this.utils || {};
     }
 
     function resourceError(e) {
-      e.target.removeEventListener('error',resourceLoaded);
-      e.target.removeEventListener('load',resourceError);
+      removeEventListeners(e.target);
+
       if(typeof self.onerror === 'function') {
         window.setTimeout(function cb_error() {
           self.onerror(e.target.src);
@@ -121,9 +134,11 @@ var utils = this.utils || {};
         loader.onerror = function() {
           outReq.failed();
         }
-        loader.onresourceloaded = function(scriptSrc) {
-          resourcesLoaded[scriptSrc] = true;
-          outReq.scriptLoaded(scriptSrc);
+        loader.onresourceloaded = function(resourceSrc) {
+          window.console.log('!!!Resource Loaded!!!', resourceSrc);
+          var fileId = getFileId(resourceSrc);
+          resourcesLoaded[fileId] = true;
+          outReq.resourceLoaded(resourceSrc);
         }
         loader.start();
       }
@@ -139,16 +154,19 @@ var utils = this.utils || {};
     var realToBeLoaded = [];
 
     requestedSources.forEach(function(aSource) {
-      if(resourcesLoaded[aSource] !== true) {
+      var fileId = getFileId(aSource);
+      if(resourcesLoaded[fileId] !== true) {
         realToBeLoaded.push(aSource);
       }
     });
 
+    window.console.log('!!!!', realToBeLoaded.length, '!!!!');
+
     return realToBeLoaded;
   }
 
-  utils.script.isLoaded = function(scriptSrc) {
-    return resourcesLoaded[scriptSrc] === true;
+  utils.script.isLoaded = function(resourceSrc) {
+    return resourcesLoaded[resourceSrc] === true;
   }
 
   /**
@@ -167,13 +185,13 @@ var utils = this.utils || {};
       }
     };
 
-    this.scriptLoaded = function(scriptSrc) {
-      this.scriptSrc = scriptSrc;
-      if(typeof this.onscriptloaded === 'function') {
+    this.resourceLoaded = function(resourceSrc) {
+      this.resourceSrc = resourceSrc;
+      if(typeof this.onresourceloaded === 'function') {
         var ev = {};
         ev.target = this;
         window.setTimeout(function() {
-          this.onscriptloaded(ev);
+          this.onresourceloaded(ev);
         }.bind(this), 0);
       }
     }
