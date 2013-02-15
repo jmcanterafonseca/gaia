@@ -4,42 +4,77 @@ var utils = this.utils || {};
 
 (function() {
   var scr = utils.script = {};
-  // order can be one of 'sequential', 'parallel'
+  // order can be one of 'sequential', 'concurrent'
   utils.script.Loader = function(psourcesArray, porder) {
     var numLoaded = 0;
     var self = this;
     var nextToBeLoaded = 0;
     var sourcesArray = psourcesArray;
     var totalToBeLoaded = sourcesArray.length;
-    var order = porder || 'paralell';
+    var order = porder || 'concurrent';
 
     function loadScript(scriptSrc) {
       var scriptNode = document.createElement('script');
       scriptNode.src = scriptSrc;
-      scriptNode.onload = scriptLoaded;
-      scriptNode.onerror = scriptError;
+      scriptNode.addEventListener('load', resourceLoaded);
+      scriptNode.addEventListener('error', resourceError);
 
       document.head.appendChild(scriptNode);
-      window.console.log(scriptSrc);
     }
 
-    function scriptLoaded(e) {
-      window.console.log('script loaded', e.target.src);
+    function loadStyle(styleSrc) {
+      var styleNode = document.createElement('link');
+      styleNode.href = styleSrc;
+      styleNode.rel = 'stylesheet';
+      styleNode.type = 'text/css';
+
+      styleNode.addEventListener('load',resourceLoaded);
+      styleNode.addEventListener('error',resourceError);
+      document.head.appendChild(styleNode);
+    }
+
+    function loadResource(resourceSrc) {
+      var extension = resourceSrc.match(/\.(.*?)$/)[1];
+      if(extension === 'js') {
+        var node = document.head.querySelector('script[src=' + '"' +
+                                               resourceSrc + '"]');
+        if(node) {
+          node.addEventListener('load',resourceLoaded);
+          node.addEventListener('error', resourceError);
+        }
+        else {
+          loadScript(resourceSrc);
+        }
+      }
+      else if(extension === 'css') {
+        var node = document.head.querySelector('link[href=' + '"'
+                                               + resourceSrc + '"]');
+        if(node) {
+          node.addEventListener('load',resourceLoaded);
+          node.addEventListener('error', resourceError);
+        }
+        else {
+          loadStyle(resourceSrc);
+        }
+      }
+    }
+
+    function resourceLoaded(e) {
+      e.target.removeEventListener('error',resourceLoaded);
+      e.target.removeEventListener('load',resourceError);
       numLoaded++;
-      if(typeof self.onscriptloaded === 'function') {
+      if(typeof self.onresourceloaded === 'function') {
         window.setTimeout(function cb_loaded() {
-          self.onscriptloaded(e.target.src);
+          self.onresourceloaded(e.target.src);
         }, 0);
       }
       nextToBeLoaded++;
       if(order === 'sequential' && nextToBeLoaded < totalToBeLoaded) {
-        loadScript(sourcesArray[nextToBeLoaded]);
+        loadResource(sourcesArray[nextToBeLoaded]);
       }
       else {
-        window.console.log(nextToBeLoaded + "," + numLoaded + "," + totalToBeLoaded);
-        // Order is parallel (just check for the number of scripts loaded)
+        // Order is concurrent (just check for the number of resources loaded)
         if(numLoaded === totalToBeLoaded) {
-          window.console.log('all loaded');
           if(typeof self.onfinish === 'function') {
             window.setTimeout(self.onfinish, 0);
           }
@@ -47,7 +82,9 @@ var utils = this.utils || {};
       }
     }
 
-    function scriptError(e) {
+    function resourceError(e) {
+      e.target.removeEventListener('error',resourceLoaded);
+      e.target.removeEventListener('load',resourceError);
       if(typeof self.onerror === 'function') {
         window.setTimeout(function cb_error() {
           self.onerror(e.target.src);
@@ -57,19 +94,19 @@ var utils = this.utils || {};
 
     this.start = function() {
       if(order === 'sequential') {
-        loadScript(sourcesArray[0]);
+        loadResource(sourcesArray[0]);
       }
       else {
-        // All of them are loaded in parallel
+        // All of them are loaded concurrently
         sourcesArray.forEach(function(aSource) {
-          loadScript(aSource);
+          loadResource(aSource);
         });
       }
     }
   }
 
 
-  var scriptsLoaded = {};
+  var resourcesLoaded = {};
 
   utils.script.load = function(psourcesArray, order) {
     var outReq = new Request();
@@ -84,8 +121,8 @@ var utils = this.utils || {};
         loader.onerror = function() {
           outReq.failed();
         }
-        loader.onscriptloaded = function(scriptSrc) {
-          scriptsLoaded[scriptSrc] = true;
+        loader.onresourceloaded = function(scriptSrc) {
+          resourcesLoaded[scriptSrc] = true;
           outReq.scriptLoaded(scriptSrc);
         }
         loader.start();
@@ -102,7 +139,7 @@ var utils = this.utils || {};
     var realToBeLoaded = [];
 
     requestedSources.forEach(function(aSource) {
-      if(scriptsLoaded[aSource] !== true) {
+      if(resourcesLoaded[aSource] !== true) {
         realToBeLoaded.push(aSource);
       }
     });
@@ -111,7 +148,7 @@ var utils = this.utils || {};
   }
 
   utils.script.isLoaded = function(scriptSrc) {
-    return scriptsLoaded[scriptSrc] === true;
+    return resourcesLoaded[scriptSrc] === true;
   }
 
   /**
@@ -153,5 +190,3 @@ var utils = this.utils || {};
     };
   };
 })();
-
-

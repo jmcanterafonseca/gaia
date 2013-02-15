@@ -36,29 +36,15 @@ var fbLoader = (function() {
       '/contacts/js/fb/fb_link.js',
       '/contacts/js/fb/fb_messaging.js',
       '/contacts/js/value_selector.js',
-      '/contacts/js/fb/fb_data.js'
+      '/contacts/js/fb/fb_data.js',
+      '/shared/style/headers.css'
     ];
 
-    var fragment = document.createDocumentFragment();
-
-    var onScriptLoaded = function onScriptLoaded() {
-      scriptsLoaded++;
-      if (scriptsLoaded === scripts.length) {
-        var event = new CustomEvent('facebookLoaded');
-        window.dispatchEvent(event);
-      }
-    };
-
-    for (var i = 0; i < scripts.length; i++) {
-      var script = scripts[i];
-      var elem = document.createElement('script');
-      elem.setAttribute('type', 'text/javascript');
-      elem.src = script;
-      elem.addEventListener('load', onScriptLoaded);
-      fragment.appendChild(elem);
+    var req = utils.script.load(scripts);
+    req.onsuccess = function() {
+      var event = new CustomEvent('facebookLoaded');
+      window.dispatchEvent(event);
     }
-
-    document.head.appendChild(fragment);
   };
 
   return {
