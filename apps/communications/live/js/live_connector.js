@@ -125,7 +125,7 @@ if (!window.LiveConnector) {
       function pictureError() {
         window.console.error('Error while getting picture for contact: ',
                              this.user_id);
-        pictureTimeout.bind(this)();
+        saveMozContact(live2MozContact(this));
       }
 
       function pictureTimeout() {
