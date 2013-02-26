@@ -75,6 +75,7 @@ var FbLauncher = (function(document) {
         case 'authenticated':
           extensionFrame.src = currentURI;
           access_token = data.data;
+          window.console.log(access_token);
           break;
 
         case 'messaging_ready':
