@@ -172,17 +172,67 @@ if (!window.LiveConnector) {
     function LiveConnector() {
     }
 
+    function sortContacts(contactsList) {
+      contactsList.sort(function(a,b) {
+        var out = 0;
+        if(a.last_name && b.last_name) {
+          out = a.last_name.localeCompare(b.last_name);
+        }
+        else if(b.last_name) {
+          out = 1;
+        }
+        else if(a.last_name) {
+          out = -1;
+        }
+        return out;
+      });
+    }
+
     LiveConnector.prototype = {
       listAllContacts: function(access_token, callbacks) {
-
         var uriElements = [LIVE_ENDPOINT, CONTACTS_RESOURCE, '?',
                            'access_token', '=', access_token];
 
-        return Rest.get(uriElements.join(''), callbacks);
+        // Need to be sorted by the connector
+        var auxCbs = {
+          success: function(response) {
+            sortContacts(response.data);
+            callbacks.success(response);
+          },
+          error: callbacks.error,
+          timeout: callbacks.timeout
+        };
+
+        return Rest.get(uriElements.join(''), auxCbs);
+      },
+
+      listDeviceContacts: function(callbacks) {
+        // Dummy implementation for the time being
+        callbacks.success([]);
       },
 
       getImporter: function(contactsList, access_token) {
         return new LiveImporter(contactsList, access_token);
+      },
+
+      getCleaner: function(contactsList, access_token) {
+        // Just a placeholder for the moment
+        return null;
+      },
+
+      adaptData: function(data) {
+        var source = data;
+
+        data.uid = source.user_id;
+        data.givenName = source.first_name || '';
+        data.familyName = source.last_name || '';
+        data.email1 = source.emails.account;
+
+        return data;
+      },
+
+      get serviceName() {
+        return 'live';
       },
 
       downloadContactPicture: function(contactId, access_token, callbacks) {
