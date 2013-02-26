@@ -4,20 +4,31 @@ if (!window.LiveConnector) {
     var CONTACTS_RESOURCE = 'me/contacts';
     var PICTURE_RESOURCE = '/picture';
 
+    var itemsTypeMap = {
+      'personal': 'personal',
+      'mobile': 'mobile',
+      'business': 'work',
+      'other': 'another',
+      'preferred': 'personal'
+    };
+
     function live2MozContact(liveContact) {
       var out = {};
 
-      out.givenName = [];
-      out.givenName[0] = liveContact.first_name || '';
-      out.familyName = [];
-      out.familyName[0] = liveContact.last_name || '';
-      out.name = [];
-      out.name[0] = liveContact.name || '';
+      out.givenName = [liveContact.first_name || ''];
+      out.familyName = [liveContact.last_name || ''];
+      out.name = [liveContact.name || ''];
 
+      var byear = liveContact.birth_year;
       var bmonth = liveContact.birth_month;
       var bday = liveContact.birth_day;
       if (bmonth && bday) {
-        out.bday = new Date(1970, bmonth, bday);
+        var birthdate = out.bday = new Date();
+        birthdate.setDate(bday);
+        birthdate.setMonth(bmonth, bday);
+        if (byear) {
+          birthdate.setYear(byear);
+        }
       }
 
       out.tel = [];
@@ -30,10 +41,10 @@ if (!window.LiveConnector) {
         var emailValue = liveEmails[emailType];
         if (emailValue &&
            typeof alreadyAddedEmails[emailValue] === 'undefined') {
-          out.email.push({
-          type: ['personal'],
-          value: emailValue
-         });
+            out.email.push({
+            type: [itemsTypeMap[emailType]],
+            value: emailValue
+          });
         alreadyAddedEmails[emailValue] = true;
         }
       });
@@ -43,7 +54,7 @@ if (!window.LiveConnector) {
         var phoneValue = livePhones[phoneType];
         if (phoneValue) {
           out.tel.push({
-            type: ['personal'],
+            type: [itemsTypeMap[phoneType]],
             value: phoneValue
           });
         }
@@ -53,7 +64,7 @@ if (!window.LiveConnector) {
       Object.keys(liveAddresses).forEach(function(addrType) {
         var addrValue = liveAddresses[addrType];
         if (addrValue) {
-          out.adr.push(fillAddress(addrType, addrValue));
+          out.adr.push(fillAddress(itemsTypeMap[addrType], addrValue));
         }
       });
 
@@ -98,7 +109,8 @@ if (!window.LiveConnector) {
 
         req.onsuccess = contactSaved;
         req.onerror = function() {
-          window.console.error('Error while importing contact');
+          window.console.error('Error while importing contact: ',
+                               req.error.name);
         };
       }
 
@@ -111,11 +123,14 @@ if (!window.LiveConnector) {
       }
 
       function pictureError() {
-        window.console.error('Error while getting picture');
+        window.console.error('Error while getting picture for contact: ',
+                             this.user_id);
         pictureTimeout.bind(this)();
       }
 
       function pictureTimeout() {
+        window.console.warn('Timeout while getting picture for contact: ',
+                             this.user_id);
         saveMozContact(live2MozContact(this));
       }
 
