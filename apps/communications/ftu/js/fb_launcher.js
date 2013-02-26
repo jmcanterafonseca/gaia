@@ -6,7 +6,7 @@ var FbLauncher = (function(document) {
 
     var URIs = {
       facebook: '/contacts/fb_import.html?ftu=1',
-      live: '/contacts/live_import.html?ftu=1'
+      live: '/contacts/import.html?ftu=1&service=live'
     }
 
     var access_token, currentURI;

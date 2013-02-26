@@ -6,6 +6,9 @@ if (typeof window.importer === 'undefined') {
     var Importer = window.importer = {};
     var UI = Importer.ui = {};
 
+    var TOKEN_EXPIRED_STR = 'request_token_expired';
+    var TOKEN_EXPIRED_CODE = 190;
+
     // Connector to the external service
     var serviceConnector;
     // target app which will receive all messages from the importer
@@ -30,8 +33,8 @@ if (typeof window.importer === 'undefined') {
     var checked = 0;
 
     // Existing service contacts
-    var existingFbContacts = [];
-    var existingFbContactsByUid = {};
+    var existingContacts = [];
+    var existingContactsByUid = {};
 
     var contactsLoaded = false, friendsLoaded = false;
 
@@ -83,6 +86,10 @@ if (typeof window.importer === 'undefined') {
       // parent.postMessage(msg, '*');
     };
 
+    function tokenExpired(error) {
+      return (error.code === TOKEN_EXPIRED_CODE || error === TOKEN_EXPIRED_STR);
+    }
+
     function scrollToCb(groupContainer) {
       scrollableElement.scrollTop = groupContainer.offsetTop;
     }
@@ -129,14 +136,14 @@ if (typeof window.importer === 'undefined') {
      *
      */
     function contactsReady(result) {
-      existingFbContacts = result;
+      existingContacts = result;
       contactsLoaded = true;
 
       if (friendsLoaded) {
         // A synchronization will start asynchronously
         window.setTimeout(serviceConnector.startSync, 0);
 
-        markExisting(existingFbContacts);
+        markExisting(existingContacts);
       }
     }
 
@@ -160,7 +167,7 @@ if (typeof window.importer === 'undefined') {
             window.setTimeout(startSync, 0);
           }
         });
-        markExisting(existingFbContacts);
+        markExisting(existingContacts);
       }
 
       Curtain.hide(sendReadyEvent);
@@ -190,15 +197,15 @@ if (typeof window.importer === 'undefined') {
         if (ele) {
           setChecked(ele.querySelector('input[type="checkbox"]'), true);
         }
-        if (existingFbContactsByUid[uid]) {
-          existingFbContactsByUid[uid].push(fbContact);
+        if (existingContactsByUid[uid]) {
+          existingContactsByUid[uid].push(fbContact);
         } else {
-          existingFbContactsByUid[uid] = [fbContact];
+          existingContactsByUid[uid] = [fbContact];
         }
       });
 
       var newValue = myFriends.length -
-                        Object.keys(existingFbContactsByUid).length;
+                        Object.keys(existingContactsByUid).length;
       friendsMsgElement.textContent = _('fbFriendsFound', {
         numFriends: newValue
       });
@@ -262,8 +269,6 @@ if (typeof window.importer === 'undefined') {
      */
     Importer.friendsReady = function(response) {
       if (typeof response.error === 'undefined') {
-        window.console.log('Response data', JSON.stringify(response));
-
         var lmyFriends = response.data;
 
         myFriendsByUid = {};
@@ -281,7 +286,7 @@ if (typeof window.importer === 'undefined') {
       else {
         window.console.error('Error, while retrieving friends',
                                                     response.error.message);
-        if (response.error.code !== 190) {
+        if (!tokenExpired(error)) {
           setCurtainHandlersErrorFriends();
           Curtain.show('error', 'friends');
         }
@@ -384,13 +389,6 @@ if (typeof window.importer === 'undefined') {
       Importer.baseHandler('error');
     };
 
-    function fillData(f) {
-      f.uid = f.user_id;
-      f.givenName = f.first_name || '';
-      f.familyName = f.last_name || '';
-      f.email1 = f.emails.account;
-    }
-
     /**
      *  This function is invoked when importing and updating operations
      *  finished
@@ -442,7 +440,7 @@ if (typeof window.importer === 'undefined') {
 
       // To optimize if the user wishes to unselect all
       var mode = 'update';
-      if (unSelectedKeys.length === existingFbContacts.length) {
+      if (unSelectedKeys.length === existingContacts.length) {
         mode = 'clear';
       }
 
@@ -455,6 +453,11 @@ if (typeof window.importer === 'undefined') {
           Importer.errorHandler();
         }
       });
+    }
+
+    function getCleaner(mode, contacts, cb) {
+      var out = serviceConnector.geCleaner(mode,contacts);
+      cb(out);
     }
 
     function getTotalUnselected() {
@@ -527,8 +530,8 @@ if (typeof window.importer === 'undefined') {
 
       selectedContacts = {};
       unSelectedContacts = {};
-      for (var uid in existingFbContactsByUid) {
-        unSelectedContacts[uid] = existingFbContactsByUid[uid];
+      for (var uid in existingContactsByUid) {
+        unSelectedContacts[uid] = existingContactsByUid[uid];
       }
 
       checkDisabledButtons();
@@ -585,8 +588,8 @@ if (typeof window.importer === 'undefined') {
         } else {
           delete selectedContacts[uuid];
           // If this was an already imported friend it is added to unselect
-          if (existingFbContactsByUid[uuid]) {
-            unSelectedContacts[uuid] = existingFbContactsByUid[uuid];
+          if (existingContactsByUid[uuid]) {
+            unSelectedContacts[uuid] = existingContactsByUid[uuid];
           }
         }
 
