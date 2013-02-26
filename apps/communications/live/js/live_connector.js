@@ -13,15 +13,15 @@ if (!window.LiveConnector) {
     };
 
     function fillAddress(addrType, addrValue) {
-      var out = {};
-      out.type = [];
-      out.type.push(addrType);
+      var out = {
+        type: [addrType],
+        streetAddress: addrValue.street || '',
+        locality: addrValue.city || '',
+        region: addrValue.state || '',
+        countryName: addrValue.region || '',
+        postalCode: addrValue.postal_code || ''
 
-      out.streetAddress = addrValue.street || '';
-      out.locality = addrValue.city || '';
-      out.region = addrValue.state || '';
-      out.countryName = addrValue.region || '';
-      out.postalCode = addrValue.postal_code || '';
+      };
 
       return out;
     }
@@ -33,13 +33,13 @@ if (!window.LiveConnector) {
     function sortContacts(contactsList) {
       contactsList.sort(function(a,b) {
         var out = 0;
-        if(a.last_name && b.last_name) {
+        if (a.last_name && b.last_name) {
           out = a.last_name.localeCompare(b.last_name);
         }
-        else if(b.last_name) {
+        else if (b.last_name) {
           out = 1;
         }
-        else if(a.last_name) {
+        else if (a.last_name) {
           out = -1;
         }
         return out;
@@ -90,11 +90,14 @@ if (!window.LiveConnector) {
       },
 
       adaptDataForSaving: function live2MozContact(liveContact) {
-        var out = {};
-
-        out.givenName = [liveContact.first_name || ''];
-        out.familyName = [liveContact.last_name || ''];
-        out.name = [liveContact.name || ''];
+        var out = {
+          givenName: [liveContact.first_name || ''],
+          familyName: [liveContact.last_name || ''],
+          name: [liveContact.name || ''],
+          tel: [],
+          email: [],
+          adr: []
+        };
 
         var byear = liveContact.birth_year;
         var bmonth = liveContact.birth_month;
@@ -108,21 +111,17 @@ if (!window.LiveConnector) {
           }
         }
 
-        out.tel = [];
-        out.email = [];
-        out.adr = [];
-
         var liveEmails = liveContact.emails || {};
         var alreadyAddedEmails = {};
         Object.keys(liveEmails).forEach(function(emailType) {
           var emailValue = liveEmails[emailType];
-          if (emailValue &&
-             typeof alreadyAddedEmails[emailValue] === 'undefined') {
-              out.email.push({
+          var present = (typeof alreadyAddedEmails[emailValue] === 'boolean');
+          if (emailValue && !present) {
+            out.email.push({
               type: [itemsTypeMap[emailType]],
               value: emailValue
             });
-          alreadyAddedEmails[emailValue] = true;
+            alreadyAddedEmails[emailValue] = true;
           }
         });
 
