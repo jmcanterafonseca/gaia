@@ -6,13 +6,9 @@ var self = this;
 if (!window.Rest) {
   window.Rest = (function() {
 
-    function RestRequest() {
-      this.cancel = function() {
-        if (typeof this.oncancel === 'function') {
-          window.setTimeout(function() {
-            this.oncancel();
-          }.bind(this), 0);
-        }
+    function RestRequest(xhr) {
+      this.cancel = function oncancel() {
+        window.setTimeout(xhr.abort, 0);
       };
     }
 
@@ -23,16 +19,10 @@ if (!window.Rest) {
         var DEFAULT_TIMEOUT = 30000;
         var options = pOptions || {};
 
-        var outReq = new RestRequest();
         var xhr = new XMLHttpRequest({
           mozSystem: true
         });
-
-        // To enable xhr.abort if user cancels
-        outReq.xhr = xhr;
-        outReq.oncancel = function() {
-          this.xhr.abort();
-        };
+        var outReq = new RestRequest(xhr);
 
         xhr.open('GET', uri, true);
         xhr.responseType = options.responseType || 'json';
@@ -50,7 +40,9 @@ if (!window.Rest) {
             self.console.error('HTTP error executing GET. ',
                                uri, ' Status: ', xhr.status);
             if (callback && typeof callback.error === 'function')
-              self.setTimeout(callback.error, 0);
+              self.setTimeout(function errorHandler() {
+                callback.error({ status: xhr.status });
+              }, 0);
           }
         }; // onload
 
@@ -72,8 +64,8 @@ if (!window.Rest) {
         xhr.send();
 
         return outReq;
-      }
-    }; // get
+      } // get
+    };  // prototype
 
     return new Rest();
   })();
