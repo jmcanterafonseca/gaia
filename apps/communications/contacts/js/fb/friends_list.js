@@ -64,7 +64,7 @@ fbFriends.List = (function() {
     groupsList.appendChild(fragment);
 
     FixedHeader.init('#mainContent', '#fixed-container',
-                     '.fb-import-list header');
+                     '.import-list header, .fb-import-list header');
     if (typeof cb === 'function') {
       // We wait a delay depending on number of nodes (the curtain is displayed)
       window.setTimeout(function () { cb(); }, contacts.length * 2);
