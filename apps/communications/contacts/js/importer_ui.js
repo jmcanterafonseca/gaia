@@ -114,6 +114,9 @@ if (typeof window.importer === 'undefined') {
      *
      */
     Importer.start = function(acc_tk, connector, ptargetApp) {
+      // Setting UI title
+      document.querySelector('#content h1').textContent =
+                                          _(connector.name + '-serviceName');
       serviceConnector = connector;
       targetApp = ptargetApp;
 
