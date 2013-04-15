@@ -449,7 +449,8 @@ if (!fb.sync) {
               data: {
                 access_token: access_token,
                 uids: toBeUpdated,
-                operationsTimeout: fb.operationsTimeout
+                operationsTimeout: fb.operationsTimeout,
+                targetPictureSize: importUtils.getPreferredPictureDetail()
               }
             });
           });
