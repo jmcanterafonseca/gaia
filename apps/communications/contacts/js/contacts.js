@@ -582,11 +582,11 @@ var Contacts = (function() {
   var loadFacebook = function loadFacebook(callback) {
     if (!fbLoader.loaded) {
       fb.init(function onInitFb() {
-        fbLoader.load();
         window.addEventListener('facebookLoaded', function onFbLoaded() {
           window.removeEventListener('facebookLoaded', onFbLoaded);
           callback();
         });
+        fbLoader.load();
       });
     } else {
       callback();
@@ -614,9 +614,9 @@ var Contacts = (function() {
     } else {
       loadFacebook(function fbReady() {
         contacts.Settings.init();
+        settingsReady = true;
         callback();
       });
-      settingsReady = true;
     }
   };
 

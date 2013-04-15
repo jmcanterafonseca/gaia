@@ -2,13 +2,11 @@
 var fbLoader = (function() {
 
   var loaded = false;
-  scriptsLoaded = 0;
 
   var loadFb = function loadFb() {
     if (loaded)
       return;
 
-    loaded = true;
     var iframesFragment = document.createDocumentFragment();
 
     var curtain = document.createElement('iframe');
@@ -26,22 +24,24 @@ var fbLoader = (function() {
 
     document.body.appendChild(iframesFragment);
 
-    var scripts = [
-      '/contacts/js/service_extensions.js',
-      '/contacts/oauth2/js/parameters.js',
-      '/contacts/js/fb/fb_utils.js',
-      '/contacts/js/fb/fb_query.js',
-      '/contacts/js/fb/fb_contact_utils.js',
-      '/contacts/js/fb/fb_contact.js',
-      '/contacts/js/fb/fb_link.js',
-      '/contacts/js/fb/fb_messaging.js',
-      '/contacts/js/value_selector.js',
-      '/contacts/js/fb/fb_data.js'
-    ];
+    LazyLoader.load(['/contacts/js/fb/fb_utils.js'], function() {
+      var scripts = [
+        '/contacts/js/service_extensions.js',
+        '/contacts/oauth2/js/parameters.js',
+        '/contacts/js/fb/fb_contact_utils.js',
+        '/contacts/js/fb/fb_data.js',
+        '/contacts/js/fb/fb_query.js',
+        '/contacts/js/fb/fb_contact.js',
+        '/contacts/js/fb/fb_link.js',
+        '/contacts/js/fb/fb_messaging.js',
+        '/contacts/js/value_selector.js'
+      ];
 
-    LazyLoader.load(scripts, function() {
-      var event = new CustomEvent('facebookLoaded');
-      window.dispatchEvent(event);
+      LazyLoader.load(scripts, function() {
+        loaded = true;
+        var event = new CustomEvent('facebookLoaded');
+        window.dispatchEvent(event);
+      });
     });
   };
 
