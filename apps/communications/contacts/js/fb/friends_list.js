@@ -94,7 +94,7 @@ var FriendListRenderer = (function() {
         return;
 
       // Set the picture size
-      var box = fb.getPreferredPictureBox();
+      var box = importUtils.getPreferredPictureBox();
       friend.picwidth = box.width;
       friend.picheight = box.height;
 

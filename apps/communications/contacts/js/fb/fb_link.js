@@ -225,7 +225,7 @@ if (!fb.link) {
           if (!item.email) {
             item.email = '';
           }
-          var box = fb.getPreferredPictureBox();
+          var box = importUtils.getPreferredPictureBox();
           item.picwidth = box.width;
           item.picheight = box.height;
 

@@ -8,7 +8,8 @@ importScripts('/contacts/js/fb/fb_query.js',
   var uids,
       timestamp,
       access_token,
-      forceUpdateUids;
+      forceUpdateUids,
+      targetPictureSize;
 
   wutils.addEventListener('message', processMessage);
 
@@ -127,6 +128,7 @@ importScripts('/contacts/js/fb/fb_query.js',
       timestamp = message.data.timestamp;
       forceUpdateUids = message.data.imgNeedsUpdate;
       fb.operationsTimeout = message.data.operationsTimeout;
+      targetPictureSize = message.data.targetPictureSize;
 
       debug('Worker acks contacts to check: ', Object.keys(uids).length);
 
@@ -337,7 +339,8 @@ importScripts('/contacts/js/fb/fb_query.js',
     }
 
     function retrieveImg(uid) {
-      fb.utils.getFriendPicture(uid, imgRetrieved, access_token);
+      fb.utils.getFriendPicture(uid, imgRetrieved, access_token,
+                                targetPictureSize);
     }
   };
 

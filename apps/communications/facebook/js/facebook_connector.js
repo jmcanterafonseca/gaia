@@ -194,7 +194,7 @@ if (!window.FacebookConnector) {
 
       adaptDataForShowing: function(source) {
 
-        var box = fb.getPreferredPictureBox();
+        var box = importUtils.getPreferredPictureBox();
         var picWidth = box.width;
         var picHeight = box.height;
 
@@ -267,7 +267,7 @@ if (!window.FacebookConnector) {
             else {
               callbacks.timeout();
             }
-          }, access_token);
+          }, access_token, importUtils.getPreferredPictureDetail());
       },
 
       oncontactsloaded: function(lfriends) {
