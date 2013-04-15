@@ -12,6 +12,15 @@ fb.FRIEND_URI = 'fb_friend';
 
 fb.CONTACTS_APP_ORIGIN = 'app://communications.gaiamobile.org';
 
+// Scale ratio for different devices
+var SCALE_RATIO = window.innerWidth / 320;
+
+// Minimum size in px for profile detail image
+var IMG_DETAIL_WIDTH = 200;
+
+// Minimum size in px for profile thumbnail image
+var IMG_THUMB_SIZE = 120;
+
 // Some convenience functions follow
 
 fb.isFbContact = function(devContact) {
@@ -102,6 +111,14 @@ fb.setFriendPictureUrl = function(devContact, url) {
     type: [fb.PROFILE_PHOTO_URI],
     value: url
   });
+};
+
+// Returns the size for profile thubnails used in lists
+fb.getPreferredPictureBox = function() {
+  return {
+    width: Math.round(IMG_THUMB_SIZE * SCALE_RATIO),
+    height: Math.round(IMG_THUMB_SIZE * SCALE_RATIO)
+  }
 };
 
 // Adapts data to the mozContact format names
