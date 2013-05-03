@@ -65,7 +65,7 @@ suite('Contacts settings', function() {
     '</button>\n' +
     '</li>\n' +
     '<li class="importService">\n' +
-    '<button class="icon icon-live" data-l10n-id="importLive">\n' +
+    '<button class="icon icon-live" data-l10n-id="importLive2">\n' +
     'Windows Live\n' +
     '</button>\n' +
     '</li>\n' +

@@ -74,7 +74,7 @@ contacts.Settings = (function() {
     noSdMsg = document.querySelector('#no-sd');
 
     // Gmail & Hotmail import
-    importLiveButton = document.querySelector('[data-l10n-id="importLive"]');
+    importLiveButton = document.querySelector('[data-l10n-id="importLive2"]');
     importGmailButton = document.querySelector('[data-l10n-id="importGmail"]');
 
     importLiveButton.onclick = Contacts.extServices.importLive;
@@ -221,7 +221,7 @@ contacts.Settings = (function() {
       'imported': imported,
       'total': theTotal
     });
-    
+
     // This is to support the case of a long literal, particularly
     // when 0 or 1 friends are imported
     var msgPart1 = totalsMsgContent;
