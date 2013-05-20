@@ -290,6 +290,8 @@ if (typeof Contacts.extServices === 'undefined') {
 
         case 'token_stored':
           notifySettings('fb_token_ready');
+          // Now registering push
+          window.setTimeout(Contacts.registerPush, 0);
         break;
 
         case 'token_error':

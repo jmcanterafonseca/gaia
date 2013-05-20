@@ -307,6 +307,23 @@ contacts.Settings = (function() {
     }
   }
 
+  function unregisterPush() {
+    LazyLoader.load('/facebook/js/fb_push.js', function() {
+      var callbacks = {
+        success: function() {
+          window.console.log('PUSH: Successfully unregistered');
+        },
+        error: function() {
+          window.console.error('PUSH: Error while unregistering');
+        },
+        timeout: function() {
+          window.console.error('PUSH: Timeout while unregistering');
+        }
+      };
+      push.unregister(callbacks);
+    });
+  }
+
   function doFbUnlink() {
     var progressBar = Contacts.showOverlay(_('cleaningFbData'), 'progressBar');
     var wakeLock = navigator.requestWakeLock('cpu');
@@ -332,6 +349,8 @@ contacts.Settings = (function() {
 
           window.asyncStorage.removeItem(fb.utils.LAST_UPDATED_KEY);
           window.asyncStorage.removeItem(fb.utils.CACHE_FRIENDS_KEY);
+
+          unregisterPush();
 
           resetWait(wakeLock);
         };

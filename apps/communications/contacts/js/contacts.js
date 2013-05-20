@@ -10,6 +10,17 @@ var asyncScriptsLoaded;
 var SCALE_RATIO = window.innerWidth / 320;
 
 var Contacts = (function() {
+  // Just in the hypothetical case that a register push has to be completed
+  var IDLE_TIME = 15;   // In seconds
+  var idleObserver = {
+    time: IDLE_TIME,
+    onidle: function() {
+      if (navigator.onLine === true) {
+        Contacts.registerPush();
+      }
+    }
+  };
+
   var navigation = new navigationStack('view-contacts-list');
 
   var goToForm = function edit() {
@@ -204,8 +215,32 @@ var Contacts = (function() {
     initLanguages();
     initContainers();
     initEventListeners();
+
     window.addEventListener('hashchange', checkUrl);
+
+    navigator.addIdleObserver(idleObserver);
   };
+
+  function registerPush() {
+    window.setTimeout(function() {
+      LazyLoader.load('/facebook/js/fb_push.js', function() {
+        var cbs = {
+          success: function() {
+            window.console.log('Push: Successfuly registered!!!');
+            navigator.removeIdleObserver(idleObserver);
+          },
+          error: function(e) {
+            window.console.error('Push: Error while registering: ', e.name);
+          },
+          timeout: function() {
+             window.console.error('Push: Timeout while registering');
+          }
+        };
+
+        push.register(cbs);
+      }); // LazyLoader
+    }, 0);
+  }
 
   var initContactsList = function initContactsList() {
     if (contactsList)
@@ -868,6 +903,7 @@ var Contacts = (function() {
     'close': close,
     get asyncScriptsLoaded() {
       return asyncScriptsLoaded;
-    }
+    },
+    'registerPush': registerPush
   };
 })();

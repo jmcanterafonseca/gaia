@@ -85,7 +85,8 @@
     "browser":{},
     "idle":{},
     "storage": {},
-    "device-storage:sdcard": { "access": "readonly" }
+    "device-storage:sdcard": { "access": "readonly" },
+    "push": {}
   },
   "orientation": "portrait-primary",
   "activities": {
@@ -136,7 +137,9 @@
      { "headset-button": "/dialer/index.html#keyboard-view" },
      { "notification": "/dialer/index.html#keyboard-view" },
      { "telephony-new-call": "/dialer/index.html#keyboard-view" },
-     { "ussd-received": "/dialer/index.html#keyboard-view" }
+     { "ussd-received": "/dialer/index.html#keyboard-view" },
+     { "push": "/facebook/fb_push.html"},
+     { "push-register": "/facebook/fb_push.html"}
   ],
   "redirects": [
     {"from": "http://intense-tundra-4122.herokuapp.com/fbowd/oauth2_new/flow.html",
