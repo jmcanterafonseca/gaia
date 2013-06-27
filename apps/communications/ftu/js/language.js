@@ -3,13 +3,22 @@
 var LanguageManager = {
   settings: window.navigator.mozSettings,
 
+  NETWORK_LANGUAGES: {
+    '724'    : 'pt-BR',
+    '214'    : 'es-ES',
+    '734'    : 'es-ES',
+    '732'    : 'es-ES',
+    '334'    : 'es-ES'
+  },
+
   init: function init() {
-    this.getCurrentLanguage(this.buildLanguageList.bind(this));
+    this.settings.addObserver('language.current',
+                              this.changeDefaultKb.bind(this));
+    this._getLanguageFromNetwork(this.getCurrentLanguage.bind(this,
+                                          this.buildLanguageList.bind(this)));
     this.getCurrentKeyboardLayout();
     this.getSupportedKbLayouts();
     document.getElementById('languages').addEventListener('change', this);
-    this.settings.addObserver('language.current',
-        this.changeDefaultKb.bind(this));
   },
 
   handleEvent: function handleEvent(evt) {
@@ -49,10 +58,32 @@ var LanguageManager = {
     }
   },
 
+  _getLanguageFromNetwork: function getLanguageFromNetwork(cb) {
+    var out;
+
+    var mobConn = navigator.mozMobileConnection;
+    if(mobConn.cardState === 'ready') {
+      var mcc = mobConn.iccInfo.mcc;
+      window.console.log('MCC', mcc);
+      out = this.NETWORK_LANGUAGES[mcc];
+    }
+
+    if(out) {
+      window.console.log('Suggested language: ', out);
+
+      this.writeSetting('language.current', out, cb);
+    }
+    else {
+      cb();
+    }
+  },
+
   getCurrentLanguage: function settings_getCurrent(callback) {
+    window.console.log('In getCurrentLanguage !!!');
     var self = this;
     this.readSetting('language.current', function onResponse(setting) {
       self._currentLanguage = setting;
+      window.console.log('Current Language: ', setting);
       callback(setting);
     });
   },
@@ -80,6 +111,26 @@ var LanguageManager = {
     req.onerror = function _onerror() {
       console.error('Error checking setting ' + name);
     };
+  },
+
+  writeSetting: function settings_writeSetting(name, value, callback) {
+    window.console.log('Write settings called');
+
+    var settings = window.navigator.mozSettings;
+    if (!settings || !settings.createLock || !callback)
+      return;
+
+    window.console.log('Going to write the setting');
+    var req = settings.createLock().set({name: value});
+
+    req.onsuccess = function() {
+      window.console.log('Setting has been written');
+      callback();
+    };
+
+    req.onerror = function() {
+      window.console.error('Error while writing setting: ', name);
+    }
   },
 
   getSupportedLanguages: function settings_getSupportedLanguages(callback) {
@@ -178,4 +229,3 @@ var LanguageManager = {
 };
 
 LanguageManager.init();
-
