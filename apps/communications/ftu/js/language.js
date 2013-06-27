@@ -4,11 +4,11 @@ var LanguageManager = {
   settings: window.navigator.mozSettings,
 
   NETWORK_LANGUAGES: {
-    '724'    : 'pt-BR',
-    '214'    : 'es-ES',
-    '734'    : 'es-ES',
-    '732'    : 'es-ES',
-    '334'    : 'es-ES'
+    '724' : 'pt-BR',
+    '214' : 'es-ES',
+    '734' : 'es-ES',
+    '732' : 'es-ES',
+    '334' : 'es-ES'
   },
 
   init: function init() {
@@ -62,13 +62,13 @@ var LanguageManager = {
     var out;
 
     var mobConn = navigator.mozMobileConnection;
-    if(mobConn.cardState === 'ready') {
+    if (mobConn.cardState === 'ready') {
       var mcc = mobConn.iccInfo.mcc;
       window.console.log('MCC', mcc);
       out = this.NETWORK_LANGUAGES[mcc];
     }
 
-    if(out) {
+    if (out) {
       window.console.log('Suggested language: ', out);
 
       this.writeSetting('language.current', out, cb);
@@ -130,7 +130,7 @@ var LanguageManager = {
 
     req.onerror = function() {
       window.console.error('Error while writing setting: ', name);
-    }
+    };
   },
 
   getSupportedLanguages: function settings_getSupportedLanguages(callback) {
