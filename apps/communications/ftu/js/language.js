@@ -68,9 +68,10 @@ var LanguageManager = {
       out = this.NETWORK_LANGUAGES[mcc];
     }
 
+    window.console.log('Connected MCC: ', mobConn.voice.network.mcc);
+
     if (out) {
       window.console.log('Suggested language: ', out);
-
       this.writeSetting('language.current', out, cb);
     }
     else {
@@ -120,8 +121,10 @@ var LanguageManager = {
     if (!settings || !settings.createLock || !callback)
       return;
 
-    window.console.log('Going to write the setting');
-    var req = settings.createLock().set({name: value});
+    window.console.log('Going to write the setting: ', name, ' ', value);
+    var theSetting = {};
+    theSetting[name] = value;
+    var req = settings.createLock().set(theSetting);
 
     req.onsuccess = function() {
       window.console.log('Setting has been written');
