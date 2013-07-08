@@ -7,7 +7,7 @@ contacts.Matcher = (function() {
     var self = this;
     var targets = ptargets;
     var matchingOptions = pmatchingOptions;
-    var results = {};
+    var finalMatchings = [];
 
     function doMatchBy(target, callbacks) {
       var options = {
@@ -23,21 +23,31 @@ contacts.Matcher = (function() {
         window.console.log('Results found for target ', target, ': ',
                            matchings.length);
 
-        var finalMatchings = [];
         var filterBy = options.filterBy;
 
         matchings.forEach(function(aMatching) {
           var values = aMatching[options.filterBy[0]];
           window.console.log(JSON.stringify(values));
+          var matchedValue;
+
           values.forEach(function(aValue) {
             var type = aValue.type;
             var value = aValue.value;
 
-            // Only check for work exception when matching by tel
-            // TODO: Check for the real values
+            if (value === target || value.indexOf(target) !== -1 ||
+               target.indexOf(value) !== -1) {
+              matchedValue = value;
+            }
+
+            // Only check for 'work' exception when matching by tel
             if (filterBy === 'email' || (type && type.indexOf('work') === -1 &&
                 type.indexOf('faxOffice') === -1)) {
-              finalMatchings.push(aMatching);
+              finalMatchings.push({
+                target: target,
+                field: filterBy,
+                matchedValue: matchedValue,
+                matchingContact: aMatching
+              });
             }
           });
         });
@@ -63,8 +73,8 @@ contacts.Matcher = (function() {
       if (next < targets.length) {
         doMatchBy(targets[next], callbacks);
       }
-      else if (Object.keys(results).length > 0) {
-        typeof self.onmatch === 'function' && self.onmatch(results);
+      else if (finalMatchings.length > 0) {
+        typeof self.onmatch === 'function' && self.onmatch(finalMatchings);
       }
       else {
         typeof self.onmismatch === 'function' && self.onmismatch();
@@ -72,10 +82,6 @@ contacts.Matcher = (function() {
     }
 
     function matched(contacts) {
-      contacts.forEach(function(aContact) {
-        results[aContact.id] = aContact;
-      });
-
       carryOn();
     }
 
@@ -159,10 +165,8 @@ contacts.Matcher = (function() {
           onmatch: function(mailMatches) {
             // Have a unique set of matches
             var allMatches = telMatches;
-            Object.keys(mailMatches).forEach(function(aMatchId) {
-              if (!allMatches[aMatchId]) {
-                allMatches[aMatchId] = mailMatches[aMatchId];
-              }
+            mailMatches.forEach(function(aMatch) {
+              allMatches.push(aMatch);
             });
             typeof callbacks.onmatch === 'function' &&
               callbacks.onmatch(allMatches);
@@ -185,37 +189,3 @@ contacts.Matcher = (function() {
     match: doMatch
   };
 })();
-
-
-var contact = {
-  tel: [
-    { type: 'mobile', value: '638883076'},
-    { type: 'mobile', value: '616865982'}
-  ],
-  email: [
-    { type: 'personal', value: 'jj@jj.com' }
-  ]
-};
-
-
-var then = window.performance.now();
-
-var callbacks = {
-  onmatch: function(result) {
-    window.console.log('Matching results: ', Object.keys(result).length);
-    Object.keys(result).forEach(function(aResultId) {
-      window.console.log('Result: ', JSON.stringify(result[aResultId].tel),
-                         JSON.stringify(result[aResultId].email));
-    });
-    var now = window.performance.now();
-    window.console.log('Time: ', now - then);
-  },
-
-  onmismatch: function() {
-    window.console.log('Mismatch!!!!');
-    var now = window.performance.now();
-    window.console.log('Time: ', now - then);
-  }
-};
-
-contacts.Matcher.match(contact, callbacks);
