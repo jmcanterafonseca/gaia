@@ -4,9 +4,20 @@ contacts.Merger = (function() {
   // Target contact is a new Contact to be added to the device
   // deviceContacts are contacts already present on the device
   var newContact, matchingResults;
+  var recAddrs = [];
+  var recEmails = [];
+  var recOrgs = [];
+  var recCategories = [];
+  var addrsTypeHash = {};
+  var emailsHash = {};
+  var orgsHash = {};
+  var categoriesHash = {};
 
   function doMerge(pnewContact, pmatchingResults) {
     newContact = pnewContact;
+
+    window.console.log('New Contact Data: ', JSON.stringify(newContact));
+
     matchingResults = pmatchingResults;
 
     return mergeAll();
@@ -17,15 +28,24 @@ contacts.Merger = (function() {
     var maxLenghtFamilyName = 0;
     var recGivenName = [];
     var recFamilyName = [];
-    var recOrgs = [];
-    var recEmails = [];
+
     var recTels = [];
+    var recPhotos = [];
     var recBDay;
 
-    var newContactData = {};
-    var orgsHash = {};
-    var emailsHash = {};
     var telsHash = {};
+
+    recAddrs = [];
+    addrsTypeHash = {};
+
+    recEmails = [];
+    emailsHash = {};
+
+    recOrgs = [];
+    orgsHash = {};
+
+    recCategories = [];
+    categoriesHash = {};
 
     matchingResults.forEach(function(aResult) {
       var aDeviceContact = aResult.matchingContact;
@@ -50,23 +70,10 @@ contacts.Merger = (function() {
         recBDay = aDeviceContact.bday;
       }
 
-      if (Array.isArray(aDeviceContact.org)) {
-        aDeviceContact.org.forEach(function(aOrg) {
-          if (!orgsHash[aOrg]) {
-            recOrgs.push(aOrg);
-            orgsHash[aOrg] = true;
-          }
-        });
-      }
+      populateOrgs(aDeviceContact.org);
+      populateCategories(aDeviceContact.category);
 
-      if (Array.isArray(aDeviceContact.email)) {
-        aDeviceContact.email.forEach(function(aEmail) {
-          if (!emailsHash[aEmail.value]) {
-            recEmails.push(aEmail);
-            emailsHash[aEmail.value] = true;
-          }
-        });
-      }
+      populateEmails(aDeviceContact.email);
 
       if (Array.isArray(aDeviceContact.tel)) {
         aDeviceContact.tel.forEach(function(aTel) {
@@ -77,7 +84,8 @@ contacts.Merger = (function() {
             recTels.push({
               type: aTel.type,
               value: theValue,
-              carrier: aTel.carrier
+              carrier: aTel.carrier,
+              pref: aTel.pref
             });
             telsHash[aResult.target] = true;
             telsHash[aResult.matchedValue] = true;
@@ -88,7 +96,13 @@ contacts.Merger = (function() {
           }
         });
       }
-    });
+
+      if (Array.isArray(aDeviceContact.photo)) {
+        recPhotos.push(aDeviceContact.photo[0]);
+      }
+
+      populateAddrs(aDeviceContact.adr);
+    }); // matchingResults
 
     if (recGivenName.length === 0) {
       recGivenName = newContact.givenName;
@@ -98,58 +112,95 @@ contacts.Merger = (function() {
       recFamilyName = newContact.familyName;
     }
 
-    if (Array.isArray(newContact.org)) {
-      newContact.org.forEach(function(aOrg) {
-        if (!orgsHash[aOrg]) {
-          recOrgs.push(aOrg);
-          orgsHash[aOrg] = true;
-        }
-      });
-    }
+    populateOrgs(newContact.org);
+    populateCategories(newContact.category);
 
     if (!recBDay && newContact.bday) {
       recBDay = newContact.bday;
     }
 
-    if (Array.isArray(newContact.email)) {
-      newContact.email.forEach(function(aEmail) {
-        if (!emailsHash[aEmail.value]) {
-          recEmails.push(aEmail);
-          emailsHash[aEmail.value] = true;
-        }
-      });
+    if (Array.isArray(newContact.photo) && recPhotos.length === 0) {
+      recPhotos.push(newContact.photo[0]);
     }
+
+    populateEmails(newContact.email);
 
     if (Array.isArray(newContact.tel)) {
       newContact.tel.forEach(function(aTel) {
         if (!telsHash[aTel.value]) {
-          if (!Array.isArray(aTel.type)) {
-            aTel.type = [aTel.type];
-          }
+          aTel.type = (Array.isArray(aTel.type) ? aTel.type : [aTel.type]);
           recTels.push(aTel);
           telsHash[aTel.value] = true;
         }
       });
     }
 
-    newContactData.familyName = recFamilyName;
-    newContactData.givenName = recGivenName;
+    populateAddrs(newContact.adr);
 
     var name = (Array.isArray(recGivenName) ? recGivenName[0] : '') +
                           ' ' +
                 (Array.isArray(recFamilyName) ? recFamilyName[0] : '');
-    newContactData.name = [name];
 
-    newContactData.org = recOrgs;
-    newContactData.email = recEmails;
+     // Now we populate
+    return {
+      familyName: recFamilyName,
+      givenName: recGivenName,
+      name: name,
+      org: recOrgs,
+      email: recEmails,
+      tel: recTels,
+      bday: recBDay,
+      adr: recAddrs,
+      category: recCategories
+    };
+  }
 
-    window.console.log('Tels hash: ', JSON.stringify(telsHash),
-                       JSON.stringify(recTels));
+  function populateAddrs(sourceAddrs) {
+    // Addreses are added provided they have a different type
+    if (Array.isArray(sourceAddrs)) {
+      sourceAddrs.forEach(function(aAddr) {
+        var type = Array.isArray(aAddr.type) ? aAddr.type : [aAddr.type];
+        aAddr.type = type;
+        if (type[0] && !addrsTypeHash[type[0]]) {
+          recAddrs.push(aAddr);
+          addrsTypeHash[type[0]] = true;
+        }
+      });
+    }
+  }
 
-    newContactData.tel = recTels;
-    newContactData.bday = recBDay;
+  function populateEmails(sourceEmails) {
+    if (Array.isArray(sourceEmails)) {
+      sourceEmails.forEach(function(aEmail) {
+        var type = Array.isArray(aEmail.type) ? aEmail.type : [aEmail.type];
+        aEmail.type = type;
+        if (!emailsHash[aEmail.value]) {
+          recEmails.push(aEmail);
+          emailsHash[aEmail.value] = true;
+        }
+      });
+    }
+  }
 
-    return newContactData;
+  function populateOrgs(sourceOrgs) {
+    if (Array.isArray(sourceOrgs)) {
+      sourceOrgs.forEach(function(aOrg) {
+        if (!orgsHash[aOrg]) {
+          recOrgs.push(aOrg);
+          orgsHash[aOrg] = true;
+        }
+      });
+    }
+  }
+
+  function populateCategories(sourceCats) {
+    if (Array.isArray(sourceCats)) {
+      sourceCats.forEach(function(aCat) {
+        if (!categoriesHash[aCat]) {
+          recCategories.push(aCat);
+        }
+      });
+    }
   }
 
   return {
