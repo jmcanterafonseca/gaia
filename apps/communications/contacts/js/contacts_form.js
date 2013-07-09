@@ -492,6 +492,57 @@ contacts.Form = (function() {
     }
 
     updateCategoryForImported(contact);
+
+
+    var cbs = {
+      onmatch: function(results) {
+        window.console.log('On match');
+        var msg = 'This contact seems to be similar to existing ones. Merge?';
+        var yesObject = {
+          title: 'yes',
+          isDanger: true,
+          callback: function onAccept() {
+            var mergedData = contacts.Merger.merge(myContact, results);
+            window.console.log(JSON.stringify(mergedData));
+            removeMerged(results);
+            var mergedContact = new mozContact();
+            mergedContact.init(mergedData);
+            doSaveContact(mergedContact);
+            ConfirmDialog.hide();
+          }
+        };
+
+        var noObject = {
+          title: 'no',
+          callback: function onCancel() {
+            ConfirmDialog.hide();
+            doSaveContact(contact);
+          }
+        };
+
+        ConfirmDialog.show(null, msg, noObject, yesObject);
+      },
+
+      onmismatch: function() {
+        window.console.log('On mismatch');
+        doSaveContact(contact);
+      }
+    };
+
+    LazyLoader.load(['/contacts/js/contacts_matcher.js',
+                     '/contacts/js/contacts_merger.js'], function() {
+      contacts.Matcher.match(contact, cbs);
+    });
+  };
+
+  function removeMerged(matchingResults) {
+    matchingResults.forEach(function(aResult) {
+      window.console.log('Going to remove: ', aResult.matchingContact.id);
+      navigator.mozContacts.remove(aResult.matchingContact);
+    });
+  }
+
+  function doSaveContact(contact) {
     var request = navigator.mozContacts.save(contact);
 
     request.onsuccess = function onsuccess() {
@@ -505,7 +556,7 @@ contacts.Form = (function() {
     request.onerror = function onerror() {
       console.error('Error saving contact', request.error.name);
     };
-  };
+  }
 
   var createName = function createName(myContact) {
     if (myContact.givenName || myContact.familyName) {
