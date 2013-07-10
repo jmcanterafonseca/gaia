@@ -169,6 +169,36 @@ contacts.Matcher = (function() {
     }
   }
 
+  function matchByName(aContact, callbacks) {
+    var options = {
+      filterValue: aContact.givenName[0],
+      filterBy: ['familyName'],
+      filterOp: 'equals'
+    };
+
+    var req = navigator.mozContacts.find(options);
+
+    req.onsuccess = function() {
+      var result = req.result;
+      if(result.length > 0) {
+        var givenNames = [];
+        // Here we perform a binary search over the givenName
+        result.forEach(function(aResult) {
+          if(.)
+        });
+      }
+      else {
+        typeof callbacks.onmismatch === 'function' && callbacks.onmismatch();
+      }
+    }
+
+    req.onerror = function() {
+      window.console.error('Error while trying to perform matchinh by name',
+                           req.error.name);
+      typeof callbacks.onmismatch === 'function' && callbacks.onmismatch();
+    }
+  }
+
   function doMatch(aContact, callbacks) {
     window.console.log(JSON.stringify(aContact));
     var localCbs = {
@@ -197,7 +227,20 @@ contacts.Matcher = (function() {
     matchByTel(aContact, localCbs);
   }
 
+  function doMatchSilent(aContact, callbacks) {
+    var localCbs = {
+      onmatch: function(nameMatches) {
+
+      },
+      onmismatch: function() {
+        typeof callbacks.onmismatch === 'function' && callbacks.onmismatch();
+      }
+    };
+    matchByName(aContact, localCbs);
+  }
+
   return {
-    match: doMatch
+    matchActiveMode: doMatch,
+    matchSilentMode: doMatchSilent
   };
 })();
