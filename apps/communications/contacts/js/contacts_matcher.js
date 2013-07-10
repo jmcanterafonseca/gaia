@@ -7,7 +7,7 @@ contacts.Matcher = (function() {
     var self = this;
     var targets = ptargets;
     var matchingOptions = pmatchingOptions;
-    var finalMatchings = [];
+    var finalMatchings = {};
 
     function doMatchBy(target, callbacks) {
       var options = {
@@ -39,12 +39,8 @@ contacts.Matcher = (function() {
               matchedValue = value;
             }
 
-            // Only check for 'work' exception when matching by tel
-            if (filterBy === 'email' || (Array.isArray(type) &&
-                                         type.indexOf('work') === -1 &&
-                type.indexOf('faxOffice') === -1) &&
-                matchingOptions.selfContactId !== aMatching.id) {
-              finalMatchings[matchingContact.id] = {
+            if (matchingOptions.selfContactId !== aMatching.id) {
+              finalMatchings[aMatching.id] = {
                 target: target,
                 field: filterBy,
                 matchedValue: matchedValue,
@@ -54,9 +50,10 @@ contacts.Matcher = (function() {
           });
         });
 
-        var numFinalMatchings = Object.keys(finalMatchings.length);
+        var numFinalMatchings = Object.keys(finalMatchings).length;
         window.console.log('Final matchings length: ', numFinalMatchings);
         if (numFinalMatchings > 0) {
+          window.console.log('Calling on match');
           typeof callbacks.onmatch === 'function' &&
                                             callbacks.onmatch(finalMatchings);
         }
@@ -77,7 +74,7 @@ contacts.Matcher = (function() {
       if (next < targets.length) {
         doMatchBy(targets[next], callbacks);
       }
-      else if (finalMatchings.length > 0) {
+      else if (Object.keys(finalMatchings).length > 0) {
         typeof self.onmatch === 'function' && self.onmatch(finalMatchings);
       }
       else {
@@ -114,15 +111,13 @@ contacts.Matcher = (function() {
   }
 
   function matchByTel(aContact, callbacks) {
-    window.console.log(JSON.stringify(aContact));
+    window.console.log('aContact Data: ', JSON.stringify(aContact));
 
     var values = [];
 
     if (Array.isArray(aContact.tel)) {
       aContact.tel.forEach(function(aTel) {
-        if (isEligible(aTel)) {
-          values.push(aTel.value);
-        }
+        values.push(aTel.value);
       });
     }
 
@@ -189,24 +184,37 @@ contacts.Matcher = (function() {
     var req = navigator.mozContacts.find(options);
 
     req.onsuccess = function() {
-      var result = req.result;
-      if (result.length > 0) {
+      var familyNameResults = req.result;
+      if (familyNameResults.length > 0) {
         var givenNames = [];
         // Here we perform a binary search over the givenName
-        result.forEach(function(aResult) {
-          givenNames.push({
-            id: result.id,
-            data: aResult.giveName[0]
-          });
+        familyNameResults.forEach(function(aResult) {
+          if (Array.isArray(aResult.givenName) && aResult.givenName[0]) {
+            givenNames.push({
+              contact: aResult,
+              givenName: aResult.givenName[0]
+            });
+          }
         });
 
-        var matchingNames = utils.binarySearch();
+        var matchingNames = utils.binarySearch(aContact.givenName[0],
+                                               givenNames,
+                                               { arrayField: 'givenName'
+                            });
 
         if (matchingNames.length === 0) {
           typeof callbacks.onmistmatch === 'function' && callbacks.onmismatch();
         }
         else {
-          typeof callbacks.onmatch === 'function' && callbacks.onmatch();
+          var matchingsFound = {};
+
+          matchingNames.forEach(function(aMatchingName) {
+            matchingsFound[aMatchingName.contact.id] = {
+              matchingContact: aMatchingName.contact
+            };
+          });
+          typeof callbacks.onmatch === 'function' &&
+                                            callbacks.onmatch(matchingsFound);
         }
 
       }
@@ -226,8 +234,12 @@ contacts.Matcher = (function() {
     window.console.log(JSON.stringify(aContact));
     var localCbs = {
       onmatch: function(telMatches) {
+        window.console.log('Tel Matches on match !!!!',
+                           JSON.stringify(telMatches));
         var matchCbs = {
           onmatch: function(mailMatches) {
+            window.console.log('Mail Matches on match !!!!',
+                               JSON.stringify(mailMatches));
             // Have a unique set of matches
             var allMatches = telMatches;
             Object.keys(mailMatches).forEach(function(aMatch) {
@@ -239,7 +251,7 @@ contacts.Matcher = (function() {
               callbacks.onmatch(allMatches);
           },
           onmismatch: function() {
-            typeof callbacks.onmismatch === 'function' &&
+            typeof callbacks.onmatch === 'function' &&
               callbacks.onmatch(telMatches);
           }
         };
@@ -305,14 +317,31 @@ contacts.Matcher = (function() {
 
     // Name matches drive all the process
     Object.keys(nameMatches).forEach(function(aNameMatching) {
-      var matchingContact =
+      var matchingContact = nameMatches[aNameMatching].matchingContact;
+
+      // Three cases under which a matching is considered
       if (phoneMatches[aNameMatching] && mailMatches[aNameMatching]) {
         finalMatchings[aNameMatching] = nameMatches[aNameMatching];
       }
-      else if (phoneMatches[aNameMatching] &&)
+      else if (phoneMatches[aNameMatching] &&
+               (!Array.isArray(matchingContact.email) ||
+                !matchingContact.email[0].value)) {
+        finalMatchings[aNameMatching] = nameMatches[aNameMatching];
+      }
+      else if (mailMatches[aNameMatching] &&
+              (!Array.isArray(matchingContact.tel) ||
+               !matchingContact.tel[0].value)) {
+        finalMatchings[aNameMatching] = nameMatches[aNameMatching];
+      }
     });
 
-    return finalMatchings;
+    if (Object.keys(finalMatchings).length > 0) {
+      typeof callbacks.onmatch === 'function' &&
+                                            callbacks.onmatch(finalMatchings);
+    }
+    else {
+      typeof callbacks.onmismatch === 'function' && callbacks.onmismatch();
+    }
   }
 
   return {

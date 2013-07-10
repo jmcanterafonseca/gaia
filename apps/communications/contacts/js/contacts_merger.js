@@ -24,8 +24,8 @@ contacts.Merger = (function() {
   }
 
   function mergeAll() {
-    var maxLenghtGivenName = 0;
-    var maxLenghtFamilyName = 0;
+    var maxLengthGivenName = 0;
+    var maxLengthFamilyName = 0;
     var recGivenName = [];
     var recFamilyName = [];
 
@@ -47,21 +47,21 @@ contacts.Merger = (function() {
     recCategories = [];
     categoriesHash = {};
 
-    matchingResults.forEach(function(aResult) {
-      var aDeviceContact = aResult.matchingContact;
+    Object.keys(matchingResults).forEach(function(aResult) {
+      var aDeviceContact = matchingResults[aResult].matchingContact;
 
       var givenName = aDeviceContact.givenName;
       if (Array.isArray(givenName) && givenName[0] && givenName[0].length >
-         maxLenghtGivenName) {
-        maxLenghtGivenName = givenName[0].length;
+         maxLengthGivenName) {
+        maxLengthGivenName = givenName[0].length;
         recGivenName.pop();
         recGivenName.push(givenName[0]);
       }
 
       var familyName = aDeviceContact.familyName;
       if (Array.isArray(familyName) && familyName[0] && familyName[0].length >
-         maxLenghtFamilyName) {
-        maxLenghtFamilyName = familyName[0].length;
+         maxLengthFamilyName) {
+        maxLengthFamilyName = familyName[0].length;
         recFamilyName.pop();
         recFamilyName.push(familyName[0]);
       }

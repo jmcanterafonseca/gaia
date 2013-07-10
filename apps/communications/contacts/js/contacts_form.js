@@ -529,16 +529,17 @@ contacts.Form = (function() {
       }
     };
 
-    LazyLoader.load(['/contacts/js/contacts_matcher.js',
+    LazyLoader.load(['/contacts/js/utilities/binary_search.js',
+                     '/contacts/js/contacts_matcher.js',
                      '/contacts/js/contacts_merger.js'], function() {
-      contacts.Matcher.match(contact, cbs);
+      contacts.Matcher.matchActiveMode(contact, cbs);
     });
   };
 
   function removeMerged(matchingResults) {
-    matchingResults.forEach(function(aResult) {
-      window.console.log('Going to remove: ', aResult.matchingContact.id);
-      navigator.mozContacts.remove(aResult.matchingContact);
+    Object.keys(matchingResults).forEach(function(aResult) {
+      window.console.log('Going to remove: ', aResult);
+      navigator.mozContacts.remove(matchingResults[aResult].matchingContact);
     });
   }
 
