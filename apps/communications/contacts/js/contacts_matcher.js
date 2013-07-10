@@ -44,18 +44,19 @@ contacts.Matcher = (function() {
                                          type.indexOf('work') === -1 &&
                 type.indexOf('faxOffice') === -1) &&
                 matchingOptions.selfContactId !== aMatching.id) {
-              finalMatchings.push({
+              finalMatchings[matchingContact.id] = {
                 target: target,
                 field: filterBy,
                 matchedValue: matchedValue,
                 matchingContact: aMatching
-              });
+              };
             }
           });
         });
 
-        window.console.log('Final matchings length: ', finalMatchings.length);
-        if (finalMatchings.length > 0) {
+        var numFinalMatchings = Object.keys(finalMatchings.length);
+        window.console.log('Final matchings length: ', numFinalMatchings);
+        if (numFinalMatchings > 0) {
           typeof callbacks.onmatch === 'function' &&
                                             callbacks.onmatch(finalMatchings);
         }
@@ -170,8 +171,17 @@ contacts.Matcher = (function() {
   }
 
   function matchByName(aContact, callbacks) {
+    if (!Array.isArray(aContact.familyName) ||
+    !Array.isArray(aContact.givenName) || !aContact.familyName[0] ||
+    !aContact.givenName[0]) {
+
+      typeof callbacks.onmistmatch === 'function' && callbacks.onmismatch();
+
+      return;
+    }
+
     var options = {
-      filterValue: aContact.givenName[0],
+      filterValue: aContact.familyName[0],
       filterBy: ['familyName'],
       filterOp: 'equals'
     };
@@ -184,8 +194,21 @@ contacts.Matcher = (function() {
         var givenNames = [];
         // Here we perform a binary search over the givenName
         result.forEach(function(aResult) {
-          if (.)
+          givenNames.push({
+            id: result.id,
+            data: aResult.giveName[0]
+          });
         });
+
+        var matchingNames = utils.binarySearch();
+
+        if (matchingNames.length === 0) {
+          typeof callbacks.onmistmatch === 'function' && callbacks.onmismatch();
+        }
+        else {
+          typeof callbacks.onmatch === 'function' && callbacks.onmatch();
+        }
+
       }
       else {
         typeof callbacks.onmismatch === 'function' && callbacks.onmismatch();
@@ -207,8 +230,10 @@ contacts.Matcher = (function() {
           onmatch: function(mailMatches) {
             // Have a unique set of matches
             var allMatches = telMatches;
-            mailMatches.forEach(function(aMatch) {
-              allMatches.push(aMatch);
+            Object.keys(mailMatches).forEach(function(aMatch) {
+              if (!allMatches[aMatch]) {
+                allMatches[aMatch] = mailMatches[aMatch];
+              }
             });
             typeof callbacks.onmatch === 'function' &&
               callbacks.onmatch(allMatches);
@@ -228,15 +253,66 @@ contacts.Matcher = (function() {
   }
 
   function doMatchSilent(aContact, callbacks) {
+    function phoneFindReady(matches) {
+      phoneMatchesReady = true;
+      phoneMatches = matches || {};
+      if (mailMatchesReady) {
+        reconcileResults(nameMatches, phoneMatches, mailMatches, callbacks);
+      }
+    }
+
+    function mailFindReady(matches) {
+      mailMatchesReady = true;
+      mailMatches = matches || {};
+      if (phoneMatchesReady) {
+        reconcileResults(nameMatches, phoneMatches, mailMatches, callbacks);
+      }
+    }
+
     var localCbs = {
       onmatch: function(nameMatches) {
+        // Now matching by phone number and by email are launched in parallel
+        // Then results are reconciled
+        var phoneMatches;
+        var mailMatches;
+        var mailMatchesReady = false;
+        var phoneMatchesReady = false;
 
+        var phoneCbs = {
+          onmatch: phoneFindReady,
+          onmismatch: phoneFindReady
+        };
+
+        matchByPhones(aContact, phoneCbs);
+
+        var mailCbs = {
+          onmatch: mailFindReady,
+          onmismatch: mailFindReady
+        };
+
+        matchByEmails(aContact, mailCbs);
       },
       onmismatch: function() {
         typeof callbacks.onmismatch === 'function' && callbacks.onmismatch();
       }
     };
+    // If there is no matching by name a mismatch is reported
     matchByName(aContact, localCbs);
+  }
+
+  function reconcileResults(nameMatches, phoneMatches, mailMatches, callbacks) {
+    var finalMatchings = {};
+
+    // Name matches drive all the process
+    Object.keys(nameMatches).forEach(function(aNameMatching) {
+      var matchingContact =
+      if (phoneMatches[aNameMatching] && mailMatches[aNameMatching]) {
+        finalMatchings[aNameMatching] = nameMatches[aNameMatching];
+      }
+      else if (phoneMatches[aNameMatching] &&)
+    });
+
+    return finalMatchings;
   }
 
   return {
