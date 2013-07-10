@@ -180,23 +180,23 @@ contacts.Matcher = (function() {
 
     req.onsuccess = function() {
       var result = req.result;
-      if(result.length > 0) {
+      if (result.length > 0) {
         var givenNames = [];
         // Here we perform a binary search over the givenName
         result.forEach(function(aResult) {
-          if(.)
+          if (.)
         });
       }
       else {
         typeof callbacks.onmismatch === 'function' && callbacks.onmismatch();
       }
-    }
+    };
 
     req.onerror = function() {
       window.console.error('Error while trying to perform matchinh by name',
                            req.error.name);
       typeof callbacks.onmismatch === 'function' && callbacks.onmismatch();
-    }
+    };
   }
 
   function doMatch(aContact, callbacks) {
