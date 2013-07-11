@@ -532,7 +532,7 @@ contacts.Form = (function() {
     LazyLoader.load(['/contacts/js/utilities/binary_search.js',
                      '/contacts/js/contacts_matcher.js',
                      '/contacts/js/contacts_merger.js'], function() {
-      contacts.Matcher.matchActiveMode(contact, cbs);
+      contacts.Matcher.matchSilentMode(myContact, cbs);
     });
   };
 

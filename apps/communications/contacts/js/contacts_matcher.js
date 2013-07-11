@@ -1,6 +1,13 @@
 var contacts = window.contacts || {};
 
 contacts.Matcher = (function() {
+  var selfContactId;
+  var nameMatches;
+  var phoneMatches;
+  var mailMatches;
+  var mailMatchesReady = false;
+  var phoneMatchesReady = false;
+
   // Matcher obj
   function MatcherObj(ptargets, pmatchingOptions) {
     var next = 0;
@@ -39,7 +46,7 @@ contacts.Matcher = (function() {
               matchedValue = value;
             }
 
-            if (matchingOptions.selfContactId !== aMatching.id) {
+            if (selfContactId !== aMatching.id) {
               finalMatchings[aMatching.id] = {
                 target: target,
                 field: filterBy,
@@ -124,8 +131,7 @@ contacts.Matcher = (function() {
     if (values.length > 0) {
       var matcher = new MatcherObj(values, {
         filterBy: ['tel'],
-        filterOp: 'match',
-        selfContactId: aContact.id
+        filterOp: 'match'
       });
       matcher.onmatch = callbacks.onmatch;
 
@@ -151,8 +157,7 @@ contacts.Matcher = (function() {
     if (values.length > 0) {
       var matcher = new MatcherObj(values, {
         filterBy: ['email'],
-        filterOp: 'equals',
-        selfContactId: aContact.id
+        filterOp: 'equals'
       });
       matcher.onmatch = callbacks.onmatch;
 
@@ -166,11 +171,13 @@ contacts.Matcher = (function() {
   }
 
   function matchByName(aContact, callbacks) {
-    if (!Array.isArray(aContact.familyName) ||
-    !Array.isArray(aContact.givenName) || !aContact.familyName[0] ||
-    !aContact.givenName[0]) {
+    window.console.log('Contact by name: ', JSON.stringify(aContact));
 
-      typeof callbacks.onmistmatch === 'function' && callbacks.onmismatch();
+    if (!Array.isArray(aContact.familyName) ||
+      !Array.isArray(aContact.givenName) || !aContact.familyName[0] ||
+      !aContact.givenName[0]) {
+
+      typeof callbacks.onmismatch === 'function' && callbacks.onmismatch();
 
       return;
     }
@@ -189,7 +196,8 @@ contacts.Matcher = (function() {
         var givenNames = [];
         // Here we perform a binary search over the givenName
         familyNameResults.forEach(function(aResult) {
-          if (Array.isArray(aResult.givenName) && aResult.givenName[0]) {
+          if (aResult.id !== selfContactId &&
+              Array.isArray(aResult.givenName) && aResult.givenName[0]) {
             givenNames.push({
               contact: aResult,
               givenName: aResult.givenName[0]
@@ -197,20 +205,21 @@ contacts.Matcher = (function() {
           }
         });
 
-        var matchingNames = utils.binarySearch(aContact.givenName[0],
+        var matchingIndexes = utils.binarySearch(aContact.givenName[0],
                                                givenNames,
                                                { arrayField: 'givenName'
                             });
 
-        if (matchingNames.length === 0) {
-          typeof callbacks.onmistmatch === 'function' && callbacks.onmismatch();
+        if (matchingIndexes.length === 0) {
+          typeof callbacks.onmismatch === 'function' && callbacks.onmismatch();
         }
         else {
           var matchingsFound = {};
 
-          matchingNames.forEach(function(aMatchingName) {
-            matchingsFound[aMatchingName.contact.id] = {
-              matchingContact: aMatchingName.contact
+          matchingIndexes.forEach(function(aMatchingIndex) {
+            var contact = givenNames[aMatchingIndex].contact;
+            matchingsFound[contact.id] = {
+              matchingContact: contact
             };
           });
           typeof callbacks.onmatch === 'function' &&
@@ -231,6 +240,9 @@ contacts.Matcher = (function() {
   }
 
   function doMatch(aContact, callbacks) {
+    selfContactId = aContact.id;
+    nameMatches = null;
+
     window.console.log(JSON.stringify(aContact));
     var localCbs = {
       onmatch: function(telMatches) {
@@ -265,6 +277,11 @@ contacts.Matcher = (function() {
   }
 
   function doMatchSilent(aContact, callbacks) {
+    selfContactId = aContact.id;
+    nameMatches = null;
+
+    window.console.log('In match silent');
+
     function phoneFindReady(matches) {
       phoneMatchesReady = true;
       phoneMatches = matches || {};
@@ -281,28 +298,30 @@ contacts.Matcher = (function() {
       }
     }
 
+    try {
     var localCbs = {
-      onmatch: function(nameMatches) {
+      onmatch: function(pnameMatches) {
+        nameMatches = pnameMatches;
         // Now matching by phone number and by email are launched in parallel
         // Then results are reconciled
-        var phoneMatches;
-        var mailMatches;
-        var mailMatchesReady = false;
-        var phoneMatchesReady = false;
+        phoneMatches = {};
+        mailMatches = {};
+        mailMatchesReady = false;
+        phoneMatchesReady = false;
 
         var phoneCbs = {
           onmatch: phoneFindReady,
           onmismatch: phoneFindReady
         };
 
-        matchByPhones(aContact, phoneCbs);
+        matchByTel(aContact, phoneCbs);
 
         var mailCbs = {
           onmatch: mailFindReady,
           onmismatch: mailFindReady
         };
 
-        matchByEmails(aContact, mailCbs);
+        matchByEmail(aContact, mailCbs);
       },
       onmismatch: function() {
         typeof callbacks.onmismatch === 'function' && callbacks.onmismatch();
@@ -310,9 +329,16 @@ contacts.Matcher = (function() {
     };
     // If there is no matching by name a mismatch is reported
     matchByName(aContact, localCbs);
+    window.console.log('Match by name called');
+    }
+    catch (e) {
+      window.console.error('Error while matching: ', e);
+    }
   }
 
   function reconcileResults(nameMatches, phoneMatches, mailMatches, callbacks) {
+    window.console.log('Reconciling results');
+
     var finalMatchings = {};
 
     // Name matches drive all the process
@@ -324,13 +350,13 @@ contacts.Matcher = (function() {
         finalMatchings[aNameMatching] = nameMatches[aNameMatching];
       }
       else if (phoneMatches[aNameMatching] &&
-               (!Array.isArray(matchingContact.email) ||
-                !matchingContact.email[0].value)) {
+              (!Array.isArray(matchingContact.email) ||
+              (!matchingContact.email[0] || !matchingContact.email[0].value))) {
         finalMatchings[aNameMatching] = nameMatches[aNameMatching];
       }
       else if (mailMatches[aNameMatching] &&
               (!Array.isArray(matchingContact.tel) ||
-               !matchingContact.tel[0].value)) {
+              (!matchingContact.tel[0] || !matchingContact.tel[0].value))) {
         finalMatchings[aNameMatching] = nameMatches[aNameMatching];
       }
     });
