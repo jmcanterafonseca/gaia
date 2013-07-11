@@ -17,6 +17,7 @@ contacts.Merger = (function() {
     newContact = pnewContact;
 
     window.console.log('New Contact Data: ', JSON.stringify(newContact));
+    window.console.log('Matching Results: ', JSON.stringify(pmatchingResults));
 
     matchingResults = pmatchingResults;
 
@@ -77,18 +78,25 @@ contacts.Merger = (function() {
 
       if (Array.isArray(aDeviceContact.tel)) {
         aDeviceContact.tel.forEach(function(aTel) {
-          if (!telsHash[aTel.value] && (aTel.value === aResult.target ||
-                                      aTel.value === aResult.matchedValue)) {
-            var theValue = aResult.target.length > aResult.matchedValue.length ?
-                              aResult.target : aResult.matchedValue;
+          var currentResult = matchingResults[aResult];
+
+          var matchedValIdx = currentResult.matchedValues.indexOf(aTel.value);
+          var matchedValue = '';
+          if (matchedValIdx !== -1) {
+            matchedValue = currentResult.matchedValues[matchedValIdx];
+          }
+          if (!telsHash[aTel.value] && (aTel.value === currentResult.target ||
+                                     matchedValue === aTel.value)) {
+            var theValue = currentResult.target.length > matchedValue.length ?
+                              currentResult.target : matchedValue;
             recTels.push({
               type: aTel.type,
               value: theValue,
               carrier: aTel.carrier,
               pref: aTel.pref
             });
-            telsHash[aResult.target] = true;
-            telsHash[aResult.matchedValue] = true;
+            telsHash[currentResult.target] = true;
+            telsHash[matchedValue] = true;
           }
           else if (!telsHash[aTel.value]) {
             recTels.push(aTel);

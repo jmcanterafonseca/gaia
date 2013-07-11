@@ -2,11 +2,6 @@ var contacts = window.contacts || {};
 
 contacts.Matcher = (function() {
   var selfContactId;
-  var nameMatches;
-  var phoneMatches;
-  var mailMatches;
-  var mailMatchesReady = false;
-  var phoneMatchesReady = false;
 
   // Matcher obj
   function MatcherObj(ptargets, pmatchingOptions) {
@@ -49,8 +44,8 @@ contacts.Matcher = (function() {
             if (selfContactId !== aMatching.id) {
               finalMatchings[aMatching.id] = {
                 target: target,
-                field: filterBy,
-                matchedValue: matchedValue,
+                fields: filterBy,
+                matchedValues: [matchedValue],
                 matchingContact: aMatching
               };
             }
@@ -170,82 +165,9 @@ contacts.Matcher = (function() {
     }
   }
 
-  function matchByName(aContact, callbacks) {
-    window.console.log('Contact by name: ', JSON.stringify(aContact));
-
-    if (!Array.isArray(aContact.familyName) ||
-      !Array.isArray(aContact.givenName) || !aContact.familyName[0] ||
-      !aContact.givenName[0]) {
-
-      typeof callbacks.onmismatch === 'function' && callbacks.onmismatch();
-
-      return;
-    }
-
-    var options = {
-      filterValue: aContact.familyName[0],
-      filterBy: ['familyName'],
-      filterOp: 'equals'
-    };
-
-    var req = navigator.mozContacts.find(options);
-
-    req.onsuccess = function() {
-      var familyNameResults = req.result;
-      if (familyNameResults.length > 0) {
-        var givenNames = [];
-        // Here we perform a binary search over the givenName
-        familyNameResults.forEach(function(aResult) {
-          if (aResult.id !== selfContactId &&
-              Array.isArray(aResult.givenName) && aResult.givenName[0]) {
-            givenNames.push({
-              contact: aResult,
-              givenName: Normalizer.toAscii(aResult.givenName[0].trim().lower())
-            });
-          }
-        });
-
-        givenNames.sort();
-
-        var target = Normalizer.toAscii(aContact.givenName[0].trim().lower());
-        var matchingIndexes = utils.binarySearch(
-                                  target,
-                                  givenNames, {
-                                    arrayField: 'givenName'
-                              });
-
-        if (matchingIndexes.length === 0) {
-          typeof callbacks.onmismatch === 'function' && callbacks.onmismatch();
-        }
-        else {
-          var matchingsFound = {};
-
-          matchingIndexes.forEach(function(aMatchingIndex) {
-            var contact = givenNames[aMatchingIndex].contact;
-            matchingsFound[contact.id] = {
-              matchingContact: contact
-            };
-          });
-          typeof callbacks.onmatch === 'function' &&
-                                            callbacks.onmatch(matchingsFound);
-        }
-
-      }
-      else {
-        typeof callbacks.onmismatch === 'function' && callbacks.onmismatch();
-      }
-    };
-
-    req.onerror = function() {
-      window.console.error('Error while trying to perform matchinh by name',
-                           req.error.name);
-      typeof callbacks.onmismatch === 'function' && callbacks.onmismatch();
-    };
-  }
 
   function doMatch(aContact, callbacks) {
     selfContactId = aContact.id;
-    nameMatches = null;
 
     window.console.log(JSON.stringify(aContact));
     var localCbs = {
@@ -261,6 +183,11 @@ contacts.Matcher = (function() {
             Object.keys(mailMatches).forEach(function(aMatch) {
               if (!allMatches[aMatch]) {
                 allMatches[aMatch] = mailMatches[aMatch];
+              }
+              else {
+                allMatches[aMatch].fields.push('email');
+                allMatches[aMatch].matchedValues.push(
+                                        mailMatches[aMatch].matchedValues[0]);
               }
             });
             typeof callbacks.onmatch === 'function' &&
@@ -282,65 +209,83 @@ contacts.Matcher = (function() {
 
   function doMatchSilent(aContact, callbacks) {
     selfContactId = aContact.id;
-    nameMatches = null;
+
+    if (!Array.isArray(aContact.familyName) ||
+      !Array.isArray(aContact.givenName) || !aContact.familyName[0] ||
+      !aContact.givenName[0]) {
+
+      typeof callbacks.onmismatch === 'function' && callbacks.onmismatch();
+
+      return;
+    }
 
     window.console.log('In match silent');
 
-    function phoneFindReady(matches) {
-      phoneMatchesReady = true;
-      phoneMatches = matches || {};
-      if (mailMatchesReady) {
-        reconcileResults(nameMatches, phoneMatches, mailMatches, callbacks);
-      }
-    }
+    var matchingsFound = {};
 
-    function mailFindReady(matches) {
-      mailMatchesReady = true;
-      mailMatches = matches || {};
-      if (phoneMatchesReady) {
-        reconcileResults(nameMatches, phoneMatches, mailMatches, callbacks);
-      }
-    }
-
-    try {
     var localCbs = {
-      onmatch: function(pnameMatches) {
-        nameMatches = pnameMatches;
-        // Now matching by phone number and by email are launched in parallel
-        // Then results are reconciled
-        phoneMatches = {};
-        mailMatches = {};
-        mailMatchesReady = false;
-        phoneMatchesReady = false;
+      onmatch: function(results) {
+        // Results will contain contacts that match by tel or email
+        // Now a binary search is performed over givenName and lastName
+        // Normalizing the strings
+        var familyNames = [];
+        Object.keys(results).forEach(function(aResultId) {
+          var mContact = results[aResultId].matchingContact;
 
-        var phoneCbs = {
-          onmatch: phoneFindReady,
-          onmismatch: phoneFindReady
-        };
+          if (!Array.isArray(mContact.familyName) ||
+              !Array.isArray(mContact.givenName) || !mContact.familyName[0] ||
+              !mContact.givenName[0]) {
 
-        matchByTel(aContact, phoneCbs);
+            return;
+          }
 
-        var mailCbs = {
-          onmatch: mailFindReady,
-          onmismatch: mailFindReady
-        };
+          familyNames.push({
+            contact: mContact,
+            familyName: Normalizer.toAscii(
+                                  mContact.familyName[0].trim().toLowerCase())
+          });
 
-        matchByEmail(aContact, mailCbs);
+          familyNames.sort();
+
+          var targetFN = Normalizer.toAscii(
+                                  mContact.familyName[0].trim().toLowerCase());
+          var targetGN = Normalizer.toAscii(
+                                  mContact.givenName[0].trim().toLowerCase());
+
+          var matchingIndexes = utils.binarySearch(
+                                  targetFN,
+                                  familyNames, {
+                                  arrayField: 'familyName'
+                                });
+
+          window.console.log('Matching indexes',
+                             JSON.stringify(matchingIndexes));
+          matchingIndexes.forEach(function(aMatchingIndex) {
+            var contact = familyNames[aMatchingIndex].contact;
+            var givenNameNormalized = Normalizer.toAscii(
+                                    contact.givenName[0].trim().toLowerCase());
+
+            if (targetGN === givenNameNormalized) {
+              matchingsFound[contact.id] = {
+                matchingContact: contact
+              };
+            }
+          });
+        });
+
+        reconcileResults(matchingsFound, results, callbacks);
       },
+
       onmismatch: function() {
         typeof callbacks.onmismatch === 'function' && callbacks.onmismatch();
       }
     };
-    // If there is no matching by name a mismatch is reported
-    matchByName(aContact, localCbs);
-    window.console.log('Match by name called');
-    }
-    catch (e) {
-      window.console.error('Error while matching: ', e);
-    }
+
+    // Matching by email and phone number, then match by names
+    doMatch(aContact, localCbs);
   }
 
-  function reconcileResults(nameMatches, phoneMatches, mailMatches, callbacks) {
+  function reconcileResults(nameMatches, phoneMailMatches, callbacks) {
     window.console.log('Reconciling results');
 
     var finalMatchings = {};
@@ -349,19 +294,24 @@ contacts.Matcher = (function() {
     Object.keys(nameMatches).forEach(function(aNameMatching) {
       var matchingContact = nameMatches[aNameMatching].matchingContact;
 
+      var isPhoneMatching = phoneMailMatches[aNameMatching].
+                                          fields.indexOf('tel') !== -1;
+      var isMailMatching = phoneMailMatches[aNameMatching].
+                                          fields.indexOf('email') !== -1;
+
       // Three cases under which a matching is considered
-      if (phoneMatches[aNameMatching] && mailMatches[aNameMatching]) {
-        finalMatchings[aNameMatching] = nameMatches[aNameMatching];
+      if (isPhoneMatching && isMailMatching) {
+        finalMatchings[aNameMatching] = phoneMailMatches[aNameMatching];
       }
-      else if (phoneMatches[aNameMatching] &&
+      else if (isPhoneMatching &&
               (!Array.isArray(matchingContact.email) ||
               (!matchingContact.email[0] || !matchingContact.email[0].value))) {
-        finalMatchings[aNameMatching] = nameMatches[aNameMatching];
+        finalMatchings[aNameMatching] = phoneMailMatches[aNameMatching];
       }
-      else if (mailMatches[aNameMatching] &&
+      else if (isMailMatching &&
               (!Array.isArray(matchingContact.tel) ||
               (!matchingContact.tel[0] || !matchingContact.tel[0].value))) {
-        finalMatchings[aNameMatching] = nameMatches[aNameMatching];
+        finalMatchings[aNameMatching] = phoneMailMatches[aNameMatching];
       }
     });
 
