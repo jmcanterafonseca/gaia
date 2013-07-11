@@ -200,15 +200,19 @@ contacts.Matcher = (function() {
               Array.isArray(aResult.givenName) && aResult.givenName[0]) {
             givenNames.push({
               contact: aResult,
-              givenName: aResult.givenName[0]
+              givenName: Normalizer.toAscii(aResult.givenName[0].trim().lower())
             });
           }
         });
 
-        var matchingIndexes = utils.binarySearch(aContact.givenName[0],
-                                               givenNames,
-                                               { arrayField: 'givenName'
-                            });
+        givenNames.sort();
+
+        var target = Normalizer.toAscii(aContact.givenName[0].trim().lower());
+        var matchingIndexes = utils.binarySearch(
+                                  target,
+                                  givenNames, {
+                                    arrayField: 'givenName'
+                              });
 
         if (matchingIndexes.length === 0) {
           typeof callbacks.onmismatch === 'function' && callbacks.onmismatch();

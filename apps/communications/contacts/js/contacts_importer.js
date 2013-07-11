@@ -113,13 +113,31 @@
 
     // This method might be overritten
     this.persist = function(contactData, successCb, errorCb) {
-      saveMozContact(contactData, successCb, errorCb);
+      var cbs = {
+        onmatch: function(matches) {
+          var mergedContact = contacts.Merger.merge(contactData, matches);
+          saveMozContact(contactData, successCb, errorCb);
+          removeDuplicates(matches);
+        },
+        onmismatch: function() {
+          saveMozContact(contactData, successCb, errorCb);
+        }
+      };
+
+      // Try to match and if so merge is performed
+      contacts.Matcher.matchSilentMode(contactData, cbs);
     };
 
     // This method might be overwritten
     this.adapt = function(serviceContact) {
       return serviceConnector.adaptDataForSaving(serviceContact);
     };
+
+    function removeDuplicates(matches) {
+      Object.keys(matches).forEach(function(aMatchId) {
+        navigator.mozContacts.remove(matches[aMatchId]);
+      });
+    }
 
     function importContacts(from) {
       for (var i = from; i < from + CHUNK_SIZE && i < total; i++) {
