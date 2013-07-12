@@ -4,14 +4,16 @@ contacts.Merger = (function() {
   // Target contact is a new Contact to be added to the device
   // deviceContacts are contacts already present on the device
   var newContact, matchingResults;
-  var recAddrs = [];
-  var recEmails = [];
-  var recOrgs = [];
-  var recCategories = [];
-  var addrsTypeHash = {};
-  var emailsHash = {};
-  var orgsHash = {};
-  var categoriesHash = {};
+  var recAddrs;
+  var recEmails;
+  var recOrgs;
+  var recCategories;
+  var recUrls;
+  var recNotes;
+  var addrsTypeHash;
+  var emailsHash;
+  var orgsHash;
+  var categoriesHash;
 
   function doMerge(pnewContact, pmatchingResults) {
     newContact = pnewContact;
@@ -47,6 +49,9 @@ contacts.Merger = (function() {
 
     recCategories = [];
     categoriesHash = {};
+
+    recUrls = [];
+    recNotes = [];
 
     Object.keys(matchingResults).forEach(function(aResult) {
       var aDeviceContact = matchingResults[aResult].matchingContact;
@@ -110,6 +115,10 @@ contacts.Merger = (function() {
       }
 
       populateAddrs(aDeviceContact.adr);
+
+      populateField(aDeviceContact.url, recUrls);
+      populateField(aDeviceContact.note, recNotes);
+
     }); // matchingResults
 
     if (recGivenName.length === 0) {
@@ -145,6 +154,9 @@ contacts.Merger = (function() {
 
     populateAddrs(newContact.adr);
 
+    populateField(newContact.url, recUrls);
+    populateField(newContact.note, recNotes);
+
     var name = (Array.isArray(recGivenName) ? recGivenName[0] : '') +
                           ' ' +
                 (Array.isArray(recFamilyName) ? recFamilyName[0] : '');
@@ -159,7 +171,9 @@ contacts.Merger = (function() {
       tel: recTels,
       bday: recBDay,
       adr: recAddrs,
-      category: recCategories
+      category: recCategories,
+      url: recUrls,
+      note: recNotes
     };
   }
 
@@ -206,7 +220,16 @@ contacts.Merger = (function() {
       sourceCats.forEach(function(aCat) {
         if (!categoriesHash[aCat]) {
           recCategories.push(aCat);
+          categoriesHash[aCat] = true;
         }
+      });
+    }
+  }
+
+  function populateField(source, destination) {
+    if (Array.isArray(source)) {
+      source.forEach(function(as) {
+        destination.push(as);
       });
     }
   }

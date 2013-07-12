@@ -135,7 +135,7 @@
 
     function removeDuplicates(matches) {
       Object.keys(matches).forEach(function(aMatchId) {
-        navigator.mozContacts.remove(matches[aMatchId]);
+        navigator.mozContacts.remove(matches[aMatchId].matchingContact);
       });
     }
 

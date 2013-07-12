@@ -223,12 +223,14 @@ contacts.Matcher = (function() {
 
     var matchingsFound = {};
 
+    var blankRegExp = /\s+/g;
+
     var localCbs = {
       onmatch: function(results) {
         // Results will contain contacts that match by tel or email
         // Now a binary search is performed over givenName and lastName
         // Normalizing the strings
-        var familyNames = [];
+        var names = [];
         Object.keys(results).forEach(function(aResultId) {
           var mContact = results[aResultId].matchingContact;
 
@@ -239,37 +241,36 @@ contacts.Matcher = (function() {
             return;
           }
 
-          familyNames.push({
-            contact: mContact,
-            familyName: Normalizer.toAscii(
-                                  mContact.familyName[0].trim().toLowerCase())
-          });
-
-          familyNames.sort();
+          // As the number of candidates here will be short a normal search
+          // will be conducted
 
           var targetFN = Normalizer.toAscii(
-                                  mContact.familyName[0].trim().toLowerCase());
+                                  mContact.familyName[0].trim().toLowerCase()).
+                          replace(blankRegExp, '');
           var targetGN = Normalizer.toAscii(
-                                  mContact.givenName[0].trim().toLowerCase());
+                                  mContact.givenName[0].trim().toLowerCase()).
+                          replace(blankRegExp, '');
 
-          var matchingIndexes = utils.binarySearch(
-                                  targetFN,
-                                  familyNames, {
-                                  arrayField: 'familyName'
-                                });
+          names.push({
+            contact: mContact,
+            familyName: Normalizer.toAscii(
+                                  mContact.familyName[0].trim().toLowerCase()).
+                          replace(blankRegExp, ''),
+            givenName: Normalizer.toAscii(
+                                    mContact.givenName[0].trim().toLowerCase()).
+                          replace(blankRegExp, '')
+          });
 
-          window.console.log('Matching indexes',
-                             JSON.stringify(matchingIndexes));
-          matchingIndexes.forEach(function(aMatchingIndex) {
-            var contact = familyNames[aMatchingIndex].contact;
-            var givenNameNormalized = Normalizer.toAscii(
-                                    contact.givenName[0].trim().toLowerCase());
+          var matchingList = names.filter(function(x) {
+            return (x.familyName === targetFN && x.givenName === targetGN);
+          });
 
-            if (targetGN === givenNameNormalized) {
-              matchingsFound[contact.id] = {
-                matchingContact: contact
-              };
-            }
+          window.console.log('Matching list', JSON.stringify(matchingList));
+          matchingList.forEach(function(aMatching) {
+            var contact = aMatching.contact;
+            matchingsFound[contact.id] = {
+              matchingContact: contact
+            };
           });
         });
 
