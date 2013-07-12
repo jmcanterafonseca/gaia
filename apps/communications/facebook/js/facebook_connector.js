@@ -21,14 +21,61 @@ if (!window.FacebookConnector) {
     }
 
     function persistFbData(data, successCb, errorCb) {
+      var saveCbs = {
+        success: function(e) {
+          window.console.log('Save result: ', JSON.stringify(e.target.result));
+          var cbs = {
+            onmatch: function(matches) {
+              // For each of the matching contacts link with the just imported
+              Object.keys(matches).forEach(function(aMatchId) {
+                var fbContact = new
+                                  fb.Contact(matches[aMatchId].matchingContact);
+
+                var mozContReq = fb.utils.getMozContact(data.uid);
+
+                mozContReq.onsuccess = function() {
+                  var req = fbContact.linkTo({
+                    uid: data.uid,
+                    photoUrl: data.pic_big,
+                    mozContact: mozContReq.result
+                  });
+
+                  req.onsuccess = successCb;
+
+                  req.onerror = function error(e) {
+                    window.console.error('Error while automatically linking : ',
+                                         aMatchId, data.uid, e.target.name);
+                    successCb();
+                  };
+                };
+                mozContReq.onerror = function(e) {
+                  window.console.error('Error while automatically linking: ',
+                                       e.target.error.name);
+                  successCb();
+                };
+              });
+            },
+            onmismatch: successCb
+          };
+
+          // Try to match and if so merge is performed
+          contacts.Matcher.matchSilentMode(data, cbs);
+        },
+        error: errorCb
+      };
+      saveFbContact(data, saveCbs.success, saveCbs.error);
+    }
+
+
+    function saveFbContact(data, successCb, errorCb) {
       var fbContact, successWrapperCb;
 
       if (reusedFbContact.ready) {
         reusedFbContact.ready = null;
         fbContact = reusedFbContact;
-        successWrapperCb = function onsuccess() {
+        successWrapperCb = function onsuccess(e) {
           reusedFbContact.ready = true;
-          successCb();
+          successCb(e);
         };
       } else {
         fbContact = new fb.Contact();
