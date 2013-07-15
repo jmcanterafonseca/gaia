@@ -2,6 +2,7 @@ var contacts = window.contacts || {};
 
 contacts.Matcher = (function() {
   var selfContactId;
+  var incomingContact;
 
   // Matcher obj
   function MatcherObj(ptargets, pmatchingOptions) {
@@ -167,6 +168,7 @@ contacts.Matcher = (function() {
 
 
   function doMatch(aContact, callbacks) {
+    incomingContact = aContact;
     selfContactId = aContact.id;
 
     window.console.log(JSON.stringify(aContact));
@@ -208,6 +210,7 @@ contacts.Matcher = (function() {
   }
 
   function doMatchSilent(aContact, callbacks) {
+    incomingContact = aContact;
     selfContactId = aContact.id;
 
     if (!Array.isArray(aContact.familyName) ||
@@ -286,6 +289,11 @@ contacts.Matcher = (function() {
     doMatch(aContact, localCbs);
   }
 
+  function isEmpty(collection) {
+    return !Array.isArray(collection) || (collection[0] &&
+                                                !collection[0].value);
+  }
+
   function reconcileResults(nameMatches, phoneMailMatches, callbacks) {
     window.console.log('Reconciling results');
 
@@ -300,18 +308,19 @@ contacts.Matcher = (function() {
       var isMailMatching = phoneMailMatches[aNameMatching].
                                           fields.indexOf('email') !== -1;
 
+      window.console.log(JSON.stringify(phoneMailMatches),
+                         isPhoneMatching, isMailMatching);
+
       // Three cases under which a matching is considered
       if (isPhoneMatching && isMailMatching) {
         finalMatchings[aNameMatching] = phoneMailMatches[aNameMatching];
       }
-      else if (isPhoneMatching &&
-              (!Array.isArray(matchingContact.email) ||
-              (!matchingContact.email[0] || !matchingContact.email[0].value))) {
+      else if (isPhoneMatching && (isEmpty(incomingContact.email) ||
+              isEmpty(matchingContact.email))) {
         finalMatchings[aNameMatching] = phoneMailMatches[aNameMatching];
       }
-      else if (isMailMatching &&
-              (!Array.isArray(matchingContact.tel) ||
-              (!matchingContact.tel[0] || !matchingContact.tel[0].value))) {
+      else if (isMailMatching && (isEmpty(incomingContact.tel) ||
+                                  isEmpty(matchingContact.tel))) {
         finalMatchings[aNameMatching] = phoneMailMatches[aNameMatching];
       }
     });
