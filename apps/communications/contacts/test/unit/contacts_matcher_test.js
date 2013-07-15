@@ -23,17 +23,17 @@ suite('Test Contacts Matcher', function() {
       givenName: ['Carlos'],
       familyName: ['Álvarez'],
       tel: [{
-        type: 'home',
+        type: ['home'],
         value: '676767671'
       }],
       email: [{
-        type: 'personal',
+        type: ['personal'],
         value: 'jj@jj.com'
       }
       ]
     };
 
-    MockFindMatcher.setResult(contact);
+    MockFindMatcher.setData(contact);
 
     realmozContacts = navigator.mozContacts;
     navigator.mozContacts = MockFindMatcher;
@@ -54,7 +54,7 @@ suite('Test Contacts Matcher', function() {
   test('Matching by name and phone number', function(done) {
     var myObj = Object.create(contact);
     myObj.id = '1A';
-    myObj.email = null;
+    myObj.email = [];
 
     var cbs = {
       onmatch: function(results) {
@@ -89,7 +89,7 @@ suite('Test Contacts Matcher', function() {
     contacts.Matcher.matchSilentMode(myObj, cbs);
   });
 
-  test('Matching by name e-mail and phone number', function(done) {
+  test('Matching by name, e-mail and phone number', function(done) {
     var myObj = Object.create(contact);
     myObj.id = '1A';
 
@@ -107,20 +107,89 @@ suite('Test Contacts Matcher', function() {
     contacts.Matcher.matchSilentMode(myObj, cbs);
   });
 
-  test('Phone number matches but name does not match', function() {
+  test('Phone number matches but name does not match', function(done) {
+    var myObj = Object.create(contact);
+    myObj.id = '1A';
+    myObj.givenName = ['Adolfo'];
+    myObj.email = null;
 
+    var cbs = {
+      onmatch: function(results) {
+        assert.fail(cbs.onmismatch, cbs.onmatch, 'Matching found!!');
+        done();
+      },
+      onmismatch: function() {
+        assert.ok(true, 'Mismatch callback invoked');
+        done();
+      }
+    };
+
+    contacts.Matcher.matchSilentMode(myObj, cbs);
   });
 
-  test('e-mail matches but name does not match', function() {
+  test('e-mail matches but name does not match', function(done) {
+    var myObj = Object.create(contact);
+    myObj.id = '1A';
+    myObj.givenName = ['Adolfo'];
+    myObj.tel = [];
 
+    var cbs = {
+      onmatch: function(results) {
+        assert.fail(cbs.onmismatch, cbs.onmatch, 'Matching found!!');
+        done();
+      },
+      onmismatch: function() {
+        assert.ok(true, 'Mismatch callback invoked');
+        done();
+      }
+    };
+
+    contacts.Matcher.matchSilentMode(myObj, cbs);
   });
 
   test('Name matches, e-mail matches but phone number does not match',
-       function() {
+       function(done) {
+    var myObj = Object.create(contact);
+    myObj.id = '1A';
+    myObj.tel = [{
+      type: ['mobile'],
+      value: '98645678'
+    }];
 
+    var cbs = {
+      onmatch: function(results) {
+        assert.fail(cbs.onmismatch, cbs.onmatch, 'Matching found!!');
+        done();
+      },
+      onmismatch: function() {
+        assert.ok(true, 'Mismatch callback invoked');
+        done();
+      }
+    };
+
+    contacts.Matcher.matchSilentMode(myObj, cbs);
   });
 
-  test('Name matches phone number matches by e-mail does not match',
-       function() {
+  test('Name matches, phone number matches but e-mail does not match',
+       function(done) {
+    var myObj = Object.create(contact);
+    myObj.id = '1A';
+    myObj.email = [{
+      type: ['personal'],
+      value: 'kk@kk.com'
+    }];
+
+    var cbs = {
+      onmatch: function(results) {
+        assert.fail(cbs.onmismatch, cbs.onmatch, 'Matching found!!');
+        done();
+      },
+      onmismatch: function() {
+        assert.ok(true, 'Mismatch callback invoked');
+        done();
+      }
+    };
+
+    contacts.Matcher.matchSilentMode(myObj, cbs);
   });
 });

@@ -23,14 +23,11 @@ contacts.Matcher = (function() {
 
       req.onsuccess = function() {
         var matchings = req.result;
-        window.console.log('Results found for target ', target, ': ',
-                           matchings.length);
 
         var filterBy = options.filterBy;
 
         matchings.forEach(function(aMatching) {
           var values = aMatching[options.filterBy[0]];
-          window.console.log(JSON.stringify(values));
           var matchedValue;
 
           values.forEach(function(aValue) {
@@ -54,9 +51,8 @@ contacts.Matcher = (function() {
         });
 
         var numFinalMatchings = Object.keys(finalMatchings).length;
-        window.console.log('Final matchings length: ', numFinalMatchings);
+
         if (numFinalMatchings > 0) {
-          window.console.log('Calling on match');
           typeof callbacks.onmatch === 'function' &&
                                             callbacks.onmatch(finalMatchings);
         }
@@ -114,8 +110,6 @@ contacts.Matcher = (function() {
   }
 
   function matchByTel(aContact, callbacks) {
-    window.console.log('aContact Data: ', JSON.stringify(aContact));
-
     var values = [];
 
     if (Array.isArray(aContact.tel)) {
@@ -171,15 +165,10 @@ contacts.Matcher = (function() {
     incomingContact = aContact;
     selfContactId = aContact.id;
 
-    window.console.log(JSON.stringify(aContact));
     var localCbs = {
       onmatch: function(telMatches) {
-        window.console.log('Tel Matches on match !!!!',
-                           JSON.stringify(telMatches));
         var matchCbs = {
           onmatch: function(mailMatches) {
-            window.console.log('Mail Matches on match !!!!',
-                               JSON.stringify(mailMatches));
             // Have a unique set of matches
             var allMatches = telMatches;
             Object.keys(mailMatches).forEach(function(aMatch) {
@@ -222,8 +211,6 @@ contacts.Matcher = (function() {
       return;
     }
 
-    window.console.log('In match silent');
-
     var matchingsFound = {};
 
     var blankRegExp = /\s+/g;
@@ -248,10 +235,10 @@ contacts.Matcher = (function() {
           // will be conducted
 
           var targetFN = Normalizer.toAscii(
-                                  mContact.familyName[0].trim().toLowerCase()).
+                          incomingContact.familyName[0].trim().toLowerCase()).
                           replace(blankRegExp, '');
           var targetGN = Normalizer.toAscii(
-                                  mContact.givenName[0].trim().toLowerCase()).
+                          incomingContact.givenName[0].trim().toLowerCase()).
                           replace(blankRegExp, '');
 
           names.push({
@@ -268,7 +255,6 @@ contacts.Matcher = (function() {
             return (x.familyName === targetFN && x.givenName === targetGN);
           });
 
-          window.console.log('Matching list', JSON.stringify(matchingList));
           matchingList.forEach(function(aMatching) {
             var contact = aMatching.contact;
             matchingsFound[contact.id] = {
@@ -290,13 +276,11 @@ contacts.Matcher = (function() {
   }
 
   function isEmpty(collection) {
-    return !Array.isArray(collection) || (collection[0] &&
-                                                !collection[0].value);
+    return (!Array.isArray(collection) || !collection[0] || (collection[0] &&
+                                                !collection[0].value));
   }
 
   function reconcileResults(nameMatches, phoneMailMatches, callbacks) {
-    window.console.log('Reconciling results');
-
     var finalMatchings = {};
 
     // Name matches drive all the process
@@ -307,9 +291,6 @@ contacts.Matcher = (function() {
                                           fields.indexOf('tel') !== -1;
       var isMailMatching = phoneMailMatches[aNameMatching].
                                           fields.indexOf('email') !== -1;
-
-      window.console.log(JSON.stringify(phoneMailMatches),
-                         isPhoneMatching, isMailMatching);
 
       // Three cases under which a matching is considered
       if (isPhoneMatching && isMailMatching) {
