@@ -1143,6 +1143,9 @@ contacts.List = (function() {
     'getHighlightedName': getHighlightedName,
     get chunkSize() {
       return CHUNK_SIZE;
+    },
+    get total() {
+      return document.querySelectorAll('#groups-list li[data-uuid]').length;
     }
   };
 })();

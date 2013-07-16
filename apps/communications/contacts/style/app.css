@@ -226,6 +226,10 @@ li a[role="button"] span {
 li button.activity,
 li a[role="button"].activity {
   background-color: #fff;
+}
+
+li button.activity:not(.no-icon),
+li a[role="button"].activity:not(.no-icon) {
   padding: 0 1rem 0 0;
 }
 
