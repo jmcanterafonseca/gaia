@@ -113,7 +113,32 @@
 
     // This method might be overritten
     this.persist = function(contactData, successCb, errorCb) {
-      saveMozContact(contactData, successCb, errorCb);
+      var cbs = {
+        onmatch: function(matches) {
+          var listIds = Object.keys(matches);
+          var totalMatches = listIds.length;
+
+          // First contact here we take as the master
+          var masterContact = matches[listIds[0]];
+          var matchingContacts = [];
+          for (var j = 1; j < totalMatches; j++) {
+            matchingContacts.push(matches[listIds[j]]);
+          }
+          // Finally the last matching is the incoming itself
+          matchingContacts.push(contactData);
+
+          contacts.Merger.merge(masterContact, matchingContacts, {
+            success: successCb,
+            error: erroCb
+          });
+        },
+        onmismatch: function() {
+          saveMozContact(contactData, successCb, errorCb);
+        }
+      };
+
+      // Try to match and if so merge is performed
+      contacts.Matcher.match(contactData, 'silent', cbs);
     };
 
     // This method might be overwritten
