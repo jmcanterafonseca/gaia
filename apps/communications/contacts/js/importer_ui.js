@@ -252,7 +252,7 @@ if (typeof window.importer === 'undefined') {
         };
 
         // Prevent false logout positives
-        if (navigator.onLine === true) {
+        if (navigator.onLine === true && false) {
           Rest.get(logoutUrl, callbacks);
         }
         else {

@@ -592,7 +592,7 @@ contacts.Settings = (function() {
   }
 
   function automaticLogout() {
-    if (navigator.offLine === true) {
+    if (navigator.offLine === true || true) {
       return;
     }
 

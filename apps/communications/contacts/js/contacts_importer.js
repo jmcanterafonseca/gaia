@@ -118,18 +118,26 @@
           var listIds = Object.keys(matches);
           var totalMatches = listIds.length;
 
+          window.console.log('Matches: ', JSON.stringify(matches));
+
           // First contact here we take as the master
-          var masterContact = matches[listIds[0]];
+          var masterContact = matches[listIds[0]].matchingContact;
           var matchingContacts = [];
           for (var j = 1; j < totalMatches; j++) {
             matchingContacts.push(matches[listIds[j]]);
           }
           // Finally the last matching is the incoming itself
-          matchingContacts.push(contactData);
+          matchingContacts.push({
+            matchingContact: contactData,
+            target: '',
+            matchedValues: []
+          });
+
+          window.console.log('Master Contact id: ', masterContact.id);
 
           contacts.Merger.merge(masterContact, matchingContacts, {
             success: successCb,
-            error: erroCb
+            error: errorCb
           });
         },
         onmismatch: function() {
@@ -138,7 +146,7 @@
       };
 
       // Try to match and if so merge is performed
-      contacts.Matcher.match(contactData, 'silent', cbs);
+      contacts.Matcher.match(contactData, 'passive', cbs);
     };
 
     // This method might be overwritten
