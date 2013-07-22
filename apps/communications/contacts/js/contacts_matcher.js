@@ -327,9 +327,23 @@ contacts.Matcher = (function() {
       return;
     }
 
+    var filterValue;
+    var filterBy;
+    if(isEmptyStr(aContact.familyName)) {
+      filterValue = aContact.name[0].trim();
+      filterBy = ['name'];
+    }
+    else {
+      filterValue = aContact.familyName[0].trim();
+      filterBy = ['familyName'];
+    }
+    var filterValue = isEmptyStr(aContact.familyName) ?
+                        aContact.name[0].trim() : aContact.familyName[0].trim();
+
+
     var options = {
-      filterValue: aContact.familyName[0].trim(),
-      filterBy: ['familyName'],
+      filterValue: filterValue,
+      filterBy: filterBy,
       filterOp: 'equals'
     };
 
