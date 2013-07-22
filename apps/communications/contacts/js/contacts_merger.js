@@ -98,6 +98,7 @@ contacts.Merger = (function() {
       populateEmails(aDeviceContact.email, emailsHash, mergedContact.email);
 
       if (Array.isArray(aDeviceContact.tel)) {
+        aResult.matchedValues = aResult.matchedValues || [];
         aDeviceContact.tel.forEach(function(aTel) {
           var matchedValIdx = aResult.matchedValues.indexOf(aTel.value);
           var matchedValue = aTel.value;
