@@ -65,7 +65,7 @@ if (!contacts.MatcherUI) {
                     Object.getOwnPropertyNames(Object.getPrototypeOf(contact)));
 
       if (Array.isArray(out.email) && out.email[0]) {
-        out.email1 = out.email[0].value;
+        out.email1 = out.email[0].value || '';
       }
 
       if (Array.isArray(out.photo) && out.photo[0]) {
