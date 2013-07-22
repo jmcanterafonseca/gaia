@@ -329,7 +329,7 @@ contacts.Matcher = (function() {
 
     var filterValue;
     var filterBy;
-    if(isEmptyStr(aContact.familyName)) {
+    if (isEmptyStr(aContact.familyName)) {
       filterValue = aContact.name[0].trim();
       filterBy = ['name'];
     }
