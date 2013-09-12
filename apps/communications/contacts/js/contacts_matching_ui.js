@@ -16,6 +16,8 @@ if (!contacts.MatchingUI) {
     var checkedContacts = {};
 
     var mergeButton, contactsList, duplicateMessage, title;
+    var matchingResults;
+    var matchingDetails, matchingDetailList, matchingImg, matchingTitle;
 
     function init() {
       mergeButton = document.getElementById('merge-action');
@@ -28,11 +30,22 @@ if (!contacts.MatchingUI) {
       title = document.getElementById('title');
 
       document.getElementById('merge-close').addEventListener('click', onClose);
-      contactsList.addEventListener('click', onClick);
+      contactsList.addEventListener('click', onClick, true);
       mergeButton.addEventListener('click', onMerge);
+
+      matchingDetails = document.querySelector('#matching-details');
+      matchingDetailList = matchingDetails.querySelector('#matching-list');
+      matchingImg = matchingDetails.querySelector('img');
+      matchingTitle = matchingDetails.querySelector('h1');
+
+      matchingDetails.querySelector('button').onclick = function() {
+        hideMatchingDetails();
+      };
     }
 
     function load(type, contact, results, cb) {
+      matchingResults = results;
+
       document.body.dataset.mode = type;
       if (type === 'matching') {
         // "Suggested duplicate contacts for xxx"
@@ -135,12 +148,95 @@ if (!contacts.MatchingUI) {
     function onClick(e) {
       var target = e.target;
 
+      var uuid;
       if (target && target.dataset.uuid) {
-        var uuid = target.dataset.uuid;
+        uuid = target.dataset.uuid;
+      }
+
+      if (e.clientX <= window.innerWidth * 0.4) {
         var checkbox = target.querySelector('input[type="checkbox"]');
         setChecked(target, checkbox, !checkbox.checked, uuid);
         checkMergeButton();
       }
+      else if (uuid) {
+        matchingImg.src = null;
+        matchingTitle.textContent = '';
+        matchingDetailList.innerHTML = '';
+
+        showMatchingDetails();
+        renderMatchingDetails(uuid);
+      }
+    }
+
+    function hideMatchingDetails() {
+      matchingDetails.classList.remove('fade-in');
+      matchingDetails.classList.add('fade-out');
+
+      matchingDetails.addEventListener('animationend', function cd_fadeOut(ev) {
+        matchingDetails.removeEventListener('animationend', cd_fadeOut);
+        matchingDetails.classList.add('no-opacity');
+        matchingDetails.classList.add('hide');
+      });
+    }
+
+    function showMatchingDetails() {
+      matchingDetails.classList.remove('hide');
+      matchingDetails.classList.remove('fade-out');
+      matchingDetails.classList.add('fade-in');
+
+      matchingDetails.addEventListener('animationend', function cd_fadeIn(ev) {
+        matchingDetails.removeEventListener('animationend', cd_fadeIn);
+        matchingDetails.classList.remove('no-opacity');
+      });
+    }
+
+    function renderMatchingDetails(uuid) {
+      var fields = ['org', 'name', 'tel', 'email', 'adr', 'photo'];
+
+      var theContact = matchingResults[uuid].matchingContact;
+      var matchings = matchingResults[uuid].matchings;
+      fields.forEach(function(aField) {
+        if (!Array.isArray(theContact[aField]) || !theContact[aField][0]) {
+          return;
+        }
+
+        var item = document.createElement('li');
+        var fieldValue = theContact[aField][0];
+        if (matchings[aField]) {
+          var match = matchings[aField].filter(function(obj) {
+            var val = fieldValue && fieldValue.value || fieldValue;
+            if (obj.matchedValue === val) {
+              item.setAttribute('aria-selected', 'true');
+            }
+          });
+        }
+        switch (aField) {
+          case 'photo':
+            matchingImg.src = window.URL.createObjectURL(fieldValue);
+          break;
+          case 'name':
+            matchingTitle.textContent = fieldValue;
+            item.textContent = fieldValue;
+          break;
+          case 'tel':
+            item.textContent = fieldValue.type + ', ' + fieldValue.value;
+          break;
+          case 'adr':
+            var adrFields = ['streetAddress', 'locality',
+                             'region', 'countryName'];
+            adrFields.forEach(function(addrField) {
+              if (fieldValue[addrField]) {
+                var p = document.createElement('p');
+                p.textContent = fieldValue[addrField];
+                item.appendChild(p);
+              }
+            });
+          break;
+          default:
+             item.textContent = fieldValue.value || fieldValue || '';
+        }
+        matchingDetailList.appendChild(item);
+      });
     }
 
     function checkMergeButton() {
