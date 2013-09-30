@@ -230,8 +230,8 @@ if (!contacts.MatchingUI) {
         checkMergeButton();
       }
       else if (uuid) {
+        showMatchingDetails(uuid);
         renderMatchingDetails(uuid);
-        showMatchingDetails();
       }
     }
 
@@ -258,10 +258,22 @@ if (!contacts.MatchingUI) {
       });
     }
 
-    function showMatchingDetails() {
+    function doShowMatchingDetails() {
       matchingDetails.classList.remove('hide');
       matchingDetails.classList.remove('fade-out');
       matchingDetails.classList.add('fade-in');
+    }
+
+    function showMatchingDetails(uuid) {
+      var theContact = matchingResults[uuid].matchingContact;
+      if (Array.isArray(theContact.photo) && theContact.photo[0]) {
+        matchingImg.src = window.URL.createObjectURL(theContact.photo[0]);
+        matchingImg.onload = doShowMatchingDetails;
+        matchingImg.onerror = matchingImg.onload;
+      }
+      else {
+        doShowMatchingDetails();
+      }
 
       matchingDetails.addEventListener('animationend', function cd_fadeIn(ev) {
         matchingDetails.removeEventListener('animationend', cd_fadeIn);
@@ -310,7 +322,6 @@ if (!contacts.MatchingUI) {
               }
             break;
             case 'photo':
-              matchingImg.src = window.URL.createObjectURL(fieldValue);
               matchingImg.alt = getDisplayName(theContact);
               matchingImg.classList.remove('hide');
             break;
