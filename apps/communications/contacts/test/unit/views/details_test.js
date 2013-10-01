@@ -187,7 +187,10 @@ suite('Render contact', function() {
   suite('Render bday', function() {
     test('with bday', function() {
       subject.render(null, TAG_OPTIONS);
-      assert.include(container.innerHTML, mockContact.bday);
+      // to prevent errors with local timezone
+      var offset = mockContact.bday.getTimezoneOffset() * 60 * 1000;
+      var normalizeBirthdayDate = new Date(mockContact.bday.getTime() + offset);
+      assert.include(container.innerHTML, normalizeBirthdayDate);
     });
     test('without bday', function() {
       var contactWoBday = new MockContactAllFields();
