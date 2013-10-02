@@ -187,10 +187,13 @@ suite('Render contact', function() {
   suite('Render bday', function() {
     test('with bday', function() {
       subject.render(null, TAG_OPTIONS);
-      // to prevent errors with local timezone
+      var bdayBlock = container.querySelector('#birthday-template-1');
+      assert.isNotNull(bdayBlock);
+      // Ensuring timezone correctly treated (Bug 880775)
       var offset = mockContact.bday.getTimezoneOffset() * 60 * 1000;
-      var normalizeBirthdayDate = new Date(mockContact.bday.getTime() + offset);
-      assert.include(container.innerHTML, normalizeBirthdayDate);
+      var targetDate = new Date(mockContact.bday.getTime() + offset);
+      assert.equal(bdayBlock.querySelector('strong').textContent,
+                   targetDate.toString());
     });
     test('without bday', function() {
       var contactWoBday = new MockContactAllFields();
