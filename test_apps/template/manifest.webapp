@@ -55,5 +55,10 @@
   "default_locale": "en-US",
   "icons": {
     "128": "/style/icons/Blank.png"
+  },
+  "datastores-owned": {
+    "MyDataStore": {
+      "description": "Imported Facebook Friends"
+    }
   }
 }
