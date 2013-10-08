@@ -9,12 +9,28 @@ if (!window.fb.contacts) {
     var datastore;
     var DATASTORE_NAME = 'Gaia_Facebook_Friends';
     // Record Id for the index
-    var INDEX_ID = 1;
+    var indexId;
 
+    // Indicates whether the component (internal DS) was initialized or not
     var isInitialized = false;
+    // Indicates whether the component is in watching mode
+    var watchingForChanges = false;
 
-    // The index we need to keep
+    // The index we need to keep the correspondance between FB Friends and
+    // datastore Ids
     var index;
+
+    // Creates the internal Object in the datastore that will act as an index
+    function createIndex() {
+      return {
+        // By Facebook UID
+        byUid: Object.create({}),
+        // By internationalized tel number
+        byTel: Object.create({}),
+        // By short tel number
+        byShortTel: Object.create({})
+      };
+    }
 
     function initError(outRequest, error) {
       outRequest.failed(error);
@@ -23,7 +39,14 @@ if (!window.fb.contacts) {
     function doGet(uid, outRequest) {
       window.console.log('Index content', JSON.stringify(index));
 
-      var dsId = index[uid];
+      var dsId = index.byUid[uid];
+
+      if (!dsId) {
+        var errorName = 'No DataStore Id for UID: ' + dsId;
+        window.console.error(errorName);
+        outRequest.failed(errorName);
+        return;
+      }
 
       window.console.log('DS Id: ', dsId);
 
@@ -44,44 +67,33 @@ if (!window.fb.contacts) {
      *
      */
     contacts.get = function(uid) {
-      var retRequest = new fb.utils.Request();
+      var outRequest = new fb.utils.Request();
 
       window.setTimeout(function get() {
         contacts.init(function() {
-          doGet(uid, retRequest);
+          doGet(uid, outRequest);
         }, function() {
-          initError(retRequest);
+          initError(outRequest);
         });
       },0);
 
-      return retRequest;
+      return outRequest;
     };
 
     function doGetByPhone(tel, outRequest) {
-      var transaction = database.transaction([STORE_NAME], 'readonly');
-      var objectStore = transaction.objectStore(STORE_NAME);
+      var dsId = index.byTel[tel] || index.byShortTel[tel];
 
-      var index = objectStore.index(INDEX_LONG_PHONE);
-      var areq = index.get(tel);
-      areq.onsuccess = function(e) {
-        if (e.target.result) {
-          outRequest.done(e.target.result);
-        }
-        else {
-          var otherIndex = objectStore.index(INDEX_SHORT_PHONE);
-          var otherReq = otherIndex.get(tel);
-          otherReq.onsuccess = function(e) {
-            outRequest.done(e.target.result);
-          };
-          otherReq.onerror = function(e) {
-            outRequest.failed(e.target.error);
-          };
-        }
-      };
-
-      areq.onerror = function(e) {
-        outRequest.failed(e.target.error);
-      };
+      if (typeof dsId === 'number') {
+        datastore.get(dsId).then(function success(obj) {
+          outRequest.done(obj);
+        },
+        function error(err) {
+          outRequest.failed(err);
+        });
+      }
+      else {
+        outRequest.done(null);
+      }
     }
 
     contacts.getByPhone = function(tel) {
@@ -100,14 +112,16 @@ if (!window.fb.contacts) {
     };
 
     function doSave(obj, outRequest) {
-      var dsId = index[obj.uid];
+      var dsId = index.byUid[obj.uid];
       if (typeof dsId === 'undefined') {
         datastore.add(obj).then(function success(newId) {
           window.console.log('Saved Id: ', newId, JSON.stringify(index));
           try {
-             index[obj.uid] = newId;
+             index.byUid[obj.uid] = newId;
+             index.byTel[''] = newId;
+             index.byShortTel[''] = newId;
           }
-          catch(e) {
+          catch (e) {
             window.console.error(e);
           }
           outRequest.done(newId);
@@ -146,8 +160,10 @@ if (!window.fb.contacts) {
       return retRequest;
     };
 
+    // Returns the total number of records in the DataStore (minus 1)
+    // That's because the index object also counts
     function doGetLength(outRequest) {
-      datastore.getLength().then(function success (length) {
+      datastore.getLength().then(function success(length) {
         outRequest.done(length - 1);
       },
       function error(err) {
@@ -171,11 +187,11 @@ if (!window.fb.contacts) {
     };
 
     function doRemove(uid, outRequest) {
-      var dsId = index[uid];
+      var dsId = index.byUid[uid];
 
       datastore.remove(dsId).then(function success(removed) {
         if (removed) {
-          delete index[uid];
+          delete index.byUid[uid];
           outRequest.done();
         }
         else {
@@ -226,9 +242,11 @@ if (!window.fb.contacts) {
     function doClear(outRequest) {
       datastore.clear().then(function success(cleared) {
         if (cleared) {
-          index = {};
-          outRequest.done(cleared);
-          datastore.update(INDEX_ID, index);
+          index = createIndex();
+          datastore.add(index).then(function success(id) {
+            indexId = id;
+            outRequest.done();
+          });
         }
         else {
           outRequest.failed('Not cleared');
@@ -246,6 +264,7 @@ if (!window.fb.contacts) {
       }
     }
 
+    // The index is persisted
     contacts.flush = function() {
       var outRequest = new fb.utils.Request();
 
@@ -255,7 +274,8 @@ if (!window.fb.contacts) {
           outRequest.done();
           return;
         }
-        datastore.update(INDEX_ID, index).then(function success() {
+
+        datastore.update(indexId, index).then(function success() {
           outRequest.done();
         }, function error(err) {
           outRequest.failed();
@@ -264,7 +284,41 @@ if (!window.fb.contacts) {
       }, 0);
 
       return outRequest;
-    }
+    };
+
+    // Listen to changes on the datasource
+    contacts.watchChanges = function() {
+      var outRequest = new fb.utils.Request();
+
+      window.setTimeout(function do_watchChanges() {
+        if (watchingChanges === true) {
+          window.console.warn('FB DataStore. Already watching for changes');
+          outRequest.done();
+          return;
+        }
+
+        contacts.init(function() {
+          datastore.addEventListener('change', changesListener);
+          watchingChanges = true;
+          outRequest.done();
+        }, function() {
+          initError(outRequest);
+        });
+
+      }, 0);
+
+      return outRequest;
+    };
+
+    contacts.clearWatch = function() {
+      if (!watchingChanges) {
+        window.console.warn(
+                      'FB DataStore. Not previous watching set. Nothing Done');
+        return;
+      }
+      datastore.removeEventListener('change', changesListener);
+      watchingChanges = false;
+    };
 
     contacts.init = function(cb, errorCb) {
       if (isInitialized === true) {
@@ -273,7 +327,7 @@ if (!window.fb.contacts) {
       }
 
       navigator.getDataStores(DATASTORE_NAME).then(function success(ds) {
-        if(ds.length < 1) {
+        if (ds.length < 1) {
           window.console.error('FB: Cannot get access to the DataStore');
            if (typeof errorCb === 'function') {
             errorCb();
@@ -284,21 +338,24 @@ if (!window.fb.contacts) {
         datastore = ds[0];
         // Checking the length as the index should be there
         datastore.getLength().then(function(length) {
-          if(length === 0) {
+          if (length === 0) {
             window.console.log('Adding index as length is 0');
-            index = {};
+            index = createIndex();
             return datastore.add(index);
           }
           else {
-            return datastore.get(INDEX_ID);
+            return datastore.get(indexId);
           }
         }).then(function(v) {
           window.console.log('Second promise resolved', JSON.stringify(v));
-          if(typeof v === 'object') {
+          if (typeof v === 'object') {
             index = Object.create(v);
           }
+          else {
+            indexId = v;
+          }
           notifyOpenSuccess(cb);
-        })
+        });
       }, function error() {
         window.console.error('FB: Error while opening the DataStore: ',
                                                         e.target.error.name);
