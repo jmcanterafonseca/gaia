@@ -57,8 +57,7 @@ contacts.Matcher = (function() {
         var filterBy = options.filterBy;
 
         var sanitizedTarget = SimplePhoneMatcher.sanitizedNumber(target);
-        var internationalTarget = SimplePhoneMatcher.generateVariants(target).
-          length == 1;
+        var targetVariants = SimplePhoneMatcher.generateVariants(target);
 
         matchings.forEach(function(aMatching) {
           if (matchingOptions.selfContactId === aMatching.id) {
@@ -85,9 +84,8 @@ contacts.Matcher = (function() {
             var sanitizedValue = SimplePhoneMatcher.sanitizedNumber(value);
             var valueMatched = false;
 
-            if (internationalTarget) {
-              if (SimplePhoneMatcher.generateVariants(sanitizedTarget).indexOf(
-                sanitizedValue) !== -1) {
+            if (targetVariants.length > 1) {
+              if (targetVariants.indexOf(sanitizedValue) !== -1) {
                 valueMatched = true;
               }
             } else if (SimplePhoneMatcher.generateVariants(sanitizedValue).

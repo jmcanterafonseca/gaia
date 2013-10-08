@@ -19,6 +19,10 @@ if (!this.contactFB) {
   this.contactFB = null;
 }
 
+if (!this.SimplePhoneMatcher) {
+  this.SimplePhoneMatcher = null;
+}
+
 suite('Test Contacts Matcher', function() {
   function assertDefaultMatch(results, matchingFields) {
     assert.equal(Object.keys(results).length, 1);
@@ -381,6 +385,22 @@ suite('Test Contacts Matcher', function() {
 
       testMatch(myObj, 'active', ['tel'], done);
     });
+
+    test('Matching by phone internationalized number', function(done) {
+      var myObj = Object.create(contact);
+      myObj.id = '1A';
+
+      myObj.givenName = [];
+      myObj.familyName = null;
+      myObj.tel = [];
+      myObj.tel[0] = {
+        type: ['mobile'],
+        value: '+34' + contact.tel[0].value
+      };
+
+      testMatch(myObj, 'active', ['tel'], done);
+    });
+
 
     test('Matching by multiple phones', function(done) {
       var myObj = Object.create(contact);
