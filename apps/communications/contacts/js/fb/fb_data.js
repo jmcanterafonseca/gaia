@@ -9,7 +9,7 @@ if (!window.fb.contacts) {
     var datastore;
     var DATASTORE_NAME = 'Gaia_Facebook_Friends';
     // Record Id for the index
-    var indexId;
+    var INDEX_ID = 1;
 
     // Indicates whether the component (internal DS) was initialized or not
     var isInitialized = false;
@@ -244,7 +244,6 @@ if (!window.fb.contacts) {
         if (cleared) {
           index = createIndex();
           datastore.add(index).then(function success(id) {
-            indexId = id;
             outRequest.done();
           });
         }
@@ -275,7 +274,7 @@ if (!window.fb.contacts) {
           return;
         }
 
-        datastore.update(indexId, index).then(function success() {
+        datastore.update(INDEX_ID, index).then(function success() {
           outRequest.done();
         }, function error(err) {
           outRequest.failed();
@@ -344,15 +343,13 @@ if (!window.fb.contacts) {
             return datastore.add(index);
           }
           else {
-            return datastore.get(indexId);
+            return datastore.get(INDEX_ID);
           }
         }).then(function(v) {
           window.console.log('Second promise resolved', JSON.stringify(v));
           if (typeof v === 'object') {
-            index = Object.create(v);
-          }
-          else {
-            indexId = v;
+            window.console.log('Index Content: ', JSON.stringify(v));
+            index = v;
           }
           notifyOpenSuccess(cb);
         });
