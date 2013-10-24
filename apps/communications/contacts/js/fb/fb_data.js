@@ -123,44 +123,32 @@ if (!window.fb.contacts) {
     };
 
     function doSave(obj, outRequest) {
-      var dsId = index.byUid[obj.uid];
-
-      if (typeof dsId === 'undefined') {
-        datastore.add(obj).then(function success(newId) {
-          var uid = obj.uid;
-          index.byUid[uid] = newId;
-          // Update index by tel
-          if (Array.isArray(obj.tel)) {
-            obj.tel.forEach(function(aTel) {
-              index.byTel[aTel.value] = uid;
-            });
-          }
-          if (Array.isArray(obj.shortTelephone)) {
-            obj.shortTelephone.forEach(function(aTel) {
-              index.byShortTel[aTel] = uid;
-            });
-          }
-          window.console.log('Saved Id: ', newId, JSON.stringify(index));
-          return datastore.update(INDEX_ID, index);
-        }, function error(err) {
-          window.console.error('Error while adding the new entry: ', err);
-        }).then(function success() {
-            window.console.log('Index updated correctly');
-            outRequest.done();
-          },
-          function error(err) {
-            window.console.error('Error while saving the index: ', err);
-            outRequest.failed(err);
-        });
-      }
-      else {
-        datastore.update(dsId, obj).then(function success() {
+      datastore.add(obj).then(function success(newId) {
+        var uid = obj.uid;
+        index.byUid[uid] = newId;
+        // Update index by tel
+        if (Array.isArray(obj.tel)) {
+          obj.tel.forEach(function(aTel) {
+            index.byTel[aTel.value] = uid;
+          });
+        }
+        if (Array.isArray(obj.shortTelephone)) {
+          obj.shortTelephone.forEach(function(aTel) {
+            index.byShortTel[aTel] = uid;
+          });
+        }
+        window.console.log('Saved Id: ', newId, JSON.stringify(index));
+        return datastore.update(INDEX_ID, index);
+      }, function error(err) {
+        window.console.error('Error while adding the new entry: ', err);
+      }).then(function success() {
+          window.console.log('Index updated correctly');
           outRequest.done();
         },
         function error(err) {
+          window.console.error('Error while saving the index: ', err);
           outRequest.failed(err);
-        });
-      }
+      });
     }
 
     /**
@@ -182,6 +170,62 @@ if (!window.fb.contacts) {
 
       return retRequest;
     };
+
+     /**
+     *  Allows to update FB Contact Information
+     *
+     *
+     */
+    contacts.update = function(obj) {
+      var retRequest = new fb.utils.Request();
+
+      window.setTimeout(function save() {
+        contacts.init(function() {
+          doUpdate(obj, retRequest);
+        },
+        function() {
+          initError(retRequest);
+        });
+      },0);
+
+      return retRequest;
+    };
+
+    function doUpdate(obj, outRequest) {
+      var dsId = index.byUid[obj.uid];
+
+      var successCb = successUpdate.bind(null, outRequest);
+      var errorCb = successUpdate.bind(null, outRequest, uid);
+
+      if (typeof dsId !== 'undefined') {
+        datastore.update(dsId, obj).then(successCb, errorCb);
+      }
+      else {
+        // Let's try to refresh the index
+        datastore.get(INDEX_ID).then(function success_index(data) {
+          index = data;
+          dsId = index.byUid[obj.uid];
+          if (typeof dsId !== 'undefined') {
+            return datastore.update(dsId, obj);
+          }
+          else {
+            errorCb({
+              name: 'The id cannot be found'
+            });
+            return null;
+          }
+        }, errorCb).then(successCb, errorCb);
+      }
+    }
+
+    function successUpdate(outRequest) {
+      outRequest.done();
+    }
+
+    function errorUpdate(outRequest, uid, error) {
+      window.console.error('Error while updating datastore for: ', uid);
+      outRequest.failed(error);
+    }
 
     // Returns the total number of records in the DataStore (minus 1)
     // That's because the index object also counts
@@ -209,10 +253,10 @@ if (!window.fb.contacts) {
       return retRequest;
     };
 
-    function doRemove(uid, outRequest) {
+    function doRemove(uid, outRequest, forceFlush) {
       var dsId = index.byUid[uid];
 
-      var successCb = successRemove.bind(null, outRequest, uid);
+      var successCb = successRemove.bind(null, outRequest, forceFlush, uid);
       var errorCb = errorRemove.bind(null, outRequest);
 
       if (typeof dsId === 'undefined') {
@@ -242,14 +286,25 @@ if (!window.fb.contacts) {
       }
     }
 
-    function successRemove(outRequest, uid, removed) {
-      if (removed) {
-         delete index.byUid[uid];
-         outRequest.done();
-       }
-       else {
-         outRequest.failed('Not removed');
-       }
+    function successRemove(outRequest, uid, forceFlush, removed) {
+      if (removed === true) {
+        delete index.byUid[uid];
+        if (forceFlush) {
+          var flushReq = fb.contacts.flush();
+          flushReq.onsuccess = function() {
+            outRequest.done(true);
+          };
+          flushReq.onerror = function() {
+            outRequest.failed(flushReq.error);
+          };
+        }
+        else {
+          outRequest.done(true);
+        }
+      }
+      else {
+        outRequest.done(false);
+      }
     }
 
     function errorRemove(outRequest, uid, error) {
@@ -263,7 +318,8 @@ if (!window.fb.contacts) {
      *
      *
      */
-    contacts.remove = function(uid) {
+    contacts.remove = function(uid, flush) {
+      var hasToFlush = flush || false;
       var retRequest = new fb.utils.Request();
 
       window.setTimeout(function remove() {
