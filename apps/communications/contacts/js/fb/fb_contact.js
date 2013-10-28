@@ -217,7 +217,7 @@ fb.Contact = function(deviceContact, cid) {
         utils.squareImage(contactData.fbInfo.photo[0],
           function sq_img(squaredImg) {
             contactData.fbInfo.photo[0] = squaredImg;
-            auxCachePersist(contactData, outReq);
+            auxCachePersist(contactData, outReq, true);
           }
         );
       }

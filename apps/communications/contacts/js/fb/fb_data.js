@@ -193,7 +193,7 @@ if (!window.fb.contacts) {
       var dsId = index.byUid[obj.uid];
 
       var successCb = successUpdate.bind(null, outRequest);
-      var errorCb = successUpdate.bind(null, outRequest, uid);
+      var errorCb = errorUpdate.bind(null, outRequest, obj.uid);
 
       if (typeof dsId !== 'undefined') {
         datastore.update(dsId, obj).then(successCb, errorCb);
@@ -255,7 +255,7 @@ if (!window.fb.contacts) {
       var dsId = index.byUid[uid];
 
       var successCb = successRemove.bind(null, outRequest, forceFlush, uid);
-      var errorCb = errorRemove.bind(null, outRequest);
+      var errorCb = errorRemove.bind(null, outRequest, uid);
 
       if (typeof dsId === 'undefined') {
         // Refreshing the index
