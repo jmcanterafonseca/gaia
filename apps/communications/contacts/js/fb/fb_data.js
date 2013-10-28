@@ -68,7 +68,7 @@ if (!window.fb.contacts) {
     }
 
     function errorGet(outReq, uid, err) {
-      window.console.log('Error while getting object for UID: ', uid);
+      window.console.error('Error while getting object for UID: ', uid);
       outReq.failed(err.name);
     }
 
@@ -137,12 +137,10 @@ if (!window.fb.contacts) {
             index.byShortTel[aTel] = uid;
           });
         }
-        window.console.log('Saved Id: ', newId, JSON.stringify(index));
         return datastore.update(INDEX_ID, index);
       }, function error(err) {
         window.console.error('Error while adding the new entry: ', err);
       }).then(function success() {
-          window.console.log('Index updated correctly');
           outRequest.done();
         },
         function error(err) {
@@ -350,16 +348,14 @@ if (!window.fb.contacts) {
     };
 
     function doClear(outRequest) {
-      datastore.clear().then(function success(cleared) {
-        if (cleared) {
-          index = createIndex();
-          datastore.add(index).then(function success(id) {
-            outRequest.done();
-          });
-        }
-        else {
-          outRequest.failed('Not cleared');
-        }
+      datastore.clear().then(function success() {
+        index = createIndex();
+        datastore.update(INDEX_ID, index).then(function success(id) {
+          outRequest.done();
+        }, function error(err) {
+          window.console.error('Error while re-creating the index: ', err);
+          outRequest.failed(err);
+        });
       },
       function error(err) {
         outRequest.failed(err);
@@ -380,7 +376,7 @@ if (!window.fb.contacts) {
       var outRequest = new fb.utils.Request();
 
       window.setTimeout(function do_Flush() {
-        if (!isInitialized) {
+        if (readyState !== 'initialized') {
           window.console.warn('The datastore has not been initialized');
           outRequest.done();
           return;
@@ -426,7 +422,7 @@ if (!window.fb.contacts) {
         // Checking the length as the index should be there
         datastore.getLength().then(function(length) {
           if (length === 0) {
-            window.console.log('Adding index as length is 0');
+            window.console.info('Adding index as length is 0');
             index = createIndex();
             return datastore.add(index);
           }
@@ -434,9 +430,7 @@ if (!window.fb.contacts) {
             return datastore.get(INDEX_ID);
           }
         }).then(function(v) {
-          window.console.log('Second promise resolved', JSON.stringify(v));
           if (typeof v === 'object') {
-            window.console.log('Index Content: ', JSON.stringify(v));
             index = v;
           }
           notifyOpenSuccess(cb);
