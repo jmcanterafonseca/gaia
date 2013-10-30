@@ -1,7 +1,9 @@
 'use strict';
 
 importScripts('/contacts/js/fb/fb_query.js',
-              '/contacts/js/fb/fb_contact_utils.js', 'console.js');
+              '/contacts/js/fb/fb_contact_utils.js',
+              '/shared/js/fb/fb_reader_utils.js',
+              'console.js');
 
 (function(wutils) {
 

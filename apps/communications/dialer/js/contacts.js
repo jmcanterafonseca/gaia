@@ -18,7 +18,7 @@ var _FbDataSearcher = function(variants) {
       var contact = result;
 
       if (contact) {
-        fb.utils.getMozContactByUid(contact.uid, function merge(e) {
+        fb.getMozContactByUid(contact.uid, function merge(e) {
           var devContact = e.target.result[0];
           var finalContact = fb.mergeContact(devContact, contact);
           successCb(finalContact, {
@@ -89,9 +89,11 @@ var Contacts = {
   },
 
   findByNumber: function findByNumber(number, callback) {
-    LazyLoader.load(['/contacts/js/fb/fb_data.js',
-                     '/contacts/js/fb/fb_contact_utils.js'],
-                  this._findByNumber.bind(this, number, callback));
+    LazyLoader.load([
+      '/shared/js/fb/fb_request.js',
+      '/shared/js/fb/fb_data_reader.js',
+      '/shared/js/fb/fb_reader_utils.js'
+    ], this._findByNumber.bind(this, number, callback));
   },
 
   _findByNumber: function _findByNumber(number, callback) {
@@ -195,8 +197,11 @@ var Contacts = {
       callback(null);
     }
 
-    LazyLoader.load(['/contacts/js/fb/fb_data.js',
-                     '/contacts/js/fb/fb_contact_utils.js'], function() {
+    LazyLoader.load([
+      '/shared/js/fb/fb_request.js',
+      '/shared/js/fb/fb_data_reader.js',
+      '/shared/js/fb/fb_reader_utils.js'
+    ], function() {
       for (var i = 0, length = contacts.length; i < length; i++) {
         if (fb.isFbLinked(contacts[i])) {
           var fbReq = fb.contacts.get(fb.getFriendUid(contacts[i]));

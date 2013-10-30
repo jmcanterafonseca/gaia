@@ -31,11 +31,13 @@ var fbLoader = (function() {
       '/contacts/oauth2/js/parameters.js',
       '/contacts/js/fb/fb_utils.js',
       '/contacts/js/fb/fb_query.js',
+      '/shared/js/fb/fb_reader_utils.js',
       '/contacts/js/fb/fb_contact_utils.js',
       '/contacts/js/fb/fb_contact.js',
       '/contacts/js/fb/fb_link.js',
       '/contacts/js/fb/fb_messaging.js',
       '/contacts/js/value_selector.js',
+      '/shared/js/fb/fb_request.js',
       '/contacts/js/fb/fb_data.js'
     ];
 
