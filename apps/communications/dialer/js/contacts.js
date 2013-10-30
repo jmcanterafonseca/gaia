@@ -89,7 +89,7 @@ var Contacts = {
   },
 
   findByNumber: function findByNumber(number, callback) {
-    LazyLoader.load(['/contacts/js/fb/fb_data.js',
+    LazyLoader.load(['/shared/js/fb/fb_data_reader.js',
                      '/contacts/js/fb/fb_contact_utils.js'],
                   this._findByNumber.bind(this, number, callback));
   },
@@ -195,7 +195,7 @@ var Contacts = {
       callback(null);
     }
 
-    LazyLoader.load(['/contacts/js/fb/fb_data.js',
+    LazyLoader.load(['/shared/js/fb/fb_data_reader.js',
                      '/contacts/js/fb/fb_contact_utils.js'], function() {
       for (var i = 0, length = contacts.length; i < length; i++) {
         if (fb.isFbLinked(contacts[i])) {

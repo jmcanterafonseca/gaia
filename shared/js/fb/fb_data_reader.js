@@ -3,7 +3,8 @@
 var fb = window.fb || {};
 
   (function() {
-    var contacts = fb.contacts = {};
+    var contacts = fb.contacts || {};
+    fb.contacts = contacts;
 
     var datastore;
     // Datastore name declared on the manifest.webapp
@@ -33,9 +34,6 @@ var fb = window.fb || {};
     // The index we need to keep the correspondance between FB Friends and
     // datastore Ids
     var index;
-
-    // Indicates whether the index is dirty
-    var isIndexDirty = false;
 
     function notifyOpenSuccess(cb) {
       readyState = 'initialized';
@@ -69,8 +67,7 @@ var fb = window.fb || {};
     }
 
     function setIndex(obj) {
-      index = obj;
-      isIndexDirty = false;
+      index = (obj || createIndex());
     }
 
     function doGet(uid, outRequest) {
@@ -116,8 +113,8 @@ var fb = window.fb || {};
       configurable: false
     });
 
-    Object.defineProperty(contacts, 'index', {
-      get: function getIndex() { return index },
+    Object.defineProperty(contacts, 'dsIndex', {
+      get: function getIndex() { return index; },
       set: setIndex,
       enumerable: false,
       configurable: false
@@ -206,15 +203,10 @@ var fb = window.fb || {};
     };
 
     function doRefresh(outRequest) {
-      if (isIndexDirty) {
-        datastore.get(INDEX_ID).then(function success(obj) {
-          setIndex(obj);
-          outRequest.done();
-        }, defaultError(outRequest));
-      }
-      else {
+      datastore.get(INDEX_ID).then(function success(obj) {
+        setIndex(obj);
         outRequest.done();
-      }
+      }, defaultError(outRequest));
     }
 
      /**
@@ -279,16 +271,16 @@ var fb = window.fb || {};
             setIndex(createIndex());
             return datastore.add(index);
           }
-          else if (datastore.readOnly === false) {
+          else if (length > 0) {
             return datastore.get(INDEX_ID);
           }
-          else {
+          else if (datastore.readOnly === true) {
             // Index is created in order not to cause errors
             window.console.warn('The datastore is empty and readonly');
             setIndex(createIndex());
             notifyOpenSuccess(cb);
-            return null;
           }
+          return null;
         }).then(function(v) {
           if (typeof v === 'object') {
             setIndex(v);
@@ -304,4 +296,3 @@ var fb = window.fb || {};
      });
     };
   })();
-

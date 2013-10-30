@@ -148,7 +148,8 @@ fb.Contact = function(deviceContact, cid) {
       }; // fbReq.onsuccess
     };
     fbReq.onerror = function() {
-      window.console.error('FB: Error while saving on indexedDB');
+      window.console.error('FB: Error while saving on datastore',
+                           fbReq.error && fbReq.error.name);
       outReq.failed(fbReq.error);
     };
   }
@@ -171,7 +172,7 @@ fb.Contact = function(deviceContact, cid) {
         data[prop] = contactData.fbInfo[prop];
       });
 
-      // Names are also stored on indexedDB
+      // Names are also stored on datastore
       // thus restoring the contact (if unlinked) will be trivial
       copyNames(contactData, data);
 
@@ -183,7 +184,8 @@ fb.Contact = function(deviceContact, cid) {
         outReq.done(fbReq.result);
       };
       fbReq.onerror = function() {
-        window.console.error('FB: Error while saving on indexedDB');
+        window.console.error('FB: Error while saving Fb data on the Datastore',
+                             fbReq.error && fbReq.error.name);
         outReq.failed(fbReq.error);
       };
     },0);

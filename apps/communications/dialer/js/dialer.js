@@ -534,7 +534,7 @@ var dialerStartup = function startup(evt) {
 
     CallHandler.init();
     LazyL10n.get(function loadLazyFilesSet() {
-      LazyLoader.load(['/contacts/js/fb/fb_data.js',
+      LazyLoader.load(['/shared/js/fb/fb_data_reader.js',
                        '/contacts/js/fb/fb_contact_utils.js',
                        '/shared/style/confirm.css',
                        '/contacts/js/utilities/confirm.js',
