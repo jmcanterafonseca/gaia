@@ -4,7 +4,7 @@ var fb = this.fb || {};
 
 fb.resolver = function(item, loader) {
   var FB_SCRIPTS_NEEDED = ['/contacts/js/fb/fb_contact_utils.js',
-                         '/contacts/js/fb/fb_data.js'];
+                            '/shared/js/fb/fb_data_reader.js'];
 
   var status = item.dataset.status;
   var isFbContact = 'fbUid' in item.dataset;

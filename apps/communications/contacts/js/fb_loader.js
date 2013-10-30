@@ -36,7 +36,7 @@ var fbLoader = (function() {
       '/contacts/js/fb/fb_link.js',
       '/contacts/js/fb/fb_messaging.js',
       '/contacts/js/value_selector.js',
-      '/contacts/js/fb/fb_data.js'
+      '/shared/js/fb/fb_data_reader.js'
     ];
 
     LazyLoader.load(scripts, function() {
