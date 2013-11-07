@@ -148,9 +148,11 @@ var ActivityHandler = {
         prompt1.onchange = (function onchange(itemData) {
           if (this.activityDataType == 'webcontacts/tel') {
             // filter phone from data.tel to take out the rest
-            result = theContact;
             result.tel =
-              this.filterPhoneNumberForActivity(itemData, result.tel);
+              this.filterPhoneNumberForActivity(itemData, theContact.tel);
+            result.name = theContact.name;
+            result.givenName = theContact.givenName;
+            result.familyName = theContact.familyName;
           } else {
             result[type] = itemData;
           }
