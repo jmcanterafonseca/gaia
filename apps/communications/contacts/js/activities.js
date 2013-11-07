@@ -128,7 +128,10 @@ var ActivityHandler = {
       case 1:
         // if one required type of data
         if (this.activityDataType == 'webcontacts/tel') {
-          result = theContact;
+          result.tel = theContact.tel;
+          result.name = theContact.name;
+          result.givenName = theContact.givenName;
+          result.familyName = theContact.familyName;
         } else {
           result[type] = dataSet[0].value;
         }
