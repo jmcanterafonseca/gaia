@@ -69,6 +69,12 @@ var _FbDataSearcher = function(variants) {
 
 var Contacts = {
 
+  _FB_FILES: [
+    '/shared/js/fb/fb_request.js',
+    '/shared/js/fb/fb_data_reader.js',
+    '/shared/js/fb/fb_reader_utils.js'
+  ],
+
   // The mozContact API stores a revision of its database that allow us to know
   // if we have a proper and updated contact cache.
   getRevision: function getRevision(callback) {
@@ -89,11 +95,8 @@ var Contacts = {
   },
 
   findByNumber: function findByNumber(number, callback) {
-    LazyLoader.load([
-      '/shared/js/fb/fb_request.js',
-      '/shared/js/fb/fb_data_reader.js',
-      '/shared/js/fb/fb_reader_utils.js'
-    ], this._findByNumber.bind(this, number, callback));
+    LazyLoader.load(this._FB_FILES,
+                    this._findByNumber.bind(this, number, callback));
   },
 
   _findByNumber: function _findByNumber(number, callback) {
@@ -197,11 +200,7 @@ var Contacts = {
       callback(null);
     }
 
-    LazyLoader.load([
-      '/shared/js/fb/fb_request.js',
-      '/shared/js/fb/fb_data_reader.js',
-      '/shared/js/fb/fb_reader_utils.js'
-    ], function() {
+    LazyLoader.load(this._FB_FILES, function() {
       for (var i = 0, length = contacts.length; i < length; i++) {
         if (fb.isFbLinked(contacts[i])) {
           var fbReq = fb.contacts.get(fb.getFriendUid(contacts[i]));
