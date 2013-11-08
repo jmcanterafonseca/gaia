@@ -21,6 +21,9 @@ this.fb = fb;
   // Custom event for notifying initializations
   var INITIALIZE_EVENT = 'fb_ds_init';
 
+  // Last datastore revisionId known by the component
+  var revisionId;
+
   // Creates the internal Object in the datastore that will act as an index
   function createIndex() {
     return {
@@ -72,6 +75,8 @@ this.fb = fb;
 
   function setIndex(obj) {
     index = (obj || createIndex());
+    // Everytime index changes we update current revisionId
+    revisionId = datastore && datastore.revisionId || '';
   }
 
   function successGet(outReq, data) {
@@ -120,8 +125,10 @@ this.fb = fb;
 
     var successCb = successGet.bind(null, outRequest);
     var errorCb = errorGet.bind(null, outRequest, uid);
+    var dsRevisionId = datastore.revisionId;
 
-    if (typeof dsId === 'undefined') {
+    // Only refresh the index if the datastore has changed
+    if (typeof dsId === 'undefined' && dsRevisionId !== revisionId) {
       // Refreshing the index just in case
       datastore.get(INDEX_ID).then(function success_index(obj) {
         setIndex(obj);
@@ -136,6 +143,9 @@ this.fb = fb;
           return null;
         }
       }, errorCb).then(successCb, errorCb);
+    }
+    else if (dsRevisionId === revisionId) {
+      outRequest.done(null);
     }
     else {
       datastore.get(dsId).then(successCb, errorCb);
@@ -163,13 +173,14 @@ this.fb = fb;
 
   function doGetByPhone(tel, outRequest) {
     var dsId = index.byTel[tel] || index.byShortTel[tel];
+    var dsRevisionId = datastore.revisionId;
 
     if (typeof dsId !== 'undefined') {
       datastore.get(dsId).then(function success(friend) {
         outRequest.done(friend);
       }, defaultError(outRequest));
     }
-    else {
+    else if (dsRevisionId !== revisionId) {
       // Refreshing the index just in case
       datastore.get(INDEX_ID).then(function success(obj) {
         setIndex(obj);
@@ -186,6 +197,9 @@ this.fb = fb;
         window.console.error('The index cannot be refreshed: ', err.name);
         outRequest.failed(err);
       });
+    }
+    else {
+      outRequest.done(null);
     }
   }
 
