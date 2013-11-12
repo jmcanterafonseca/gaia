@@ -240,19 +240,22 @@ this.fb = fb;
 
   function doSearchByPhone(number, outRequest) {
     LazyLoader.load('/shared/js/fb/fb_tel_index.js', function() {
+      var toSearchNumber = number;
+      // TODO: Temporal way of searching for international numbers
+      // A follow-up is needed by using PhoneNumber.js exposed to Gaia
+      if (number.charAt(0) === '+') {
+        toSearchNumber = number.substring(1);
+      }
       if (datastore.revisionId !== revisionId) {
         window.console.info('Datastore revision id has changed!');
         // Refreshing the index just in case
         datastore.get(INDEX_ID).then(function success(obj) {
           setIndex(obj);
           revisionId = datastore.revisionId;
-          var results = TelIndexer.search(index.treeTel, number);
           var out = null;
+          var results = TelIndexer.search(index.treeTel, toSearchNumber);
           if (results.length > 0) {
-            window.console.log('Results: ', results);
-            out = datastore.get(results.map(function(sid) {
-              return parseInt(sid);
-            }));
+            out = datastore.get(results);
           }
           else {
             outRequest.done(results);
@@ -270,7 +273,7 @@ this.fb = fb;
         });
       }
       else {
-        var results = TelIndexer.search(index.treeTel, number);
+        var results = TelIndexer.search(index.treeTel, toSearchNumber);
 
         if (results.length > 0) {
           datastore.get(results).then(function success(objList) {
