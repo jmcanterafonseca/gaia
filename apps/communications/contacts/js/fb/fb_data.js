@@ -106,9 +106,11 @@ var fb = window.fb || {};
           index().byTel[aTel.value] = newId;
         });
       }
-      if (Array.isArray(obj.shortTelephone)) {
-        obj.shortTelephone.forEach(function(aTel) {
-          index().byShortTel[aTel] = newId;
+      if (Array.isArray(obj.fbTel)) {
+        obj.fbTelNumbers.forEach(function(aTel) {
+          var shortNumber = aTel.number;
+          var countryCode = aTel.country_code;
+          // Generate variants
         });
       }
     }
@@ -125,9 +127,9 @@ var fb = window.fb || {};
           delete index().byTel[aTel.value];
         });
       }
-      if (Array.isArray(deletedFriend.shortTelephone)) {
-        deletedFriend.shortTelephone.forEach(function(aTel) {
-          delete index().byShortTel[aTel];
+      if (Array.isArray(deletedFriend.fbTel)) {
+        deletedFriend.fbTel.forEach(function(aTel) {
+          delete index().byTel[aTel.number];
         });
       }
     }

@@ -39,8 +39,12 @@ if (!this.AuxFB) {
         if (items) {
           items.forEach(function(item) {
             // If there are no duplicates the merge is done
+            var auxShortTel = [];
+            if (Array.isArray(fbdata.fbTel)) {
+              auxShortTel.push(fdata.fbTel.number);
+            }
             var dupList = checkDuplicates(field, item, dcontact[field],
-                                          fbdata.shortTelephone);
+                                          auxShortTel);
             if (dupList.length === 0) {
               dcontact[field].push(item);
             }

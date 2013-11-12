@@ -279,9 +279,9 @@ if (!window.FacebookConnector) {
         }
 
         // This is the short telephone number to enable indexing
-        if (cfdata.shortTelephone) {
-          fbInfo.shortTelephone = cfdata.shortTelephone;
-          delete cfdata.shortTelephone;
+        if (cfdata.fbTel) {
+          fbInfo.fbTel = cfdata.fbTel;
+          delete cfdata.fbTel;
         }
 
         // Check whether we were able to get the photo or not

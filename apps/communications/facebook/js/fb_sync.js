@@ -160,9 +160,9 @@ if (!fb.sync) {
         cfdata.fbInfo.adr = address;
       }
 
-      if (cfdata.shortTelephone) {
-        cfdata.fbInfo.shortTelephone = cfdata.shortTelephone;
-        delete cfdata.shortTelephone;
+      if (cfdata.fbTel) {
+        cfdata.fbInfo.fbTel = cfdata.fbTel;
+        delete cfdata.fbTel;
       }
 
        // Then the new data saved to the cache

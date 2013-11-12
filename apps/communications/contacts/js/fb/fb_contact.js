@@ -323,8 +323,14 @@ fb.Contact = function(deviceContact, cid) {
                 if (item.value && item.value.length > 0) {
                   // Check for duplicates. Those duplicates are annotated to
                   // be later removed from the out2 array
+                  var auxFbValuesArr = [];
+                  if (Array.isArray(fbdata.fbTel)) {
+                    fbData.fbTel.forEach(function(aTel) {
+                      auxFbValuesArr.push(aTel.number);
+                    });
+                  }
                   var dupList = fb.checkDuplicates(key, item, devContact[key],
-                                                      fbdata.shortTelephone);
+                                                      auxFbValuesArr);
                   dupList.forEach(function(aDup) {
                     duplicates[aDup] = true;
                   });

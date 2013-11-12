@@ -32,10 +32,7 @@ this.fb = fb;
       byUid: Object.create(null),
       // By internationalized tel number
       // (We are not supporting dups right now)
-      byTel: Object.create(null),
-      // By short tel number
-      // (We are not supporting dups right now)
-      byShortTel: Object.create(null)
+      byTel: Object.create(null)
     };
   }
 
@@ -181,7 +178,7 @@ this.fb = fb;
       datastore.get(INDEX_ID).then(function success(obj) {
         setIndex(obj);
         revisionId = datastore.revisionId;
-        dsId = index.byTel[tel] || index.byShortTel[tel];
+        dsId = index.byTel[tel];
         if (typeof dsId !== 'undefined') {
           datastore.get(dsId).then(function success(friend) {
             outRequest.done(friend);
@@ -196,7 +193,7 @@ this.fb = fb;
       });
     }
     else {
-      dsId = index.byTel[tel] || index.byShortTel[tel];
+      dsId = index.byTel[tel];
       if (typeof dsId !== 'undefined') {
         datastore.get(dsId).then(function success(friend) {
           outRequest.done(friend);
