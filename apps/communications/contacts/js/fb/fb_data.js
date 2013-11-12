@@ -114,7 +114,7 @@ var fb = window.fb || {};
         obj.tel.forEach(function(aTel) {
           index().byTel[aTel.value] = newId;
           // To avoid the '+' char
-          TelIndexer.index(index().treeTel, aTel.value.substring(1));
+          TelIndexer.index(index().treeTel, aTel.value.substring(1), newId);
         });
       }
       if (Array.isArray(obj.shortTelephone)) {

@@ -259,7 +259,8 @@ var Contacts = {
 
   findListByNumber: function findListByNumber(number, limit, callback) {
     var self = this;
-    asyncStorage.getItem('order.lastname', function(value) {
+    LazyLoader.load('/shared/js/async_storage.js', function() {
+      asyncStorage.getItem('order.lastname', function(value) {
       var sortKey = value ? 'familyName' : 'givenName';
 
       var options = {
@@ -272,6 +273,7 @@ var Contacts = {
       };
 
       self._findContacts(options, callback);
+      });
     });
   }
 };

@@ -244,17 +244,20 @@ this.fb = fb;
         window.console.info('Datastore revision id has changed!');
         // Refreshing the index just in case
         datastore.get(INDEX_ID).then(function success(obj) {
-        setIndex(obj);
-        revisionId = datastore.revisionId;
-        var results = TelIndexer.search(index.treeTel, number);
-        var out = null;
-        if (results.length > 0) {
-          out = datastore.get(results);
-        }
-        else {
-          outRequest.done(results);
-        }
-        return out;
+          setIndex(obj);
+          revisionId = datastore.revisionId;
+          var results = TelIndexer.search(index.treeTel, number);
+          var out = null;
+          if (results.length > 0) {
+            window.console.log('Results: ', results);
+            out = datastore.get(results.map(function(sid) {
+              return parseInt(sid);
+            }));
+          }
+          else {
+            outRequest.done(results);
+          }
+          return out;
       },function(err) {
         window.console.error('The index cannot be refreshed: ', err.name);
         outRequest.failed(err);
