@@ -29,6 +29,30 @@ var ContactsSIMExport = function ContactsSIMExport() {
     return _('simExport-title');
   };
 
+  // Returns the iccContactId to be used for exporting this contact
+  // null if not iccContactId found
+  function getIccContactId(theContact) {
+    var out = null;
+
+    var contactUrl = theContact.url;
+    if (Array.isArray(contactUrl)) {
+      for (var j = 0; j < contactUrl.length; j++) {
+        var aUrl = contactUrl[j];
+        if (aUrl.type.indexOf('source') !== -1 &&
+                                          aUrl.type.indexOf('sim') !== -1) {
+          var value = aUrl.value.split(':')[2];
+          var iccInfo = value.split('-');
+          alert(iccInfo[0]);
+          if (iccInfo[0] === icc.iccInfo.iccid) {
+            out = iccInfo[1];
+            break;
+          }
+        }
+      }
+    }
+    return out;
+  }
+
   var doExport = function doExport(finishCallback) {
     if (typeof finishCallback !== 'function') {
       throw new Error('SIM export requires a callback function');
@@ -71,6 +95,8 @@ var ContactsSIMExport = function ContactsSIMExport() {
     };
 
     var theContact = contacts[step];
+
+    theContact.id = getIccContactId(theContact) || theContact.id;
 
     var request = icc.updateContact('adn', theContact);
     request.onsuccess = function onsuccess() {

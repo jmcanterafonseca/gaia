@@ -20,6 +20,7 @@ function SimContactsImporter() {
   var _ = navigator.mozL10n.get;
   var mustFinish = false;
   var loadedMatch = false;
+  var iccId;
 
   function getContact(contact) {
     return (contact instanceof mozContact) ? contact : new mozContact(contact);
@@ -90,6 +91,7 @@ function SimContactsImporter() {
     //   'fdn': Fixed Dialing Numbers
     if (icc && icc.readContacts) {
       request = icc.readContacts('adn');
+      iccId = icc.iccInfo && icc.iccInfo.iccid;
     }
     else if (navigator.mozContacts) {
       // Just to enable import on builds different than M-C
@@ -134,6 +136,14 @@ function SimContactsImporter() {
     mustFinish = true;
   };
 
+  function generateIccContactUrl(contactid) {
+    var urlValue = 'urn:' + 'uuid:' + (iccId || 'iccId') + '-' + contactid;
+    return [{
+      type: ['source', 'sim'],
+      value: urlValue
+    }];
+  }
+
   /**
    * store mozContact elements -- each returned mozContact has two properties:
    *   .name : [ string ]
@@ -161,7 +171,8 @@ function SimContactsImporter() {
       }
 
       item.category = ['sim'];
-
+      item.url = generateIccContactUrl(item.id);
+      window.console.log(JSON.stringify(item.url));
       var contact = new mozContact(item);
 
       var cbs = {
@@ -188,12 +199,13 @@ function SimContactsImporter() {
 
   function saveContact(contact) {
     var req = window.navigator.mozContacts.save(getContact(contact));
-      req.onsuccess = function saveSuccess() {
-        continueCb();
-      };
-      req.onerror = function saveError() {
-        console.error('SIM Import: Error importing ', item.id);
-        continueCb();
-      };
+    req.onsuccess = function saveSuccess() {
+      continueCb();
+    };
+    req.onerror = function saveError() {
+      console.error('SIM Import: Error importing: ', contact.id, ': ',
+                    req.error.name);
+      continueCb();
+    };
   }
 }
