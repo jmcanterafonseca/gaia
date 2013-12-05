@@ -4,7 +4,7 @@
 'use strict';
 
 /*global Utils, ActivityHandler, ThreadUI, ThreadListUI, MessageManager,
-         Settings, LazyLoader, TimeHeaders */
+         Settings, LazyLoader, TimeHeaders, fb */
 
 var lazyLoadFiles = [
   'shared/js/async_storage.js',
@@ -40,6 +40,9 @@ var lazyLoadFiles = [
   'js/notify.js',
   'js/activity_handler.js',
   'js/contact_renderer.js',
+  'shared/js/fb/fb_request.js',
+  'shared/js/fb/fb_data_reader.js',
+  'shared/js/fb/fb_reader_utils.js',
   'shared/style/input_areas.css',
   'shared/style/switches.css',
   'shared/style/confirm.css',

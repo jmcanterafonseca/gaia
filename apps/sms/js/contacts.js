@@ -227,12 +227,26 @@
         callback(isExact ? [contact] : []);
       });
     },
+
     findByPhoneNumber: function contacts_findByPhone(filterValue, callback) {
       return this.findBy({
         filterBy: ['tel'],
         filterOp: 'match',
         filterValue: filterValue.replace(/\s+/g, '')
-      }, callback);
+      }, function(results) {
+          if (results.length > 0) {
+            callback(results);
+            return;
+          }
+
+          fb.getContactByNumber(filterValue, function fbByPhone(contact) {
+            callback(contact ? [contact] : []);
+          }, function error_fbByPhone(err) {
+              window.console.error('Error while retrieving fb by phone: ',
+                                   err.name);
+              callback(results);
+          });
+      });
     }
   };
 

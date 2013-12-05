@@ -12,10 +12,10 @@
     "storage":{},
     "mobileconnection":{},
     "contacts":{ "access": "readonly" },
-    "settings":{ "access": "readonly" },
+    "settings":{ "access": "readwrite" },
     "audio-channel-notification":{},
     "desktop-notification":{},
-    "settings":{ "access": "readwrite" }
+    "phonenumberservice": {}
   },
   "locales": {
     "ar": {
@@ -64,5 +64,11 @@
   "messages": [
      { "sms-received": "/index.html" },
      { "notification": "/index.html" }
-  ]
+  ],
+  "datastores-access": {
+    "Gaia_Facebook_Friends": {
+      "access": "readonly",
+      "description": "Facebook Friends"
+    }
+  }
 }
