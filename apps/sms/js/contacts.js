@@ -204,7 +204,20 @@
         filterBy: ['tel', 'givenName', 'familyName'],
         filterOp: 'contains',
         filterValue: filterValue
-      }, callback);
+      }, function(results) {
+          if (filterValue.length < 3) {
+            callback(results);
+            return;
+          }
+
+          var req = fb.contacts.search('phone', filterValue);
+          req.onsuccess = function() {
+            callback(results.concat(req.result));
+          };
+          req.onerror = function() {
+            callback(results);
+          };
+      });
     },
 
     findExact: function contacts_findBy(filterValue, callback) {
