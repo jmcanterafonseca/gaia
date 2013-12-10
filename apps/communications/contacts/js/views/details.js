@@ -189,7 +189,7 @@ contacts.Details = (function() {
   var doReloadContactDetails = function doReloadContactDetails(contact) {
 
     detailsName.textContent = contact.name;
-    contactDetails.classList.remove('no-photo');
+    // contactDetails.classList.remove('no-photo');
     contactDetails.classList.remove('fb-contact');
     contactDetails.classList.remove('up');
     utils.dom.removeChildNodes(listContainer);
@@ -548,7 +548,8 @@ contacts.Details = (function() {
       } else {
         cover.style.overflow = 'auto';
       }
-      Contacts.updatePhoto(contact.photo[0], cover);
+      Contacts.updatePhoto(contact.photo[0], cover,
+                           contacts.List.getPhotoUrl(contact.id));
     } else {
       cover.style.backgroundImage = '';
       cover.style.overflow = 'auto';

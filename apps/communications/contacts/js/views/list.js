@@ -805,12 +805,16 @@ contacts.List = (function() {
     var newPhoto = Array.isArray(contact.photo) ? contact.photo[0] : null;
 
     // Do nothing if photo did not change
-    if ((!prevPhoto && !newPhoto) || (prevPhoto === newPhoto)) {
+    if ((!prevPhoto && !newPhoto) || (prevPhoto &&
+                                      prevPhoto.photo === newPhoto)) {
       return false;
     }
 
     if (newPhoto) {
-      photosById[id] = newPhoto;
+      photosById[id] = {
+        photo: newPhoto,
+        url: null
+      };
     }
     else {
       delete photosById[id];
@@ -823,6 +827,10 @@ contacts.List = (function() {
     return !!photosById[id];
   };
 
+  var getPhotoUrl = function getPhotoUrl(id) {
+    return photosById[id].url;
+  };
+
   // Utility function to manage the dataset-src URL for images.  Its important
   // to only modify this attribute from this function in order to ensure that
   // the URLs are properly revoked.
@@ -832,13 +840,14 @@ contacts.List = (function() {
       window.URL.revokeObjectURL(oldURL);
       img.dataset.src = '';
     }
-    if (photo) {
+    if (photo.photo) {
+      photo.url = window.URL.createObjectURL(photo.photo);
       try {
-        img.dataset.src = window.URL.createObjectURL(photo);
+        img.dataset.src = photo.url;
       } catch (err) {
         // Warn, but do nothing else.  We cleared the old URL above.
-        console.warn('Failed to create URL for contacts image blob: ' + photo +
-                     ', error: ' + err);
+        console.warn('Failed to create URL for contacts image blob: ' +
+                     photo.photo + ', error: ' + err);
       }
     }
   }
@@ -1812,6 +1821,7 @@ contacts.List = (function() {
     'renderPhoto': renderPhoto,
     'updatePhoto': updatePhoto,
     'hasPhoto' : hasPhoto,
+    'getPhotoUrl' : getPhotoUrl,
     'renderFbData': renderFbData,
     'getHighlightedName': getHighlightedName,
     'selectFromList': selectFromList,

@@ -300,7 +300,13 @@ var Contacts = (function() {
     return prop.length;
   };
 
-  var updatePhoto = function updatePhoto(photo, dest) {
+  var updatePhoto = function updatePhoto(photo, dest, url) {
+    if (url) {
+      background = 'url(' + url + ')';
+      dest.style.backgroundImage = background;
+      return;
+    }
+
     var background = '';
     if (photo != null) {
       background = 'url(' + URL.createObjectURL(photo) + ')';
