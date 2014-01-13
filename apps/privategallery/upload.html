@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <link href="style/privategallery.css" rel="stylesheet" type="text/css">
+    <link href="/shared/style/buttons.css" rel="stylesheet" type="text/css">
+    <link href="/shared/style/confirm.css" rel="stylesheet" type="text/css">
+    <link href="/shared/style_unstable/progress_activity.css"
+          rel="stylesheet" type="text/css">
+
+    <script src="/shared/js/async_storage.js"></script>
+    <script src="js/uploader.js"></script>
+    <script src="js/oauth.js"></script>
+    <script src="js/main.js"></script>
+  </head>
+
+  <body>
+    <section id="uploading">
+      <form role="dialog" data-type="confirm">
+        <section>
+          <h1>Uploading media</h1>
+          <!-- Note: inline style only for demo purposes -->
+          <p style="text-align: center;"><progress></progress></p>
+        </section>
+        <menu><button type="button" class="full">Cancel</button></menu>
+      </form>
+    </section>
+  </body>
+</html>
