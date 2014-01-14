@@ -12,7 +12,9 @@ var Gallery = (function() {
   var mediaDetail = document.querySelector('#gallery-detail');
   var imgNode = mediaDetail.querySelector('img');
   var progressActivity = mediaDetail.querySelector('progress');
+  var progressActivityList = gallerySection.querySelector('progress');
   var currentMediaId;
+  var rendered = false;
 
   var numImgsLoaded = 0;
   var totalMedia = 0;
@@ -102,12 +104,33 @@ var Gallery = (function() {
 
   function showMedia(e) {
     var target = e.target;
+    var media = target.dataset.media;
+
+    if (inActivity === true) {
+      Rest.get(getMediaUrl(media), {
+        success: function(result) {
+          activity.postResult({
+            blob: result,
+            type: result.type
+          });
+        },
+        error: function(err) {
+          console.error('Error while downloading photo pick', err);
+        }
+      },{
+          operationsTimeout: 10000,
+          responseType: 'blob'
+      });
+
+      inActivity = false;
+      return;
+    }
+
     mediaDetail.classList.add('right-to-left');
     mediaDetail.classList.remove('hidden');
 
     progressActivity.style.display = '';
 
-    var media = target.dataset.media;
     currentMediaId = media;
 
     imgNode.onload = function() {
@@ -160,12 +183,103 @@ var Gallery = (function() {
     var ele = document.querySelector('li[data-media="' + currentMediaId + '"]');
     list.removeChild(ele);
     currentMediaId = null;
+    progressActivity.style.display = 'none';
+    imgNode.style.opacity = 1;
     alert('Media Removed!');
     goBack();
   }
 
+  function pickImage(cb) {
+    var activityOptions = {
+      name: 'pick',
+      data: {
+        type: 'image/*',
+        self: 'self'
+      }
+    };
+
+    var activity = new MozActivity(activityOptions);
+    activity.onsuccess = function() {
+      var blob = activity.result.blob;
+      cb(blob);
+    };
+    activity.onerror = function() {
+      window.console.error('Error: ', activity.error);
+      cb(null);
+    };
+  }
+
+  function addMedia() {
+    pickImage(function imgReady(blob) {
+      if (blob) {
+        toggleUpload();
+        uploadContent(blob, access_token, function(uploadedId) {
+          togglePick();
+          prependNewMedia(uploadedId);
+        });
+      }
+    });
+  }
+
+  function prependNewMedia(newMediaId) {
+    var beforeEle = list.firstElementChild;
+    window.console.log('Before: ', beforeEle);
+    list.insertBefore(buildImageNode(access_token, newMediaId), beforeEle);
+  }
+
+  function logout() {
+    progressActivityList.style.display = '';
+
+    var REDIRECT_LOGOUT_URI = GALLERY_SERVER + '/' + 'logout_redirect';
+    var logoutService = 'https://www.facebook.com/logout.php?';
+    var params = [
+      'next' + '=' + encodeURIComponent(
+                        'https://www.facebook.com/connect/login_success.html'),
+      'access_token' + '=' + access_token
+    ];
+
+    var logoutParams = params.join('&');
+    var logoutUrl = logoutService + logoutParams;
+    window.console.log(logoutUrl);
+
+    Rest.get(logoutUrl, {
+      success: function(result) {
+        window.console.log(result);
+        window.console.log('Logout service invoked successfully');
+        window.asyncStorage.removeItem('userData', function() {
+          window.setTimeout(function() {
+            progressActivity.style.display = 'none';
+            clearGallery();
+            Gallery.start();
+          }, 1500);
+        });
+      },
+      error: function() {
+        progressActivity.style.display = 'none';
+        console.log('Error while logging out');
+      },
+      timeout: function() {
+        progressActivity.style.display = 'none';
+        alert('Operation timeout');
+      }
+    },{
+        operationsTimeout: 20000
+    });
+  }
+
+  function reload() {
+    clearGallery();
+    start();
+  }
+
+  function clearGallery() {
+    rendered = false;
+    list.innerHTML = '';
+  }
+
   function sendMedia() {
     var uri = ALBUMS_URI + '?access_token=' + access_token;
+    progressActivity.style.display = '';
     Rest.get(uri, {
       success: function(result) {
         var actionMenuOptions = {
@@ -188,6 +302,12 @@ var Gallery = (function() {
         document.body.appendChild(albumsElement);
 
         var albumsAction = utils.ActionMenu.bind(albumsElement);
+        albumsAction.onclick = function(e) {
+          if (e.target.id !== 'cancel') {
+            doSendMediaFacebook(e.target.id, currentMediaId);
+          }
+        };
+        progressActivity.style.display = 'none';
         albumsAction.show();
       },
       error: function() {
@@ -198,11 +318,83 @@ var Gallery = (function() {
     });
   }
 
-  function start() {
+  function doSendMediaFacebook(albumId, mediaId) {
+    var uri = GALLERY_SERVER + '/upload_media_facebook' + '/' +
+    albumId + '/' + mediaId + '?access_token=' + access_token;
+
+    progressActivity.style.display = '';
+    imgNode.style.opacity = 0.2;
+
+    Rest.get(uri, {
+      success: function() {
+        alert('Successfully pusblished to Facebook');
+        progressActivity.style.display = 'none';
+        imgNode.style.opacity = 1;
+      },
+      error: function() {
+        alert('Error while publishing to Facebook');
+        progressActivity.style.display = 'none';
+        imgNode.style.opacity = 1;
+      },
+      timeout: function() {
+        alert('Timeout while publishing to Facebook');
+        progressActivity.style.display = 'none';
+        imgNode.style.opacity = 1;
+      }
+    }, {
+        method: 'POST',
+        operationsTimeout: 20000
+    });
+  }
+
+  function shareMedia() {
+    progressActivity.style.display = '';
+    Rest.get(getMediaUrl(currentMediaId), {
+      success: function(result) {
+        var activityOptions = {
+          name: 'share',
+          data: {
+            type: 'image/*',
+            blobs: [result],
+            self: 'self',
+            filenames: [currentMediaId]
+          }
+        };
+        var activity = new MozActivity(activityOptions);
+        activity.onsuccess = function() {
+          progressActivity.style.display = 'none';
+          window.console.log('File shared');
+        };
+        activity.onerror = function() {
+          progressActivity.style.display = 'none';
+          window.console.error('Error: ', activity.error);
+        };
+      },
+      error: function(err) {
+        console.error('Error while downloading photo pick', err);
+      }
+      },{
+          operationsTimeout: 10000,
+          responseType: 'blob'
+      });
+  }
+
+  function start(cb) {
+    if (rendered) {
+      if (typeof cb === 'function') {
+       cb();
+      }
+      return;
+    }
+
     list.addEventListener('click', showMedia);
     backButton.addEventListener('click', goBack);
     document.querySelector('#delete').addEventListener('click', deleteMedia);
     document.querySelector('#send').addEventListener('click', sendMedia);
+    document.querySelector('#add').addEventListener('click', addMedia);
+    document.querySelector('#share').addEventListener('click', shareMedia);
+    document.querySelector('#logout').addEventListener('click', logout);
+    document.querySelector('#refresh').addEventListener('click', reload);
 
     numImgsLoaded = 0;
     totalMedia = 0;
@@ -210,15 +402,24 @@ var Gallery = (function() {
     getToken(function(access_token) {
       renderGallery(access_token, function() {
         console.log('Gallery rendered');
+        rendered = true;
+        if (typeof cb === 'function') {
+          cb();
+        }
       });
     }, function err() {
         console.log('There has been an error');
     });
   }
 
+  function refresh(newMediaId) {
+    start(function() {
+      prependNewMedia(newMediaId);
+    });
+  }
+
   return {
-    'start': start
+    'start': start,
+    'refresh': refresh
   };
 })();
-
-Gallery.start();

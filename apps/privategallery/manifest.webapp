@@ -1,5 +1,5 @@
 {
-  "name": "PrivateGallery",
+  "name": "CloudGallery",
   "description": "My Private Gallery",
   "type": "certified",
   "launch_path": "/index.html",
@@ -16,7 +16,8 @@
   "activities": {
     "pick": {
       "filters": {
-        "type": ["image/*", "audio/*", "video/*"]
+        "type": ["image/*", "audio/*", "video/*"],
+        "self": "undefined"
        },
       "disposition": "inline",
       "returnValue": true,
@@ -25,14 +26,8 @@
     "share": {
       "filters": {
         "type": ["image/*", "audio/*", "video/*"],
-        "number": 1
-       },
-      "disposition": "window",
-      "href": "/upload.html"
-    },
-    "browse": {
-      "filters": {
-        "type": "photos"
+        "number": 1,
+        "self": "undefined"
        },
       "disposition": "window"
     }
@@ -40,13 +35,13 @@
   "orientation": "portrait-primary",
   "locales": {
     "en-US": {
-      "name": "PrivateGallery",
+      "name": "CloudGallery",
       "description": "My Private Gallery"
     }
   },
   "default_locale": "en-US",
   "icons": {
-    "120": "/style/icons/Gallery.png",
-    "60": "/style/icons/60/Gallery.png"
+    "120": "/style/icons/icon_120_.png",
+    "60": "/style/icons/icon_.png"
   }
 }

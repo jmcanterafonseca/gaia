@@ -1,11 +1,39 @@
 'use strict';
 
 window.console.log('main.js loaded ...');
-navigator.mozSetMessageHandler('activity', handleActivity);
+
+var inActivity = false;
+var activity;
+
+if (!navigator.mozHasPendingMessage('activity')) {
+  togglePick();
+  Gallery.start();
+  navigator.mozSetMessageHandler('activity', handleActivity);
+}
+else {
+  navigator.mozSetMessageHandler('activity', handleActivity);
+}
 
 var PRIVATE_GALLERY_SERVICE = 'http://5.255.150.180/upload_media';
 
+function toggleUpload() {
+  document.querySelector('#upload').classList.remove('hide');
+  document.querySelector('#gallery-list').classList.add('hide');
+  document.querySelector('section.empty').style.opacity = 0;
+}
+
+function togglePick() {
+  document.querySelector('#upload').classList.add('hide');
+  document.querySelector('#gallery-list').classList.remove('hide');
+  document.querySelector('section.empty').style.opacity = 0;
+}
+
 function handleActivity(activityRequest) {
+  inActivity = true;
+  activity = activityRequest;
+
+  window.console.log('In handle activity ...');
+
   window.asyncStorage.getItem('userData', function(data) {
     if (!data) {
       oauth.flow.start(function(token) {
@@ -26,20 +54,26 @@ function handleActivity(activityRequest) {
 function doHandleActivity(activityRequest, access_token) {
   var options = activityRequest.source;
 
+  if (activityRequest.source.name === 'pick') {
+    togglePick();
+    return;
+  }
+
   if (options.name === 'share') {
     window.console.log('Handling share activity ...');
-    uploadContent(options.data, access_token, function() {
+    toggleUpload();
+    uploadContent(options.data.blobs[0], access_token, function(newMediaId) {
+      togglePick();
+      Gallery.refresh(newMediaId);
       activityRequest.postResult({
         success: true
       });
+      inActivity = false;
     });
   }
 }
 
-function uploadContent(content, access_token, done) {
-  window.console.log('Content: ', JSON.stringify(content));
-
-  var blob = content.blobs[0];
+function uploadContent(blob, access_token, done) {
   var blobUrl = window.URL.createObjectURL(blob);
   var fileName = blobUrl.substring(blobUrl.indexOf(':') + 1);
   var url = PRIVATE_GALLERY_SERVICE + '?access_token=' + access_token +
@@ -58,10 +92,10 @@ function uploadContent(content, access_token, done) {
 
       uploader.onfinish = function() {
         window.console.log('Uploaded correctly !!!');
-        var notif = new Notification('PrivateGallery', {
+        var notif = new Notification('Cloud Gallery', {
           body: 'Photo has been uploaded'
         });
-        done();
+        done(fileName);
       };
 
       uploader.onerror = function(e) {
