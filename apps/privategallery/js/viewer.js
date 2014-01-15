@@ -15,6 +15,7 @@ var Gallery = (function() {
   var progressActivityList = gallerySection.querySelector('progress');
   var currentMediaId;
   var rendered = false;
+  var rendering = false;
 
   var numImgsLoaded = 0;
   var totalMedia = 0;
@@ -32,6 +33,7 @@ var Gallery = (function() {
         oauth.flow.start(function(token) {
           window.asyncStorage.setItem('userData', token, function() {
             console.log('Token stored correctly');
+            registerPush(token);
           });
           tokenReady(cb, token);
         });
@@ -247,11 +249,13 @@ var Gallery = (function() {
         window.console.log(result);
         window.console.log('Logout service invoked successfully');
         window.asyncStorage.removeItem('userData', function() {
-          window.setTimeout(function() {
-            progressActivity.style.display = 'none';
-            clearGallery();
-            Gallery.start();
-          }, 1500);
+          unregisterPush(access_token, function() {
+            window.setTimeout(function() {
+              progressActivity.style.display = 'none';
+              clearGallery();
+              Gallery.start();
+            }, 1500);
+          });
         });
       },
       error: function() {
@@ -272,7 +276,12 @@ var Gallery = (function() {
     start();
   }
 
+  function newVersion(versionNumber) {
+    reload();
+  }
+
   function clearGallery() {
+    rendering = false;
     rendered = false;
     list.innerHTML = '';
   }
@@ -380,12 +389,15 @@ var Gallery = (function() {
   }
 
   function start(cb) {
-    if (rendered) {
+    if (rendered || rendering) {
       if (typeof cb === 'function') {
        cb();
       }
       return;
     }
+
+    rendering = true;
+    rendered = false;
 
     list.addEventListener('click', showMedia);
     backButton.addEventListener('click', goBack);
@@ -399,10 +411,12 @@ var Gallery = (function() {
     numImgsLoaded = 0;
     totalMedia = 0;
 
+    progressActivityList.style.display = '';
     getToken(function(access_token) {
       renderGallery(access_token, function() {
         console.log('Gallery rendered');
         rendered = true;
+        rendering = false;
         if (typeof cb === 'function') {
           cb();
         }
@@ -420,6 +434,7 @@ var Gallery = (function() {
 
   return {
     'start': start,
-    'refresh': refresh
+    'refresh': refresh,
+    'newVersion': newVersion
   };
 })();

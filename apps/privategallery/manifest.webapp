@@ -1,17 +1,16 @@
 {
   "name": "CloudGallery",
   "description": "My Private Gallery",
-  "type": "certified",
+  "type": "privileged",
   "launch_path": "/index.html",
   "developer": {
     "name": "José Manuel Cantera",
     "url": "mailto:jmcf@tid.es"
   },
   "permissions": {
-    "device-storage:pictures":{ "access": "readwrite" },
-    "device-storage:videos":{ "access": "readwrite" },
     "systemXHR": {},
-    "desktop-notification": {}
+    "desktop-notification": {},
+    "push": {}
   },
   "activities": {
     "pick": {
@@ -32,6 +31,11 @@
       "disposition": "window"
     }
   },
+  "messages": [
+    { "push": "/index.html"},
+    { "push-register": "/index.html"},
+    { "notification": "/index.html" }
+  ],
   "orientation": "portrait-primary",
   "locales": {
     "en-US": {

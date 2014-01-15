@@ -5,14 +5,123 @@ window.console.log('main.js loaded ...');
 var inActivity = false;
 var activity;
 
-if (!navigator.mozHasPendingMessage('activity')) {
+var GALLERY_SERVER_REGISTER = 'http://5.255.150.180/push_token_register';
+var GALLERY_SERVER_UNREGISTER = 'http://5.255.150.180/push_token_unregister';
+
+function registerPush(access_token) {
+  window.asyncStorage.getItem('pushToken', function(data) {
+    if (!data) {
+      var req = navigator.push.register();
+      req.onsuccess = function() {
+        var endPoint = req.result;
+        var url = GALLERY_SERVER_REGISTER + '?access_token=' + access_token +
+        '&push_token=' + endPoint;
+        Rest.get(url, {
+          success: function() {
+            console.log('Successfully registered on the server: ', endPoint);
+            window.asyncStorage.setItem('pushToken', endPoint, function() {
+              console.log('Push token stored correctly');
+            });
+          },
+          error: function() {
+            console.error('Error while registering the push endpoint');
+          }
+        }, {
+              operationsTimeout: 10000,
+              method: 'POST'
+        });
+      };
+      req.onerror = function() {
+        console.error('Error while registering push: ', req.error.name);
+      };
+    }
+  });
+}
+
+function unregisterPush(access_token, cb) {
+  window.asyncStorage.getItem('pushToken', function(endPoint) {
+    if (!endPoint) {
+      cb();
+      return;
+    }
+    var req = navigator.push.unregister(endPoint);
+    req.onsuccess = function() {
+      console.log('End point unregistered ok!', endPoint);
+      var url = GALLERY_SERVER_UNREGISTER + '?access_token=' + access_token +
+        '&push_token=' + endPoint;
+      Rest.get(url, {
+        success: function() {
+          console.log('Successfully unregistered on the server: ');
+          window.asyncStorage.removeItem('pushToken', function() {
+            console.log('Push token removed correctly');
+          });
+          cb();
+        },
+        error: function() {
+          console.error('Error while unregistering the push endpoint',
+                        req.error.name);
+          cb(req.error);
+        }
+      }, {
+            operationsTimeout: 10000,
+            method: 'POST'
+      });
+    };
+
+    req.onerror = function() {
+      console.error('Error while unregistering the push ', req.error.name);
+    };
+  });
+}
+
+function setHandlers() {
+  navigator.mozSetMessageHandler('activity', handleActivity);
+  navigator.mozSetMessageHandler('push', handlePush);
+
+  navigator.mozSetMessageHandler('notification', function() {
+    window.console.log('Notification called');
+    navigator.mozApps.getSelf().onsuccess = function(evt) {
+      var app = evt.target.result;
+      app.launch();
+    };
+  });
+}
+
+var state;
+
+if (navigator.mozHasPendingMessage('activity')) {
+  navigator.mozSetMessageHandler('activity', handleActivity);
+}
+else if (!navigator.mozHasPendingMessage('push')) {
+  window.console.log('Showing the app');
+  state = 'running';
+  setHandlers();
   togglePick();
   Gallery.start();
-  navigator.mozSetMessageHandler('activity', handleActivity);
 }
 else {
-  navigator.mozSetMessageHandler('activity', handleActivity);
+  state = 'mustClose';
+  navigator.mozSetMessageHandler('push', handlePush);
 }
+
+
+function handlePush(e) {
+  window.console.log(state, e);
+  console.log('Push message received. Version: ', e.version);
+   var notif = new Notification('Cloud Gallery', {
+    body: 'Gallery has changed'
+  });
+
+  if (state === 'running') {
+    togglePick();
+    Gallery.newVersion(e.version);
+  }
+  else {
+    window.close();
+  }
+
+}
+
 
 var PRIVATE_GALLERY_SERVICE = 'http://5.255.150.180/upload_media';
 
@@ -39,6 +148,7 @@ function handleActivity(activityRequest) {
       oauth.flow.start(function(token) {
         window.asyncStorage.setItem('userData', token, function() {
           window.console.log('Token stored!!!');
+          registerPush(token);
         });
 
         doHandleActivity(activityRequest, token);
