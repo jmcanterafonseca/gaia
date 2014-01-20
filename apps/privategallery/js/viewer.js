@@ -10,12 +10,14 @@ var Gallery = (function() {
   var backButton = document.getElementById('back');
   var gallerySection = document.querySelector('#gallery-list');
   var mediaDetail = document.querySelector('#gallery-detail');
-  var imgNode = mediaDetail.querySelector('img');
   var progressActivity = mediaDetail.querySelector('progress');
   var progressActivityList = gallerySection.querySelector('progress');
   var currentMediaId;
   var rendered = false;
   var rendering = false;
+
+  var imgNode = null;
+  var imgContainer = document.querySelector('#img-container');
 
   var numImgsLoaded = 0;
   var totalMedia = 0;
@@ -48,7 +50,11 @@ var Gallery = (function() {
       success: function(response) {
         cb(response.data);
       },
-      error: errorCb
+      error: errorCb,
+      timeout: function() {
+        alert('Timeout');
+        progressActivityList.style.display = 'none';
+      }
     }, {
         operationsTimeout: 10000
     });
@@ -83,6 +89,9 @@ var Gallery = (function() {
   function renderGallery(access_token, done) {
     listMedia(access_token, function(mediaList) {
       totalMedia = mediaList.length;
+      if (totalMedia === 0) {
+        progressActivityList.style.display = 'none';
+      }
       mediaList.forEach(function(aMedia) {
         list.appendChild(buildImageNode(access_token, aMedia));
       });
@@ -98,7 +107,9 @@ var Gallery = (function() {
       mediaDetail.classList.remove('right-to-left');
       mediaDetail.classList.remove('back-to-right');
       mediaDetail.classList.add('hidden');
-      imgNode.removeAttribute('src');
+      if (imgNode) {
+        imgContainer.removeChild(imgNode);
+      }
     });
 
     mediaDetail.classList.add('back-to-right');
@@ -109,15 +120,23 @@ var Gallery = (function() {
     var media = target.dataset.media;
 
     if (inActivity === true) {
+      progressActivityList.style.display = '';
       Rest.get(getMediaUrl(media), {
         success: function(result) {
+          progressActivityList.style.display = 'none';
           activity.postResult({
             blob: result,
             type: result.type
           });
         },
         error: function(err) {
+          alert('Error');
+          progressActivityList.style.display = 'none';
           console.error('Error while downloading photo pick', err);
+        },
+        timeout: function() {
+          progressActivityList.style.display = 'none';
+          alert('timeout');
         }
       },{
           operationsTimeout: 10000,
@@ -135,10 +154,48 @@ var Gallery = (function() {
 
     currentMediaId = media;
 
-    imgNode.onload = function() {
-      progressActivity.style.display = 'none';
-    };
-    imgNode.src = getMediaUrl(media);
+    Rest.get(getMediaUrl(media), {
+      success: function(blob) {
+        imgNode = new Image();
+        imgNode.src = window.URL.createObjectURL(blob);
+        var availableHeight = window.innerHeight -
+              mediaDetail.querySelector('header').clientHeight -
+              mediaDetail.querySelector('div[role="toolbar"]').clientHeight;
+        window.console.log('Available height: ', availableHeight);
+
+        imgNode.onload = function() {
+          var relX = window.innerWidth / imgNode.naturalWidth;
+          var relY = availableHeight / imgNode.naturalHeight;
+
+          window.URL.revokeObjectURL(imgNode.src);
+
+          var minRel = Math.min(relX, relY);
+          imgNode.width = imgNode.naturalWidth * minRel;
+          window.console.log('Img Node Width: ', imgNode.width);
+          imgNode.height = imgNode.naturalHeight * minRel;
+          window.console.log('Img Node Height: ', imgNode.height);
+
+          if (imgNode.height < availableHeight) {
+            imgNode.style.top = (availableHeight - imgNode.height) / 2 + 'px';
+          }
+
+          window.console.log('Img Width:', relX, relY);
+          imgContainer.appendChild(imgNode);
+          progressActivity.style.display = 'none';
+        };
+      },
+      error: function() {
+        alert('Error');
+      },
+      timeout: function() {
+        alert('Timeout');
+      }
+    },{
+        responseType: 'blob',
+        operationsTimeout: 20000
+    });
+
+    // imgNode.src = getMediaUrl(media);
   }
 
   function getMediaUrl(media) {
@@ -173,7 +230,13 @@ var Gallery = (function() {
     Rest.get(getMediaUrl(mediaId), {
       success: mediaRemoved,
       error: function() {
+        alert('Error');
         console.error('Error while deleting media');
+        progressActivity.style.display = 'none';
+      },
+      timeout: function() {
+        alert('Timeout');
+        progressActivity.style.display = 'none';
       }
     },{
         operationsTimeout: 10000,
@@ -213,6 +276,7 @@ var Gallery = (function() {
 
   function addMedia() {
     pickImage(function imgReady(blob) {
+      window.console.log('Image Ready after picking');
       if (blob) {
         toggleUpload();
         uploadContent(blob, access_token, function(uploadedId) {
@@ -232,17 +296,37 @@ var Gallery = (function() {
   function logout() {
     progressActivityList.style.display = '';
 
-    var REDIRECT_LOGOUT_URI = GALLERY_SERVER + '/' + 'logout_redirect';
+    // var REDIRECT_LOGOUT_URI = GALLERY_SERVER + '/' + 'logout_redirect';
+    var REDIRECT_LOGOUT_URI =
+                      'https://www.facebook.com/connect/login_success.html';
     var logoutService = 'https://www.facebook.com/logout.php?';
     var params = [
-      'next' + '=' + encodeURIComponent(
-                        'https://www.facebook.com/connect/login_success.html'),
+      'next' + '=' + encodeURIComponent(REDIRECT_LOGOUT_URI),
       'access_token' + '=' + access_token
     ];
 
     var logoutParams = params.join('&');
     var logoutUrl = logoutService + logoutParams;
     window.console.log(logoutUrl);
+/*
+    window.addEventListener('message', function logoutHandler(e) {
+      window.removeEventListener('message', logoutHandler);
+      if (e.type === 'ok') {
+        window.console.log(result);
+        window.console.log('Logout service invoked successfully');
+        window.asyncStorage.removeItem('userData', function() {
+          unregisterPush(access_token, function() {
+            window.setTimeout(function() {
+              progressActivity.style.display = 'none';
+              clearGallery();
+              Gallery.start();
+            }, 1500);
+          });
+        });
+      }
+    });
+
+    window.open(logoutUrl); */
 
     Rest.get(logoutUrl, {
       success: function(result) {
@@ -259,6 +343,7 @@ var Gallery = (function() {
         });
       },
       error: function() {
+        alert('Error');
         progressActivity.style.display = 'none';
         console.log('Error while logging out');
       },
@@ -321,6 +406,10 @@ var Gallery = (function() {
       },
       error: function() {
         alert('error');
+      },
+      timeout: function() {
+        alert('timeout');
+        progressActivity.style.display = 'none';
       }
     },{
         operationsTimeout: 10000
@@ -380,7 +469,13 @@ var Gallery = (function() {
         };
       },
       error: function(err) {
+        alert('Error');
+        progressActivity.style.display = 'none';
         console.error('Error while downloading photo pick', err);
+      },
+      timeout: function() {
+        alert('Timeout');
+        progressActivity.style.display = 'none';
       }
       },{
           operationsTimeout: 10000,

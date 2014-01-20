@@ -166,6 +166,7 @@ function doHandleActivity(activityRequest, access_token) {
 
   if (activityRequest.source.name === 'pick') {
     togglePick();
+    Gallery.start();
     return;
   }
 
@@ -191,12 +192,27 @@ function uploadContent(blob, access_token, done) {
 
   var img = new Image();
   img.src = blobUrl;
-  img.onload = function() {
+  window.console.log('Hereeeee', blobUrl);
+
+  img.onload = function onBlobLoad() {
+    window.console.log('Image on load');
+    window.URL.revokeObjectURL(blobUrl);
+    var width = img.naturalWidth;
+    var height = img.naturalHeight;
+
+    // Make the image square
+    var canvas1 = document.createElement('canvas');
+    var min = canvas1.width = canvas1.height = Math.min(width, height);
+    var context1 = canvas1.getContext('2d');
+    context1.drawImage(img, (width - min) / 2, (height - min) / 2, min, min,
+                       0, 0, min, min);
+
     var canvas = document.createElement('canvas');
     canvas.width = canvas.height = 106;
     var context = canvas.getContext('2d');
-    context.drawImage(img, 0, 0, canvas.width, canvas.height);
+    context.drawImage(canvas1, 0, 0, canvas.width, canvas.height);
     console.log('Image drawn to canvas');
+
     canvas.toBlob(function(thumbnail) {
       var uploader = new MediaUploader(url, blob, thumbnail);
 
@@ -217,7 +233,6 @@ function uploadContent(blob, access_token, done) {
       };
 
       uploader.start();
-      window.URL.revokeObjectURL(blobUrl);
     });
   };
 }

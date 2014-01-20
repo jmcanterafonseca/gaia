@@ -23,8 +23,9 @@ var oauth = {
       var query = queryParams.join('&');
       var url = oauth._END_POINT + query;
 
-      window.addEventListener('message', function(e) {
+      window.addEventListener('message', function msgListener(e) {
         if (e.data.type === 'token') {
+          window.removeEventListener('message', msgListener);
           window.console.log('token ready: ', e.data.data);
           cb(e.data.data);
         }

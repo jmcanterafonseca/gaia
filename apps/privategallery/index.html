@@ -21,6 +21,7 @@
     <script defer src="js/utils/action_menu.js"></script>
     <script defer src="js/utils/confirm.js"></script>
     <script defer src="js/utils/http_rest.js"></script>
+    <script defer src="js/utils/image_square.js"></script>
     <script defer src="js/viewer.js"></script>
     <script defer src="js/uploader.js"></script>
     <script defer src="js/main.js"></script>
@@ -67,25 +68,27 @@
       </section>
     </section>
 
-    <section id="gallery-detail" class="skin-dark hidden" role="region">
-      <header>
-        <button id="back"><span class="icon icon-back">back</span></button>
-        <h1>Media</h1>
-      </header>
-      <progress class="pack-activity" value="0" max="100"></progress>
-      <div id="img-container">
-        <!-- Here goes the image -->
-        <img src=""></img>
-      </div>
-      <div role="toolbar">
-        <ul>
-          <li><button type="button" id="delete" class="action-icon delete">delete</button></li>
-        </ul>
-        <ul>
-          <li><button type="button" id="share" class="action-icon email-share">Share</button></li>
-          <li><button type="button" id="send" class="comms-icon contacts-facebook">Send</button></li>
-        </ul>
-      </div>
+    <section id="gallery-detail" class="hidden">
+      <section class="skin-dark" role="region">
+        <header>
+          <button id="back"><span class="icon icon-back">back</span></button>
+          <h1>Media</h1>
+        </header>
+      </section>
+      <section id="media-content">
+        <progress class="pack-activity" value="0" max="100"></progress>
+        <div id="img-container">
+        </div>
+        <div role="toolbar">
+          <ul>
+            <li><button type="button" id="delete" class="action-icon delete">delete</button></li>
+          </ul>
+          <ul>
+            <li><button type="button" id="share" class="action-icon email-share">Share</button></li>
+            <li><button type="button" id="send" class="comms-icon contacts-facebook">Send</button></li>
+          </ul>
+        </div>
+      </section>
     </section>
 
     <form id="confirmation-message" class="hide" role="dialog" data-type="confirm">
