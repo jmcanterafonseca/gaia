@@ -200,17 +200,24 @@ function uploadContent(blob, access_token, done) {
     var width = img.naturalWidth;
     var height = img.naturalHeight;
 
+    var targetValue = Math.min(width, height);
+    var relationship = 106 / targetValue;
+
     // Make the image square
     var canvas1 = document.createElement('canvas');
-    var min = canvas1.width = canvas1.height = Math.min(width, height);
+    canvas1.width = width * relationship;
+    canvas1.height = height * relationship;
+
     var context1 = canvas1.getContext('2d');
-    context1.drawImage(img, (width - min) / 2, (height - min) / 2, min, min,
-                       0, 0, min, min);
+    context1.drawImage(img, 0, 0, canvas1.width, canvas1.height);
 
     var canvas = document.createElement('canvas');
-    canvas.width = canvas.height = 106;
+    var targetWidth = canvas.width = canvas.height = 106;
+
     var context = canvas.getContext('2d');
-    context.drawImage(canvas1, 0, 0, canvas.width, canvas.height);
+    context.drawImage(canvas1, (canvas1.width - targetWidth) / 2,
+                  (canvas1.height - targetWidth) / 2, targetWidth, targetWidth,
+                  0, 0, targetWidth, targetWidth);
     console.log('Image drawn to canvas');
 
     canvas.toBlob(function(thumbnail) {
