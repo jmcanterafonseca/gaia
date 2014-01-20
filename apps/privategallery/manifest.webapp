@@ -18,7 +18,7 @@
         "type": ["image/*", "audio/*", "video/*"],
         "self": "undefined"
        },
-      "disposition": "inline",
+      "disposition": "window",
       "returnValue": true,
       "href": "/index.html#pick"
     },

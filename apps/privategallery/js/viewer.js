@@ -486,7 +486,7 @@ var Gallery = (function() {
   function start(cb) {
     if (rendered || rendering) {
       if (typeof cb === 'function') {
-       cb();
+       cb(false);
       }
       return;
     }
@@ -513,7 +513,7 @@ var Gallery = (function() {
         rendered = true;
         rendering = false;
         if (typeof cb === 'function') {
-          cb();
+          cb(true);
         }
       });
     }, function err() {
@@ -522,8 +522,10 @@ var Gallery = (function() {
   }
 
   function refresh(newMediaId) {
-    start(function() {
-      prependNewMedia(newMediaId);
+    start(function(refreshed) {
+      if (!refreshed) {
+        prependNewMedia(newMediaId);
+      }
     });
   }
 
