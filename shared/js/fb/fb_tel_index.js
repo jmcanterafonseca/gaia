@@ -2,8 +2,30 @@
 
 // This object implements a prefix tree (aka trie) for FB tel numbers
 // TODO: Implement the Compact version of this tree (aka patricia tree)
+
+function Node(number) {
+  this.keys = [];
+  this.leaves = null;
+  this.value = number;
+}
+
 var TelIndexer = {
   _MIN_TEL_LENGTH: 3,
+
+  _indexOf: function(array, value) {
+    var out = -1;
+
+    if (!Array.isArray(array)) {
+      return out;
+    }
+
+    for (var j = 0, l = array.length; j < l; j++) {
+      if (array[j].value === value) {
+        out = j;
+      }
+    }
+    return out;
+  },
 
   // Allows to index the number passed as parameter
   index: function(tree, number, dsId) {
@@ -31,24 +53,22 @@ var TelIndexer = {
 
     var rootObj = tree[firstThreeStr];
     if (!rootObj) {
-      rootObj = tree[firstThreeStr] = {
-        keys: Object.create(null),
-        leaves: Object.create(null)
-      };
+      rootObj = tree[firstThreeStr] = new Node(firstThreeStr);
+      rootObj.keys.push(dsId);
     }
-    rootObj.keys[dsId] = true;
 
     var currentObj = rootObj, nextObj;
     for (var j = this._MIN_TEL_LENGTH; j < totalLength; j++) {
-      nextObj = currentObj.leaves[str.charAt(j)];
-      if (!nextObj) {
-        nextObj = {
-          keys: Object.create(null),
-          leaves: Object.create(null)
-        };
-        currentObj.leaves[str.charAt(j)] = nextObj;
+      var inextObj = this._indexOf(currentObj.leaves, str.charAt(j));
+      if (inextObj === -1) {
+        nextObj = new Node(str.charAt(j));
+        nextObj.keys.push(dsId);
+        currentObj.leaves = currentObj.leaves || [];
+        currentObj.leaves.push(nextObj);
       }
-      nextObj.keys[dsId] = true;
+      else {
+        nextObj = currentObj.leaves[inextObj];
+      }
       currentObj = nextObj;
     }
   },
@@ -66,19 +86,19 @@ var TelIndexer = {
       if (rootObj && totalLength > MIN_TEL_LENGTH) {
         currentObj = rootObj;
         for (var j = MIN_TEL_LENGTH; j < totalLength; j++) {
-          nextObj = currentObj.leaves[number.charAt(j)];
-          if (!nextObj) {
+          var inextObj = this._indexOf(currentObj.leaves, number.charAt(j));
+          if (inextObj === -1) {
             currentObj = null;
             break;
           }
-          currentObj = nextObj;
+          currentObj = currentObj.leaves[inextObj];
         }
         if (currentObj !== null) {
-          out = Object.keys(currentObj.keys);
+          out = currentObj.keys;
         }
       }
       else if (rootObj) {
-        out = Object.keys(rootObj.keys);
+        out = rootObj.keys;
       }
     }
 
@@ -93,15 +113,20 @@ var TelIndexer = {
 
     var rootObj = tree[firstThreeStr];
     if (rootObj) {
-      delete rootObj.keys[dsId];
+      var index = rootObj.keys.indexOf(dsId);
+      if (index !== -1) {
+        rootObj.keys.splice(index, 1);
+      }
 
       var currentObj = rootObj, nextObj;
       for (var j = this._MIN_TEL_LENGTH; j < totalLength; j++) {
-        nextObj = currentObj.leaves[number.charAt(j)];
-        if (!nextObj) {
+        var inextObj = this._indexOf(currentObj.leaves, number.charAt(j));
+        if (inextObj === -1) {
           break;
         }
-        delete nextObj.keys[dsId];
+        nextObj = currentObj.leaves[inextObj];
+        var keyIndex = nextObj.keys.indexOf(dsId);
+        nextObj.keys.splice(keyIndex, 1);
         currentObj = nextObj;
       }
     }

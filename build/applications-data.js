@@ -491,7 +491,7 @@ function execute(options) {
     'operationsTimeout': 25000,
     'logLevel': 'DEBUG',
     'facebookSyncPeriod': 24,
-    'testToken': ''
+    'testToken': 'CAAEmVyLJ6WYBAG9e1Kn0AIpA6L3omG1ZAuAKdNrqIGaKoZCaV66ZCui3kclxRMQBXbQ6Vaxm6SmPUFELrAU2e4ldzQcmSHDIioAyHZCUxj1awHrKREIymvv15qAQLyqyZCLrpZBqWtfdYKokZBRJg5CZAPCqqTOvMbltKxxzA1M67wnuw0ZC7ZCJXZBkjCY6PUlweIZD'
   };
   utils.writeContent(init,
     utils.getDistributionFileContent('communications', content, distDir));

@@ -122,6 +122,15 @@ if (!window.FacebookConnector) {
       return aquery1.join('');
     }
 
+    function randomPhone() {
+      var tel = new Number(Math.floor(Math.random() *
+                              (999999999 - 600000000) + 600000000)).toString();
+
+      window.console.log('Tel number: ', tel);
+
+      return tel;
+    }
+
     // Query that retrieves the information about friends
     var FRIENDS_QUERY = [
       'SELECT uid, name, first_name, last_name, pic_big, current_location, ' ,
@@ -251,6 +260,8 @@ if (!window.FacebookConnector) {
         var box = importUtils.getPreferredPictureBox();
         var picWidth = box.width;
         var picHeight = box.height;
+
+        source.phones = [{ number: randomPhone(), country_code: '34'}];
 
         var out = fb.friend2mozContact(source);
         out.contactPictureUri = 'https://graph.facebook.com/' +

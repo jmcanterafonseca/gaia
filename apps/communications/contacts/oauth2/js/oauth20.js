@@ -103,12 +103,13 @@ if (typeof window.oauth2 === 'undefined') {
       if (!parameters || !parameters.access_token) {
         return;
       }
+      /*
       var location = getLocation(oauthflow.params[accessTokenCbData.service].
         redirectURI);
       var allowedOrigin = oauthflow.params[accessTokenCbData.service].appOrigin;
       if (e.origin !== allowedOrigin) {
         return;
-      }
+      }*/
 
       Curtain.show('wait', accessTokenCbData.state);
 
