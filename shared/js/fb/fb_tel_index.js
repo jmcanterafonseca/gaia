@@ -22,6 +22,7 @@ var TelIndexer = {
     for (var j = 0, l = array.length; j < l; j++) {
       if (array[j].value === value) {
         out = j;
+        break;
       }
     }
     return out;
