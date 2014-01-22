@@ -302,8 +302,9 @@ this.fb = fb;
         var results = TelIndexer.search(index.treeTel, toSearchNumber);
 
         if (results.length > 0) {
-          datastore.get(results).then(function success(objList) {
-            outRequest.done(objList);
+          datastore.get.apply(datastore, results).then(
+            function success(objList) {
+              outRequest.done(objList);
           }, function error(err) {
               err = safeError(err);
               window.console.error('Error while retrieving result data: ',
