@@ -4,7 +4,7 @@
 // TODO: Implement the Compact version of this tree (aka patricia tree)
 
 function Node(number) {
-  this.keys = [];
+  this.keys = Object.create(null);
   this.leaves = null;
   this.value = number;
 }
@@ -20,7 +20,7 @@ var TelIndexer = {
     }
 
     for (var j = 0, l = array.length; j < l; j++) {
-      if (array[j].value === value) {
+      if (array[j].value === value || array[j].value.startsWith(value)) {
         out = j;
         break;
       }
@@ -30,19 +30,73 @@ var TelIndexer = {
 
   // Allows to index the number passed as parameter
   index: function(tree, number, dsId) {
-    // For each length starting from the minimum (3)
-    for (var k = this._MIN_TEL_LENGTH; k <= number.length; k++) {
-      // For each number
-      var str;
-      for (var j = 0; j < number.length - 1; j++) {
-        str = '';
-        if (j + k <= number.length) {
-          for (var h = j; h < (j + k); h++) {
-            str += number.charAt(h);
-          }
-          this.insert(tree, str, dsId);
-        }
+    window.console.log(number.length);
+    var limit = number.length - this._MIN_TEL_LENGTH + 1;
+    for (var j = 0; j < limit; j++) {
+      this.insert(tree, number.substr(j), dsId);
+    }
+  },
+
+  _insertInNode: function(node, str, dsId) {
+    if (str.length === 0) {
+      return;
+    }
+
+    var currentStr = str;
+    var insertPointFound = false;
+    var insertObj;
+    var pointerOriginal = str.length;
+    while (!insertPointFound && currentStr.length > 0) {
+      var inextObj = this._indexOf(node.leaves, currentStr);
+      if (inextObj !== -1) {
+        insertPointFound = true;
+        insertObj = node.leaves[inextObj];
       }
+      else {
+        currentStr = currentStr.substring(0, currentStr.length - 1);
+      }
+      pointerOriginal--;
+    }
+
+    if (insertPointFound) {
+      if (insertObj.value === str) {
+        // Exact insertion point
+        insertObj.keys[dsId] = true;
+      }
+      else {
+        var keys = Object.keys(insertObj.keys);
+        // If only one key and the key we are talking about
+        if (keys.indexOf(dsId) !== -1) {
+          insertObj.value = str;
+          return;
+        }
+        // Let's check what's the gap
+        var newString = insertObj.value.substring(0, currentStr.length);
+        var restString = insertObj.value.substring(currentStr.length);
+        insertObj.value = newString;
+        if (restString.length > 0) {
+          var newNode = new Node(restString);
+          for (var j = 0; j < keys.length; j++) {
+            newNode.keys[keys[j]] = true;
+          }
+          insertObj.leaves = insertObj.leaves || [];
+          newNode.leaves = [];
+          for (var j = 0; j < insertObj.leaves.length; j++) {
+            newNode.leaves.push(insertObj.leaves[j]);
+          }
+          insertObj.leaves.push(newNode);
+        }
+
+        var restOriginal = str.substring(pointerOriginal + 1);
+        // And the rest of the original string is inserted in the insertObj
+        this._insertInNode(insertObj, restOriginal, dsId);
+      }
+    }
+    else {
+      var nextObj = new Node(str);
+      nextObj.keys[dsId] = true;
+      node.leaves = node.leaves || [];
+      node.leaves.push(nextObj);
     }
   },
 
@@ -55,22 +109,45 @@ var TelIndexer = {
     var rootObj = tree[firstThreeStr];
     if (!rootObj) {
       rootObj = tree[firstThreeStr] = new Node(firstThreeStr);
-      rootObj.keys.push(dsId);
     }
+    rootObj.keys[dsId] = true;
 
-    var currentObj = rootObj, nextObj;
-    for (var j = this._MIN_TEL_LENGTH; j < totalLength; j++) {
-      var inextObj = this._indexOf(currentObj.leaves, str.charAt(j));
-      if (inextObj === -1) {
-        nextObj = new Node(str.charAt(j));
-        nextObj.keys.push(dsId);
-        currentObj.leaves = currentObj.leaves || [];
-        currentObj.leaves.push(nextObj);
+    this._insertInNode(rootObj, str.substring(this._MIN_TEL_LENGTH), dsId);
+  },
+
+  _search: function(node, str) {
+    var currentStr = str;
+    var found = false;
+    var pointerOriginal = str.length;
+    var searchObj;
+    while (!found && currentStr.length > 0) {
+      var idxObj = this._indexOf(node.leaves, currentStr);
+      if (idxObj !== -1) {
+        found = true;
+        searchObj = node.leaves[idxObj];
       }
       else {
-        nextObj = currentObj.leaves[inextObj];
+        currentStr = currentStr.substring(0, currentStr.length - 1);
       }
-      currentObj = nextObj;
+      pointerOriginal--;
+    }
+
+    if (found) {
+      if (searchObj.value === str) {
+        return searchObj;
+      }
+      // Let's calculate what is the gap
+      var restString = str.substr(pointerOriginal + 1);
+      if (restString.length > 0) {
+        return this._search(searchObj, restString);
+      }
+      else {
+        return searchObj;
+      }
+
+    }
+    else {
+      return null;
     }
   },
 
@@ -83,27 +160,41 @@ var TelIndexer = {
     if (totalLength >= MIN_TEL_LENGTH) {
       var firstThreeStr = number.substring(0, MIN_TEL_LENGTH);
       var rootObj = tree[firstThreeStr];
-      var currentObj, nextObj;
-      if (rootObj && totalLength > MIN_TEL_LENGTH) {
-        currentObj = rootObj;
-        for (var j = MIN_TEL_LENGTH; j < totalLength; j++) {
-          var inextObj = this._indexOf(currentObj.leaves, number.charAt(j));
-          if (inextObj === -1) {
-            currentObj = null;
-            break;
+
+      if (rootObj) {
+        if (totalLength === MIN_TEL_LENGTH) {
+          out = Object.keys(rootObj.keys);
+        }
+        else {
+          var node = this._search(rootObj, number.substring(MIN_TEL_LENGTH));
+          if (node) {
+            out = this._getAllKeys(node);
           }
-          currentObj = currentObj.leaves[inextObj];
         }
-        if (currentObj !== null) {
-          out = currentObj.keys;
-        }
-      }
-      else if (rootObj) {
-        out = rootObj.keys;
       }
     }
-
     return out;
+  },
+
+  _getAllKeys: function(node) {
+    var keys = Object.create(null);
+    this._getKeys(node, keys);
+
+    return Object.keys(keys);
+  },
+
+  _getKeys: function(node, container) {
+    if (!node.leaves || node.leaves.length === 0) {
+      var keys = Object.keys(node.keys);
+      for (var j = 0; j < keys.length; j++) {
+        container[keys[j]] = true;
+      }
+      return;
+    }
+
+    for (var j = 0; j < node.leaves.length; j++) {
+      this._getKeys(node.leaves[j], container);
+    }
   },
 
   // Removes a number from the tree
