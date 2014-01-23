@@ -30,7 +30,6 @@ var TelIndexer = {
 
   // Allows to index the number passed as parameter
   index: function(tree, number, dsId) {
-    window.console.log(number.length);
     var limit = number.length - this._MIN_TEL_LENGTH + 1;
     for (var j = 0; j < limit; j++) {
       this.insert(tree, number.substr(j), dsId);
@@ -80,12 +79,13 @@ var TelIndexer = {
             newNode.keys[keys[j]] = true;
           }
           insertObj.leaves = insertObj.leaves || [];
-          newNode.leaves = [];
+          newNode.leaves = insertObj.leaves && [];
           for (var j = 0; j < insertObj.leaves.length; j++) {
             newNode.leaves.push(insertObj.leaves[j]);
           }
           insertObj.leaves.push(newNode);
         }
+        insertObj.keys[dsId] = true;
 
         var restOriginal = str.substring(pointerOriginal + 1);
         // And the rest of the original string is inserted in the insertObj
@@ -144,7 +144,6 @@ var TelIndexer = {
       else {
         return searchObj;
       }
-
     }
     else {
       return null;
@@ -168,33 +167,12 @@ var TelIndexer = {
         else {
           var node = this._search(rootObj, number.substring(MIN_TEL_LENGTH));
           if (node) {
-            out = this._getAllKeys(node);
+            out = Object.keys(node.keys);
           }
         }
       }
     }
     return out;
-  },
-
-  _getAllKeys: function(node) {
-    var keys = Object.create(null);
-    this._getKeys(node, keys);
-
-    return Object.keys(keys);
-  },
-
-  _getKeys: function(node, container) {
-    if (!node.leaves || node.leaves.length === 0) {
-      var keys = Object.keys(node.keys);
-      for (var j = 0; j < keys.length; j++) {
-        container[keys[j]] = true;
-      }
-      return;
-    }
-
-    for (var j = 0; j < node.leaves.length; j++) {
-      this._getKeys(node.leaves[j], container);
-    }
   },
 
   // Removes a number from the tree
