@@ -12,7 +12,7 @@ function Node(number) {
 var TelIndexer = {
   _MIN_TEL_LENGTH: 3,
 
-  _indexOf: function(array, value) {
+  _indexOf: function(array, value, byPrefix) {
     var out = -1;
 
     if (!Array.isArray(array)) {
@@ -20,7 +20,8 @@ var TelIndexer = {
     }
 
     for (var j = 0, l = array.length; j < l; j++) {
-      if (array[j].value === value || array[j].value.startsWith(value)) {
+      if (array[j].value === value || (array[j].value.startsWith(value) &&
+                                       byPrefix)) {
         out = j;
         break;
       }
@@ -46,7 +47,7 @@ var TelIndexer = {
     var insertObj;
     var pointerOriginal = str.length;
     while (!insertPointFound && currentStr.length > 0) {
-      var inextObj = this._indexOf(node.leaves, currentStr);
+      var inextObj = this._indexOf(node.leaves, currentStr, 'prefix');
       if (inextObj !== -1) {
         insertPointFound = true;
         insertObj = node.leaves[inextObj];
@@ -64,11 +65,6 @@ var TelIndexer = {
       }
       else {
         var keys = Object.keys(insertObj.keys);
-        // If only one key and the key we are talking about
-        if (keys.indexOf(dsId) !== -1) {
-          insertObj.value = str;
-          return;
-        }
         // Let's check what's the gap
         var newString = insertObj.value.substring(0, currentStr.length);
         var restString = insertObj.value.substring(currentStr.length);
@@ -100,28 +96,58 @@ var TelIndexer = {
     }
   },
 
+  _getFirstLevelNode: function(tree, str, mode) {
+    var out = null;
+
+    if (mode === 'insert') {
+      var index = this._indexOf(tree, str);
+      if (index !== -1) {
+        out = tree[index];
+      }
+    }
+    else {
+      var index = utils.binarySearch(str, tree, {
+        compareFunction: function(a, b) {
+          return a.localeCompare(b);
+        },
+        arrayField: 'value'
+      });
+
+      if (index.length > 0) {
+        out = tree[index[0]];
+      }
+    }
+    return out;
+  },
+
+  orderTree: function(tree) {
+    tree.sort(function(a, b) {
+      return a.value.localeCompare(b.value);
+    });
+  },
+
   // Inserts a number on the tree
   insert: function(tree, str, dsId) {
     var totalLength = str.length;
 
     var firstThreeStr = str.substring(0, this._MIN_TEL_LENGTH);
-
-    var rootObj = tree[firstThreeStr];
+    var rootObj = this._getFirstLevelNode(tree, firstThreeStr, 'insert');
     if (!rootObj) {
-      rootObj = tree[firstThreeStr] = new Node(firstThreeStr);
+      rootObj = new Node(firstThreeStr);
+      tree.push(rootObj);
     }
     rootObj.keys[dsId] = true;
 
     this._insertInNode(rootObj, str.substring(this._MIN_TEL_LENGTH), dsId);
   },
 
-  _search: function(node, str) {
+  _searchInNode: function(node, str) {
     var currentStr = str;
     var found = false;
     var pointerOriginal = str.length;
     var searchObj;
     while (!found && currentStr.length > 0) {
-      var idxObj = this._indexOf(node.leaves, currentStr);
+      var idxObj = this._indexOf(node.leaves, currentStr, 'prefix');
       if (idxObj !== -1) {
         found = true;
         searchObj = node.leaves[idxObj];
@@ -139,7 +165,7 @@ var TelIndexer = {
       // Let's calculate what is the gap
       var restString = str.substr(pointerOriginal + 1);
       if (restString.length > 0) {
-        return this._search(searchObj, restString);
+        return this._searchInNode(searchObj, restString);
       }
       else {
         return searchObj;
@@ -158,14 +184,15 @@ var TelIndexer = {
 
     if (totalLength >= MIN_TEL_LENGTH) {
       var firstThreeStr = number.substring(0, MIN_TEL_LENGTH);
-      var rootObj = tree[firstThreeStr];
+      var rootObj = this._getFirstLevelNode(tree, firstThreeStr);
 
       if (rootObj) {
         if (totalLength === MIN_TEL_LENGTH) {
           out = Object.keys(rootObj.keys);
         }
         else {
-          var node = this._search(rootObj, number.substring(MIN_TEL_LENGTH));
+          var node = this._searchInNode(rootObj,
+                                        number.substring(MIN_TEL_LENGTH));
           if (node) {
             out = Object.keys(node.keys);
           }

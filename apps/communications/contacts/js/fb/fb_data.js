@@ -110,7 +110,8 @@ var fb = window.fb || {};
     }
 
     function doSave(obj, outRequest) {
-      LazyLoader.load([TEL_INDEXER_JS, PHONE_MATCHER_JS] , function() {
+      LazyLoader.load([TEL_INDEXER_JS, PHONE_MATCHER_JS,
+                       '/shared/js/binary_search.js'] , function() {
         datastore().add(obj, obj.uid).then(function success(newId) {
           indexByPhone(obj, obj.uid);
           isIndexDirty = true;
@@ -360,6 +361,7 @@ var fb = window.fb || {};
           return;
         }
 
+        TelIndexer.orderTree(index().treeTel);
         datastore().put(index(), INDEX_ID).then(
                                               defaultSuccess(outRequest),
                                               defaultError(outRequest));
