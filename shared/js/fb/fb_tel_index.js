@@ -29,11 +29,22 @@ var TelIndexer = {
     return out;
   },
 
-  // Allows to index the number passed as parameter
-  index: function(tree, number, dsId) {
+  _getStringVariants: function(number) {
+    var out = [];
+
     var limit = number.length - this._MIN_TEL_LENGTH + 1;
     for (var j = 0; j < limit; j++) {
-      this.insert(tree, number.substr(j), dsId);
+      out.push(number.substr(j));
+    }
+    return out;
+  },
+
+  // Allows to index the number passed as parameter
+  index: function(tree, number, dsId) {
+    var variants = this._getStringVariants(number);
+
+    for (var j = 0; j < variants.length; j++) {
+      this._insert(tree, variants[j], dsId);
     }
   },
 
@@ -127,7 +138,7 @@ var TelIndexer = {
   },
 
   // Inserts a number on the tree
-  insert: function(tree, str, dsId) {
+  _insert: function(tree, str, dsId) {
     var totalLength = str.length;
 
     var firstThreeStr = str.substring(0, this._MIN_TEL_LENGTH);
@@ -202,30 +213,50 @@ var TelIndexer = {
     return out;
   },
 
+  remove: function(tree, number, dsId) {
+    var variants = this._getStringVariants(number);
+    for (var j = 0; j < variants.length; j++) {
+      this._unIndex(tree, variants[j], dsId);
+    }
+  },
+
+  _removeInNode: function(node, str, dsId) {
+    if (str.length === 0) {
+      return;
+    }
+
+    var currentStr = str;
+    var found = false;
+    var pointerOriginal = str.length;
+    var searchObj;
+    while (!found && currentStr.length > 0) {
+      var idxObj = this._indexOf(node.leaves, currentStr, 'prefix');
+      if (idxObj !== -1) {
+        found = true;
+        searchObj = node.leaves[idxObj];
+      }
+      else {
+        currentStr = currentStr.substring(0, currentStr.length - 1);
+      }
+      pointerOriginal--;
+    }
+
+    if (found) {
+      delete searchObj.keys[dsId];
+      this._removeInNode(searchObj, str.substr(pointerOriginal + 1), dsId);
+    }
+  },
+
   // Removes a number from the tree
   // TODO: Compact the tree when a number is removed
-  remove: function(tree, number, dsId) {
+  _unIndex: function(tree, number, dsId) {
     var totalLength = number.length;
     var firstThreeStr = number.substring(0, this._MIN_TEL_LENGTH);
 
-    var rootObj = tree[firstThreeStr];
+    var rootObj = this._getFirstLevelNode(tree, firstThreeStr);
     if (rootObj) {
-      var index = rootObj.keys.indexOf(dsId);
-      if (index !== -1) {
-        rootObj.keys.splice(index, 1);
-      }
-
-      var currentObj = rootObj, nextObj;
-      for (var j = this._MIN_TEL_LENGTH; j < totalLength; j++) {
-        var inextObj = this._indexOf(currentObj.leaves, number.charAt(j));
-        if (inextObj === -1) {
-          break;
-        }
-        nextObj = currentObj.leaves[inextObj];
-        var keyIndex = nextObj.keys.indexOf(dsId);
-        nextObj.keys.splice(keyIndex, 1);
-        currentObj = nextObj;
-      }
+      delete rootObj.keys[dsId];
+      this._removeInNode(rootObj, number.substr(this._MIN_TEL_LENGTH), dsId);
     }
   }
 };
