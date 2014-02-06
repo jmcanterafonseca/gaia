@@ -53,7 +53,9 @@ if (typeof Contacts.extServices === 'undefined') {
       closeRequested = false;
       canClose = false;
       canCloseLogout = false;
-      load('import.html?service=' + serviceName, 'friends', serviceName);
+      var prefix = 'app://importers.gaiamobile.org/';
+      load(prefix + 'import.html?service=' + serviceName, 'friends',
+           serviceName);
     }
 
     function load(uri, from, serviceName) {
@@ -276,7 +278,10 @@ if (typeof Contacts.extServices === 'undefined') {
     // This function can also be executed when other messages arrive
     // That's why we cannot call notifySettings outside the switch block
     function messageHandler(e) {
-      if (!currentURI || e.origin !== fb.CONTACTS_APP_ORIGIN) {
+      window.console.log('Origin: ', e.origin);
+
+      if (!currentURI || (e.origin !== fb.CONTACTS_APP_ORIGIN &&
+                          e.origin !== 'app://importers.gaiamobile.org')) {
         return;
       }
 
@@ -354,7 +359,7 @@ if (typeof Contacts.extServices === 'undefined') {
           extensionFrame.contentWindow.postMessage({
             type: 'token',
             data: access_token
-          }, fb.CONTACTS_APP_ORIGIN);
+          }, '*');
 
         case 'show_duplicate_contacts':
           extensionFrame.contentWindow.postMessage(data,

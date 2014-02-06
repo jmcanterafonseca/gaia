@@ -3,6 +3,8 @@
 
 'use strict';
 
+document.domain = 'gaiamobile.org';
+
 var ActivityHandler = {
   _currentActivity: null,
 

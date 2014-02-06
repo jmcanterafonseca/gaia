@@ -1,0 +1,25 @@
+{
+  "name": "Importer",
+  "type": "certified",
+  "role": "xxx",
+  "description": "Import Contacts from different sources",
+  "launch_path": "/import.html",
+  "developer": {
+    "name": "The Gaia Team",
+    "url": "https://github.com/mozilla-b2g/gaia"
+  },
+  "locales": {
+    "en-US": {
+      "name": "Importer",
+      "description": "Import Contacts from different sources"
+    }
+  },
+  "default_locale": "en-US",
+  "icons": {
+    "128": "/style/icons/Blank.png"
+  },
+  "permissions": {
+    "contacts":{ "access": "readwrite" },
+    "systemXHR": {}
+  }
+}

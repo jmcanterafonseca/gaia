@@ -2,11 +2,11 @@
 
 var Curtain = (function() {
   document.domain = 'gaiamobile.org';
+
   var _ = navigator.mozL10n.get;
 
   var curtainFrame = parent.document.querySelector('#fb-curtain');
-  window.console.log(curtainFrame);
-  var doc = curtainFrame.contentWindow.document;
+  var doc = curtainFrame.contentDocument;
 
   var cpuWakeLock, cancelButton, retryButton, okButton, progressElement, form,
       progressTitle;

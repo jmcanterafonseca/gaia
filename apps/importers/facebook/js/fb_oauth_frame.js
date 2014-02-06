@@ -2,7 +2,7 @@
 
 if (typeof window.oauthFrame === 'undefined') {
   (function() {
-    document.domain = 'gaiamobile.org';
+
     var targetService;
     var oauthFrame = window.oauthFrame = {};
     var oauthParams = oauthflow.params;

@@ -1,5 +1,7 @@
 'use strict';
 
+window.console.log('loaded', location.origin, navigator.mozContacts);
+
 (function(document) {
   var serviceName = getServiceName();
   var allowedOrigin = location.origin;
@@ -8,7 +10,7 @@
     parent.postMessage({
       type: message.type || '',
       data: message.data || ''
-    }, origin);
+    }, '*');
   }
 
   function parseParams(paramsStr) {
@@ -122,9 +124,12 @@
   });
 
   window.addEventListener('message', function getAccessToken(e) {
+    alert('here');
+    /*
     if (e.origin !== allowedOrigin) {
       return;
     }
+    */
     window.removeEventListener('message', getAccessToken);
     if (e.data.type === 'token') {
       tokenReady(e.data.data);

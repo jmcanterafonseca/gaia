@@ -5,7 +5,7 @@ var fb = window.fb || {};
 if (typeof window.oauth2 === 'undefined') {
   (function(document) {
     document.domain = 'gaiamobile.org';
-
+    
     var oauth2 = window.oauth2 = {};
     // <callback> is invoked when an access token is ready
     // and the hash state matches <state>
@@ -40,6 +40,7 @@ if (typeof window.oauth2 === 'undefined') {
      *
      */
     oauth2.getAccessToken = function(ready, state, service) {
+      alert('here');
       accessTokenCbData = {
         callback: ready,
         state: state,
@@ -103,6 +104,8 @@ if (typeof window.oauth2 === 'undefined') {
     }
 
     function tokenDataReady(e) {
+      window.console.log('Here');
+
       var parameters = e.data;
       if (!parameters || !parameters.access_token) {
         return;
@@ -112,6 +115,8 @@ if (typeof window.oauth2 === 'undefined') {
       if (e.origin !== APP_ORIGIN) {
         return;
       }
+
+      window.console.log('Here');
 
       Curtain.show('wait', accessTokenCbData.state);
 
