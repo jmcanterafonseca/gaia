@@ -165,6 +165,12 @@
   "datastores-owned": {
     "Gaia_Facebook_Friends": {
       "description": "Imported Facebook Friends"
+    },
+    "Master_Contacts": {
+      "description": "Master Contact Datastore"
+    },
+    "Gmail_Contacts": {
+      "description": "Gmail Contacts"
     }
   }
 }
