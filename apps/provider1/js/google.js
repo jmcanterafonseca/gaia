@@ -51,7 +51,7 @@ var Google = function Google() {
       return;
     }
 
-    var contact = prepareForDS(contacts.slice[0]);
+    var contact = prepareForDS(contacts[0]);
 
     function continuee() {
       var rest = contacts.slice(1);
