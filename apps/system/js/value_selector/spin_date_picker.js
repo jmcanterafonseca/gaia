@@ -18,6 +18,9 @@ var SpinDatePicker = (function SpinDatePicker() {
 
   var GLOBAL_MIN_YEAR = 1900;
   var GLOBAL_MAX_YEAR = 2099;
+  var IGNORED_YEAR = 9996; // Leap year
+
+  var _ = navigator.mozL10n.get;
 
   var DateRange = (function DateRange(min, max) {
     var _minYear = min.getFullYear();
@@ -169,6 +172,9 @@ var SpinDatePicker = (function SpinDatePicker() {
       element.querySelector('.value-picker-month');
     var datePickerContainer =
       element.querySelector('.value-picker-date');
+    var yearButton = this.yearButton =
+      element.querySelector('.spin-date-picker-button-year');
+    yearButton.addEventListener('click', this._toggleYearVisibility.bind(this));
 
     var updateCurrentValue = (function spd_updateCurrentValue() {
       var selectedYear = this.yearPicker.getSelectedIndex() + GLOBAL_MIN_YEAR;
@@ -211,6 +217,7 @@ var SpinDatePicker = (function SpinDatePicker() {
 
     var onvaluechangeInternal =
     (function spd_onvaluechangeInternal(newDateValue) {
+      this._initYearVisibility(newDateValue);
       this.yearPicker.setSelectedIndex(
         newDateValue.getFullYear() - GLOBAL_MIN_YEAR);
       this.monthPicker.setSelectedIndex(newDateValue.getMonth());
@@ -301,12 +308,30 @@ var SpinDatePicker = (function SpinDatePicker() {
      */
     _value: null,
 
+    _toggleYearVisibility: function sv_toggleButton() {
+      var hidden = this.element.classList.toggle('year-hidden');
+      this.yearButton.textContent = _(hidden ? 'add-year' : 'remove-year');
+    },
+
+    _initYearVisibility: function sv_initYearVisibility(date) {
+      if (date.getFullYear() === IGNORED_YEAR) {
+        this.element.classList.add('year-hidden');
+        this.yearButton.textContent = _('add-year');
+      } else {
+        this.element.classList.remove('year-hidden');
+        this.yearButton.textContent = _('remove-year');
+      }
+    },
+
     /**
      * Gets current value
      *
      * @return {Null|Date} date or null.
      */
     get value() {
+      if (this.element.classList.contains('year-hidden')) {
+        this._value.setFullYear(IGNORED_YEAR);
+      }
       return this._value;
     },
 
