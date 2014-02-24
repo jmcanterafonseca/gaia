@@ -1,4 +1,3 @@
-/*global KeyboardLayout KeyboardTouchHandler KeyEvent InputField */
 'use strict';
 
 (function(exports) {
