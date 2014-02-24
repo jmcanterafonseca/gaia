@@ -116,5 +116,11 @@
       "access": "readwrite",
       "description": "Stores data about browsing history."
     }
+  },
+  "datastores-access": {
+    "contacts": {
+      "access": "readonly",
+      "description": "Notify contacts if a new contacts source changed"
+    }
   }
 }
