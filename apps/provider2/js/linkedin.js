@@ -123,7 +123,22 @@ var LinkedIn = function LinkedIn() {
       raw.querySelector('headline').textContent || '' : '';
 
     // Parse photo here
-    cb(contact);
+    var photoUrl = raw.querySelector('picture-url');
+    if (photoUrl) {
+      photoUrl = photoUrl.textContent;
+      var xhr = new XMLHttpRequest({mozSystem: true});
+      xhr.open('GET', photoUrl, true);
+      xhr.responseType = 'blob';
+      xhr.addEventListener('load', function onImageLoaded(e) {
+        if (xhr.status === 0 || xhr.status === 200) {
+          contact.photo = [xhr.response];
+        }
+        cb(contact);
+      });
+      xhr.send();
+    } else {
+      cb(contact);
+    }
   }
 
   function exchangeAuthCode(code, cb) {
