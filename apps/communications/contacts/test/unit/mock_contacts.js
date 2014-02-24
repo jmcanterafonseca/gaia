@@ -30,8 +30,20 @@ var MockContacts = {
       'address-type' : [
         {type: 'home', value: 'Home'},
         {type: 'work', value: 'Work'}
+      ],
+      'date-type': [
+        {type: 'birthday', value: 'Birthday'},
+        {type: 'anniversary', value: 'Anniversary'}
       ]
     };
+  },
+  filterTags: function(options) {
+    return options;
+  },
+  formatDate: function(date) {
+    var offset = date.getTimezoneOffset() * 60 * 1000;
+    var normalizedDate = new Date(date.getTime() + offset);
+    return normalizedDate.toString();
   },
   hideOverlay: function() {
   },

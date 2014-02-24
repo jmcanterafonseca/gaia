@@ -9,6 +9,19 @@ var ContactsTag = (function() {
     customTag = element;
   };
 
+  var setCustomTagVisibility = function setCustomTagVisibility(value) {
+    if (!customTag) {
+      return;
+    }
+
+    if (value) {
+      customTag.classList.remove('hide');
+    }
+    else {
+      customTag.classList.add('hide');
+    }
+  };
+
   var touchCustomTag = function touchCustomTag(callback) {
     if (selectedTag) {
       selectedTag.removeAttribute('class');
@@ -89,6 +102,7 @@ var ContactsTag = (function() {
     'setCustomTag': setCustomTag,
     'touchCustomTag': touchCustomTag,
     'fillTagOptions': fillTagOptions,
-    'clickDone': clickDone
+    'clickDone': clickDone,
+    'setCustomTagVisibility': setCustomTagVisibility
   };
 })();

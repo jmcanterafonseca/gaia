@@ -9,6 +9,9 @@ var asyncScriptsLoaded;
 var SCALE_RATIO = window.innerWidth / 320;
 
 var Contacts = (function() {
+  // This year indicates that the year can be ignored
+  var FLAG_YEAR_IGNORED = 9996;
+
   var navigation = new navigationStack('view-contacts-list');
 
   var goToForm = function edit() {
@@ -85,7 +88,7 @@ var Contacts = (function() {
                                     null, params['fromUpdateActivity']);
                 showApp();
               }, function onError() {
-                console.log('Error retrieving contact to be edited');
+                console.error('Error retrieving contact to be edited');
                 contactsForm.render(null, goToForm);
                 showApp();
               });
@@ -171,6 +174,10 @@ var Contacts = (function() {
         {type: 'current', value: _('current')},
         {type: 'home', value: _('home')},
         {type: 'work', value: _('work')}
+      ],
+      'date-type': [
+        {type: 'birthday', value: _('birthday')},
+        {type: 'anniversary', value: _('anniversary')}
       ]
     };
   };
@@ -351,10 +358,48 @@ var Contacts = (function() {
     return true;
   };
 
+  // Filter tags to be shown when selecting an item type (work, birthday, etc)
+  // This is particularly useful for dates as we cannot have multiple instances
+  // of them (only one birthday, only one anniversary)
+  function filterTags(type, currentNode, tags) {
+    var element = document.querySelector(
+                          '[data-template]' + '.' + type + '-' + 'template');
+    if (!element || !element.dataset.exclusive) {
+      return tags;
+    }
+
+    // If the type is exclusive the tag options are filtered according to
+    // the existing ones
+    var newOptions = tags.slice(0);
+
+    var sameType = document.querySelectorAll('.' + type + '-template');
+    if (sameType.length > 1) {
+      for (var j = 0; j < sameType.length; j++) {
+        var itemSame = sameType.item(j);
+        var tagNode = itemSame.querySelector('[data-field="type"]');
+        if (tagNode !== currentNode &&
+            !itemSame.classList.contains('removed')) {
+          newOptions = newOptions.filter(function(ele) {
+            return ele.value != tagNode.textContent;
+          });
+        }
+      }
+    }
+
+    return newOptions;
+  }
+
   function showSelectTag() {
     var tagsList = document.getElementById('tags-list');
     var selectedTagType = contactTag.dataset.taglist;
     var options = TAG_OPTIONS[selectedTagType];
+
+    var type = selectedTagType.split('-')[0];
+    var isCustomTagVisible = (document.querySelector(
+      '[data-template]' + '.' + type + '-' +
+      'template').dataset.custom != 'false');
+
+    options = filterTags(type, contactTag, options);
 
     if (!customTag) {
       customTag = document.querySelector('#custom-tag');
@@ -377,7 +422,13 @@ var Contacts = (function() {
     for (var i in options) {
       options[i].value = _(options[i].type);
     }
+
     ContactsTag.setCustomTag(customTag);
+    // Set whether the custom tag is visible or not
+    // This is needed for dates as we only support bday and anniversary
+    // and not custom dates
+    ContactsTag.setCustomTagVisibility(isCustomTagVisible);
+
     ContactsTag.fillTagOptions(tagsList, contactTag, options);
 
     navigation.go('view-select-tag', 'right-left');
@@ -666,6 +717,29 @@ var Contacts = (function() {
     contactsList.getAllContacts(onerror);
   };
 
+  function formatDate(date) {
+    var year = date.getFullYear();
+    if (year === FLAG_YEAR_IGNORED) {
+      year = '';
+    }
+    var dateFormat = _('dateFormat') || '%B %e';
+    var f = new navigator.mozL10n.DateTimeFormat();
+    try {
+      var offset = date.getTimezoneOffset() * 60 * 1000;
+      var normalizedDate = new Date(date.getTime() + offset);
+      var dayMonthString = f.localeFormat(normalizedDate, dateFormat);
+      var dateString = _('dateOutput', {
+        dayMonthFormatted: dayMonthString,
+        year: year
+      });
+    } catch (err) {
+      console.error('Error parsing date: ', err);
+      throw err;
+    }
+
+    return dateString;
+  }
+
   var addAsyncScripts = function addAsyncScripts() {
     var lazyLoadFiles = [
       '/contacts/js/utilities/templates.js',
@@ -916,6 +990,8 @@ var Contacts = (function() {
     'close': close,
     'view': loadView,
     'utility': loadUtility,
+    'filterTags': filterTags,
+    'formatDate': formatDate,
     get asyncScriptsLoaded() {
       return asyncScriptsLoaded;
     }
