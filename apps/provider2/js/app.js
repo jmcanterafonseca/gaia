@@ -1,5 +1,3 @@
-/* global Google */
-
 'use strict';
 
 var App = function App() {
@@ -27,12 +25,12 @@ var App = function App() {
     switch (btn) {
       case 'fillDS':
       fillButton.disabled = true;
-      Google.initLogin(store, function(t) {
-        Google.importContacts(function() {
-          fillButton.disabled = false;
+      LinkedIn.initLogin(store, function() {
+        LinkedIn.importContacts(function() {
           store.getLength().then(function(count) {
             info.textContent = count + ' elements';
           });
+          fillButton.disabled = false;
         });
       });
       break;
@@ -64,7 +62,7 @@ var App = function App() {
         return;
       }
       ds.forEach(function onDs(datastore) {
-        if (datastore.owner.indexOf('provider1')) {
+        if (datastore.owner.indexOf('provider2')) {
           store = datastore;
           console.log('Got store ' + store.owner);
         }
