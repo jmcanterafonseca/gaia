@@ -167,8 +167,23 @@
       "description": "Imported Facebook Friends"
     }
   },
+  "datastores-access": {
+    "contacts": {
+      "access": "readonly",
+      "description": "Fetch contacts from different data sources"
+    }
+  },
   "icons": {
         "30": "/style/icons/communication_30.png",
         "45": "/style/icons/communication_45.png"
+  },
+  "connections": {
+    "contacts-sync": {
+      "description": "Contacts DataBase synchronization",
+      "rules": {
+        "manifestURLs": ["app://system.gaiamobile.org/manifest.webapp"]
+      },
+      "handler_path": "/contacts/sync/index.html"
+    }
   }
 }

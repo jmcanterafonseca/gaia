@@ -1,3 +1,4 @@
+/*jshint -W053 */
 'use strict';
 
 // Subscribe to changes in contacts datastores
@@ -6,6 +7,8 @@
 var ContactsProvider = (function ContactsProvider() {
 
   var stores;
+  var changesToNotify = {};
+  var isMultipleChange = false;
 
   var init = function init() {
     if (!navigator.getDataStores) {
@@ -16,7 +19,7 @@ var ContactsProvider = (function ContactsProvider() {
       stores = sts;
       // TODO: filter any DS from contacts (be careful with FB DS)
       stores.forEach(function onStore(store) {
-        store.onchange =  onStoreChange.bind(store);
+        store.onchange = onStoreChange.bind(store);
       });
     });
   };
@@ -27,12 +30,54 @@ var ContactsProvider = (function ContactsProvider() {
   // DS for contacts we have.
   function onStoreChange(evt) {
     console.log('------------------ DS CHANGE ----------------');
+    var owner = null;
     /* jshint ignore:start */
-    console.log('owner: ' + this.owner);
+    owner = this.owner;
+    console.log('owner: ' + owner);
     /* jshint ignore:end */
     console.log('revision: ' + evt.revisionId);
     console.log('id: ' + evt.id);
     console.log('operation: ' + evt.operation);
+
+    //Do a bit of throlling
+    var revision = new String(evt.revisionId);
+    changesToNotify[owner] = revision;
+    console.log(JSON.stringify(changesToNotify));
+    function waitAndCheck() {
+      setTimeout(function() {
+        if (changesToNotify[owner] !== revision) {
+          isMultipleChange = true;
+          waitAndCheck();
+          return;
+        }
+
+        notifyChange(owner, evt);
+      }, 1500);
+    }
+    waitAndCheck();
+  }
+
+  function notifyChange(owner, change) {
+    console.log('Notifying change to ' + owner);
+    navigator.mozApps.getSelf().onsuccess = function(evt) {
+      var app = evt.target.result;
+      app.connect('contacts-sync').then(function onConnAccepted(ports) {
+        ports.forEach(function(port) {
+          var message = {};
+          message.owner = owner;
+          message.multiple = isMultipleChange;
+          message.revisionId = change.revisionId;
+          message.id = change.id;
+          message.operation = change.operation;
+          isMultipleChange = false;
+          port.postMessage(message);
+        });
+      }, function onConnRejected(reason) {
+        console.log('Cannot notify Contacts for change ' +
+         JSON.stringify(change));
+        console.log(reason);
+      });
+    };
   }
 
   return {
