@@ -168,7 +168,7 @@
     }
   },
   "datastores-access": {
-    "contacts": {
+    "aggregated_contacts": {
       "access": "readonly",
       "description": "Fetch contacts from different data sources"
     }

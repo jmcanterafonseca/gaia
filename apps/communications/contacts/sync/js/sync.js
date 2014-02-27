@@ -1,6 +1,30 @@
+/* global asyncStorage */
 'use strict';
 
 var ContactsSync = (function ContactsSync() {
+
+  var stores = {};
+
+  // Make sure the contacts stores are loaded
+  function ensureStores(cb) {
+    if (!navigator.getDataStores) {
+      if (typeof cb === 'function') {
+        cb('No DS available');
+      }
+      return;
+    }
+
+    stores = {};
+    navigator.getDataStores('contacts').then(function(ds) {
+      ds.forEach(function onStore(store) {
+        stores[store.owner] = store;
+      });
+
+      if (typeof cb === 'function') {
+        cb();
+      }
+    });
+  }
 
   var onSync = function onSync(evt) {
     var message = evt.data;
@@ -19,14 +43,11 @@ var ContactsSync = (function ContactsSync() {
   }
 
   function findStore(owner, cb) {
-    navigator.getDataStores('contacts').then(function(stores) {
-      var result = null;
-      stores.forEach(function onStore(store) {
-        if (store.owner === owner) {
-          result = store;
-        }
-      });
-      cb(result);
+    ensureStores(function() {
+      var result = stores[owner] || null;
+      if (typeof cb === 'function') {
+        cb(result);
+      }
     });
   }
 
@@ -37,6 +58,57 @@ var ContactsSync = (function ContactsSync() {
     // revision.
     // Unfortunately, the revisionId parameter to ask for the cursor
     // is being ignored if it's incorrect :(
+    if (!store || !change || !change.id || !change.operation) {
+      // Do nothing
+      return;
+    }
+
+    if (change.multipe) {
+      applySync(store);
+    } else {
+      applySingleChange(store, change);
+    }
+  }
+
+  // We got a single change, apply it
+  function applySingleChange(store, change) {
+    switch (change.operation) {
+      case 'update':
+      case 'add':
+      break;
+      case 'clear':
+      break;
+      default:
+      break;
+    }
+  }
+
+  function applySync(store) {
+    getLastRevision(store, function(revisionId) {
+      var cursor = store.sync(revisionId);
+      function resolveCursor(task) {
+        if (!task) {
+          setLastRevision(store);
+          return;
+        }
+        applySingleChange(store, task.operation);
+        cursor.next().then(resolveCursor);
+      }
+      cursor.next().then(resolveCursor);
+    });
+  }
+
+  // Given the current store, gets last time we
+  // perform a sync. If we never did, we will get a
+  // null.
+  function getLastRevision(store, done) {
+    asyncStorage.getItem(store.owner, done);
+  }
+
+  // Save current DS revision as the last one
+  // we sync.
+  function setLastRevision(store, done) {
+    asyncStorage.setItem(store.owner, store.revisionId, done);
   }
 
   return {
