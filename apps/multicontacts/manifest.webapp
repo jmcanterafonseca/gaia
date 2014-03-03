@@ -1,0 +1,21 @@
+{
+  "name": "CourseAppUva",
+  "type": "certified",
+  "description": "Dummy Contacts App",
+  "launch_path": "/index.html",
+  "developer": {
+    "name": "JMCF",
+    "url": "mailto:jmcf@tid.es"
+  },
+  "permissions": {
+    "contacts": {
+      "access": "readwrite"
+    }
+  },
+  "datastores-owned": {
+    "GlobalContacts": {
+      "access": "readwrite",
+      "description": "GCDS"
+    }
+  }
+}

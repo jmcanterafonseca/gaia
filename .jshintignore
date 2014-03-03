@@ -1,3 +1,4 @@
+apps/multicontacts/**
 apps/pdfjs/content/**
 apps/pdfjs/test/**
 apps/email/build/**
