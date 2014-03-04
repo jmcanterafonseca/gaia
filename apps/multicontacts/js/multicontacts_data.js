@@ -6,11 +6,11 @@
 // 'shared/js/binary_search.js'
 // 'shared/js/simple_phone_matcher.js' (will be removed once bug 938265 lands)
 
-var fb = window.fb || {};
+var MultiContacts = MultiContacts || {};
 
   (function() {
-    var contacts = fb.contacts || {};
-    fb.contacts = contacts;
+    var contacts = MultiContacts || {};
+    MultiContacts = contacts;
 
     var Reader;
     var readerLoaded = false;
@@ -22,7 +22,7 @@ var fb = window.fb || {};
 
     var TEL_INDEXER_JS = '/shared/js/fb/fb_tel_index.js';
     var PHONE_MATCHER_JS = '/shared/js/simple_phone_matcher.js';
-    var FB_READER_JS = '/shared/js/fb/fb_data_reader.js';
+    var FB_READER_JS = 'js/multicontact_data_reader.js';
     var BINARY_SEARCH_JS = '/shared/js/binary_search.js';
 
     contacts.UID_NOT_FOUND = 'UIDNotFound';

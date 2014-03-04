@@ -28,6 +28,7 @@ this.MultiContacts = MultiContacts;
   // Creates the internal Object in the datastore that will act as an index
   function createIndex() {
     return {
+      byService: Object.create(null),
       // By tel number and all its possible variants
       // (We are not supporting dups right now)
       byTel: Object.create(null),
@@ -127,7 +128,7 @@ this.MultiContacts = MultiContacts;
    *
    *
    */
-  contacts.get = function(uid) {
+  contacts.get = function(service, uid) {
     var outRequest = new fb.utils.Request();
 
     window.setTimeout(function get() {
@@ -141,11 +142,13 @@ this.MultiContacts = MultiContacts;
     return outRequest;
   };
 
-  function doGet(uid, outRequest) {
+  function doGet(service, uid, outRequest) {
     var successCb = successGet.bind(null, outRequest);
     var errorCb = errorGet.bind(null, outRequest, uid);
 
-    datastore.get(uid).then(successCb, errorCb);
+    var dsId = index.byService[service].uid;
+
+    datastore.get(dsId).then(successCb, errorCb);
   }
 
   /**
