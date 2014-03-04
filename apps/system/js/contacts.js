@@ -19,6 +19,7 @@ var ContactsProvider = (function ContactsProvider() {
       stores = sts;
       // TODO: filter any DS from contacts (be careful with FB DS)
       stores.forEach(function onStore(store) {
+        console.log('Registering for listening to changes on ' + store.owner);
         store.onchange = onStoreChange.bind(store);
       });
     });

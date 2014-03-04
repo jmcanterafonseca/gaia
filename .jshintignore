@@ -34,3 +34,4 @@ apps/keyboard/js/imes/jszhuyin/tools/cook.js
 apps/keyboard/build/keyboard-config.js
 apps/provider1/js/google.js
 apps/provider2/**
+apps/communications/contacts/sync/js/gcdsops.js
