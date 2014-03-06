@@ -563,6 +563,7 @@ contacts.Settings = (function() {
 
           window.asyncStorage.removeItem(fb.utils.LAST_UPDATED_KEY);
           window.asyncStorage.removeItem(fb.utils.CACHE_FRIENDS_KEY);
+          window.asyncStorage.removeItem(fb.utils.FRIENDS_DIFFERENCE_KEY);
 
           resetWait(wakeLock);
         };

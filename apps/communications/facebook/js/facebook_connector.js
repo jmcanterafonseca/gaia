@@ -203,11 +203,37 @@ if (!window.FacebookConnector) {
           FRIENDS_QUERY[FRIENDS_QUERY.length] = 'last_name';
           friendsQueryStr = FRIENDS_QUERY.join('');
         }
-        return fb.utils.runQuery(friendsQueryStr, {
-          success: callbacks.success,
+        var queries = {
+          query1: friendsQueryStr,
+          query2: fb.utils.FRIEND_COUNT_QUERY
+        };
+        var queriesStr = JSON.stringify(queries);
+
+        return fb.utils.runQuery(queriesStr, {
+          success: function(response) {
+            // If there is an error we just pass it upstream
+            if (response.error) {
+              callbacks.success(response);
+              return;
+            }
+            if (!Array.isArray(response.data)) {
+              callbacks.error({name: 'QueryResponseError'});
+              return;
+            }
+            if (!response.data[0] ||
+                !Array.isArray(response.data[0].fql_result_set)) {
+              callbacks.error({name: 'QueryResponseError'});
+              return;
+            }
+
+            fb.utils.calculateAndSetDifference(response);
+
+            var allFriends = response.data[0].fql_result_set;
+            callbacks.success({data: allFriends});
+          },
           error: callbacks.error,
           timeout: callbacks.timeout
-        },access_token);
+        },access_token, true);
       },
 
       listDeviceContacts: function(callbacks) {

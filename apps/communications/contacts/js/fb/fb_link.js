@@ -139,6 +139,37 @@ if (!fb.link) {
       doGetRemoteProposal(acc_tk, null, ALL_QUERY.join(''));
     }
 
+    function multiQueryCb(done, isAllQuery, response) {
+      // If there is an error we just pass it upstream
+      if (response.error) {
+        done(response);
+        return;
+      }
+      if (!Array.isArray(response.data)) {
+        fb.link.errorHandler({name: 'QueryResponseError'});
+        return;
+      }
+      if (!response.data[0] ||
+          !Array.isArray(response.data[0].fql_result_set)) {
+        fb.link.errorHandler({name: 'QueryResponseError'});
+        return;
+      }
+
+      if (isAllQuery) {
+        var difference = fb.utils.calculateAndSetDifference(response);
+        // Here we set the number of friends from the count query
+        // It will be likely overwritten later when a query for all friends
+        // is launched
+        fb.utils.setCachedNumFriends(fb.utils.getCount(response) - difference);
+      }
+      else {
+        fb.utils.setCachedNumFriends(fb.utils.getCount(response));
+      }
+
+      var friendList = response.data[0].fql_result_set;
+      done({data: friendList});
+    }
+
     // Performs all the work to obtain the remote proposal
     function doGetRemoteProposal(acc_tk, contactData, query) {
       /*
@@ -151,9 +182,16 @@ if (!fb.link) {
       var sentries = JSON.stringify(entries);
 
       */
+      var queries = {
+        query1: query,
+        query2: fb.utils.FRIEND_COUNT_QUERY
+      };
+      var queryStr = JSON.stringify(queries);
+
       state = 'proposal';
-      currentNetworkRequest = fb.utils.runQuery(query, {
-        success: fb.link.proposalReady,
+      currentNetworkRequest = fb.utils.runQuery(queryStr, {
+        success: multiQueryCb.bind(null, fb.link.proposalReady,
+                                   query === ALL_QUERY.join('')),
         error: fb.link.errorHandler,
         timeout: fb.link.timeoutHandler
       }, acc_tk);
@@ -177,13 +215,21 @@ if (!fb.link) {
 
     // Obtains a proposal with all friends
     function getRemoteAll() {
+      window.console.log('In get remote all');
       Curtain.oncancel = cancelCb;
       Curtain.show('wait', 'friends');
 
       state = 'friends';
 
-      currentNetworkRequest = fb.utils.runQuery(ALL_QUERY.join(''), {
-        success: fb.link.friendsReady,
+      var queries = {
+        query1: ALL_QUERY.join(''),
+        query2: fb.utils.FRIEND_COUNT_QUERY
+      };
+
+      var queryStr = JSON.stringify(queries);
+
+      currentNetworkRequest = fb.utils.runQuery(queryStr, {
+        success: multiQueryCb.bind(null, fb.link.friendsReady, true),
         error: fb.link.errorHandler,
         timeout: fb.link.timeoutHandler
       }, access_token);

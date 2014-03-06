@@ -8,10 +8,13 @@ window.fb = fb;
     fb.utils = Utils;
 
     var TIMEOUT_QUERY = fb.operationsTimeout;
-    var FRIEND_COUNT_QUERY = 'select friend_count from user where uid=me()';
+    var FRIEND_COUNT_QUERY =
+      Utils.FRIEND_COUNT_QUERY = 'select friend_count from user where uid=me()';
 
     var CACHE_FRIENDS_KEY = Utils.CACHE_FRIENDS_KEY = 'numFacebookFriends';
     var LAST_UPDATED_KEY = Utils.LAST_UPDATED_KEY = 'lastUpdatedTime';
+    var FRIENDS_DIFFERENCE_KEY =
+                        Utils.FRIENDS_DIFFERENCE_KEY = 'friendsDifference';
     Utils.ALARM_ID_KEY = 'nextAlarmId';
 
     var REDIRECT_LOGOUT_URI = window.oauthflow ?
@@ -152,7 +155,9 @@ window.fb = fb;
 
     // Requests the number remotely
     Utils.getNumFbFriends = function(callback, access_token) {
-      fb.utils.runQuery(FRIEND_COUNT_QUERY, callback, access_token);
+      fb.utils.runQuery(FRIEND_COUNT_QUERY, function(result) {
+        res;
+      }, access_token);
     };
 
     Utils.getCachedAccessToken = function(callback) {
@@ -183,6 +188,43 @@ window.fb = fb;
       window.asyncStorage.setItem(CACHE_FRIENDS_KEY, value);
     };
 
+    Utils.setCountDifference = function(value) {
+      window.asyncStorage.setItem(FRIENDS_DIFFERENCE_KEY, value);
+    };
+
+    Utils.getCountDifference = function(callback) {
+      window.asyncStorage.getItem(FRIENDS_DIFFERENCE_KEY, function(data) {
+        if (typeof callback === 'function') {
+          callback(data || 0);
+        }
+      });
+    };
+
+    function getCount(response) {
+      var count;
+      if (response.data[1] && Array.isArray(response.data[1].fql_result_set) &&
+        response.data[1].fql_result_set[0]) {
+        count = response.data[1].fql_result_set[0].friend_count;
+      }
+
+      return count;
+    }
+
+    Utils.getCount = getCount;
+
+    // The difference between the listed friends and the counted
+    // friends needs to be stored in order to rectify the number
+    // presented to the user. This is needed in order to deal with
+    // deactivated accounts
+    Utils.calculateAndSetDifference = function(response) {
+      var allFriends = response.data[0].fql_result_set;
+      var difference = (getCount(response) || allFriends.length) -
+                        allFriends.length;
+
+      Utils.setCountDifference(difference);
+
+      return difference;
+    };
 
     Utils.getImportChecked = function(callback) {
       // If we have an access token Import should be checked
@@ -223,7 +265,9 @@ window.fb = fb;
       function auxCallback(response) {
         if (response.data && response.data[0] &&
             response.data[0].friend_count) {
-          remoteCb(response.data[0].friend_count);
+          Utils.getCountDifference(function(difference) {
+            remoteCb(response.data[0].friend_count - difference);
+          });
         }
       }
 
