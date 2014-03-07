@@ -1,4 +1,4 @@
-/* global asyncStorage */
+/* global asyncStorage, Promise, GCDSOps */
 'use strict';
 
 var ContactsSync = (function ContactsSync() {
@@ -19,7 +19,8 @@ var ContactsSync = (function ContactsSync() {
       ds.forEach(function onStore(store) {
         stores[store.owner] = store;
       });
-
+      return Promise.resolve();
+    }).then(GCDSOps.init).then(function() {
       if (typeof cb === 'function') {
         cb();
       }
@@ -37,7 +38,6 @@ var ContactsSync = (function ContactsSync() {
       if (!store) {
         return;
       }
-
       doApplyChanges(store, message);
     });
   }
@@ -52,7 +52,6 @@ var ContactsSync = (function ContactsSync() {
   }
 
   function doApplyChanges(store, change) {
-    console.log('Have to apply change: ' + JSON.stringify(change));
     // Since there is a bug in datastore that launch event changes
     // in all DS of the same kind, use the cursor with the
     // revision.
@@ -63,18 +62,25 @@ var ContactsSync = (function ContactsSync() {
       return;
     }
 
-    if (change.multipe) {
-      applySync(store);
-    } else {
-      applySingleChange(store, change);
-    }
+    // if (change.multipe) {
+    //   applySync(store);
+    // } else {
+    //   applySingleChange(store, change);
+    // }
+    applySync(store);
+  }
+
+  function endSync() {
+    window.close();
   }
 
   // We got a single change, apply it
   function applySingleChange(store, change) {
     switch (change.operation) {
       case 'update':
+      break;
       case 'add':
+        GCDSOps.add(change.data, store);
       break;
       case 'clear':
       break;
@@ -87,11 +93,11 @@ var ContactsSync = (function ContactsSync() {
     getLastRevision(store, function(revisionId) {
       var cursor = store.sync(revisionId);
       function resolveCursor(task) {
-        if (!task) {
-          setLastRevision(store);
+        if (task.operation === 'done') {
+          setLastRevision(store, endSync);
           return;
         }
-        applySingleChange(store, task.operation);
+        applySingleChange(store, task);
         cursor.next().then(resolveCursor);
       }
       cursor.next().then(resolveCursor);

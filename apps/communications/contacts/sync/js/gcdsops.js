@@ -12,139 +12,111 @@
 //    ]
 // }
 //
-// Those object will have an unique id in the GCDS, but the first element
-// of the GCDS will contain an object which keys will represent different
-// indexes pointing to an index in the GCDS element.
-// Current 'index', are:
-//    by phone: 'urn:phone:123123123'
-//    by user id in datastore: 'urn:mysource.org/manifest.webapp:uuid:2'
-//    by datastore: 'urn:mysource.org'
 
 var GCDSOps = (function GCDSOps() {
-  // Define the URNs that we will use as indexes
-  var byPhone = 'urn:phone:<phone>';
-  var byOwnerUser = 'urn:owner:<owner>:uuid:<uuid>';
-  var byOwner = 'urn:owner:<owner>';
 
-  var gcds;
-  var indexObject;
+  var store = null;
+  var DS_NAME = 'aggregated_contacts';
 
-  var init = function(done, error) {
+  var INDEX_ID = 1;
+  var isIndexDirty = false;
+  var index;
+
+  var init = function init() {
     if (!navigator.getDataStores) {
-      if (typeof error === 'function') {
-        error();
-      }
-      return;
+      return Promise.reject(null);
+    }
+    if (store !== null) {
+      return Promise.resolve(store);
     }
 
-    navigator.getDataStores('aggregated_contacts').then(function(stores) {
-      gcds = stores[0]; // TODO: check contacts ownership
-      // Load the index in memory
-      gcds.get(0).then(function(index) {
-        indexObject = index;
-        if (typeof done === 'function') {
-          done(gcds);
-        }
-      }, error);
-    }, error);
-  };
-
-  // Index building functions
-  function getIndexByPhone(contact, phone) {
     var promise = new Promise(function(resolve, reject) {
-      if (!phone && (!contact ||
-        !contact.tel || contact.tel.length < 1 || !contact.tel[0].value)) {
-        reject('No uuid');
-      } else {
-        var index = byPhone.replace('<phone>', phone || contact.tel[0].value);
-        resolve(index);
-      }
+      navigator.getDataStores(DS_NAME).then(function(stores) {
+        store = stores[0];
+        resolve(store);
+      }, reject);
     });
 
-    return promise;
-  }
-
-  function getIndexByOwnerUser(store, contact) {
-    var promise = new Promise(function(resolve, reject) {
-      if (!store || !store.owner || !contact || !contact.uuid) {
-        reject('Invalid data');
-      } else {
-        var index = byOwnerUser.replace('<owner>', store.owner)
-          .replace('uuid', contact.uuid);
-        resolve(index);
-      }
-    });
-
-    return promise;
-  }
-
-  function getIndexByOwner(store) {
-    var promise = new Promise(function(resolve, reject) {
-      if (!store || !store.owner) {
-        reject('Invalid data');
-      } else {
-        var index = byOwner.replace('<owner>', store.owner);
-      }
-    });
-
-    return promise;
-  }
-
-  // Search the index object
-  var find = function(index) {
-    var promise = new Promise(function(resolve, reject) {
-      if (!index || !gcds || !indexObject || !indexObject[index]) {
-        reject();
-      } else {
-        resolve(indexObject[index]);
-      }
-    });
+    promise.then(loadIndex);
 
     return promise;
   };
 
-  // Saves the index object into the DS
-  function saveIndex() {
-    var promise = new Promise(function(resolve, reject) {
-      if (!gcds || !indexObject) {
-        reject('Not initialized');
-      } else {
-        gcds.put(indexObject, 0).then(resolve, reject);
-      }
-    });
-
-    return promise;
+  function createIndex() {
+    return {
+      // By tel number and all its possible variants
+      // (We are not supporting dups right now)
+      byTel: Object.create(null),
+      // Prefix tree for enabling searching by partial tel numbers
+      treeTel: [],
+      // Will contain all the index of contacts that come from a
+      // specific store.
+      byStore: Object.create(null),
+      // Index by store and external uid
+      byExternalUid: Object.create(null)
+    };
   }
 
-  // Clear a contact datasource
-  var clear = function clear(store) {
-    getIndexByOwner(store).then(function (index) {
-      return find(index);
-    }).then(function (listOfIndex) {
-      return cleanByIndex(listOfIndex);
-    }).then(function ());
-  };
+  function setIndex(obj) {
+    isIndexDirty = false;
+    index = (obj || createIndex());
+  }
 
-  // Given index in the GCDS it removes all of them
-  function cleanByIndex(indexes) {
-    if (!indexes || !Array.isArray(indexes)) {
-      return Promise.reject('Invalid list of indexes')
+  function loadIndex() {
+    return new Promise(function(resolve, reject) {
+      store.get(INDEX_ID).then(function(idx) {
+        setIndex(idx);
+        resolve(idx);
+      }, reject);
+    });
+  }
+
+  function getContactIndex(contact, originStore) {
+    return contact.uid + '_' + originStore.owner;
+  }
+
+  function indexByPhone(obj, idx) {
+    if (Array.isArray(obj.tel)) {
+      obj.tel.forEach(function(aTel) {
+        var variants = SimplePhoneMatcher.generateVariants(aTel.value);
+
+        variants.forEach(function(aVariant) {
+          index.byTel[aVariant] = newId;
+        });
+        // To avoid the '+' char
+        TelIndexer.index(index.treeTel, aTel.value.substring(1),
+         newId);
+      });
     }
-    var promises = [];
-    indexes.forEach(function onIndex(index) {
-      promises.push(gcds.remove(index));
-    });
-
-    return Promise.all(promises);
   }
+
+  function indexByStore(contact, originStore) {
+
+  }
+
+  function indexByExternalUid(contact, originStore) {
+
+  }
+
+  var add = function add(obj, originStore) {
+    return new Promise(function(resolve, reject) {
+      var key = getContactIndex(obj, originStore);
+      var data = [{
+        uid: obj.uid,
+        origin: originStore.owner
+      }];
+      store.add(data, key).then(function() {
+        indexByPhone(obj, key);
+        indexByStore(obj, originStore);
+        indexByExternalUid(obj, originStore);
+        resolve(data);
+      }, reject);
+    });
+  };
 
   return {
     init: init,
-    get isInitialised() {
-      return gcds !== null;
-    },
-    find: find,
-    clear: clear
+    add: add
   };
 
 })();
