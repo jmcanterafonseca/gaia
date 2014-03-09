@@ -51,9 +51,7 @@ var GCDSOps = (function GCDSOps() {
       treeTel: [],
       // Will contain all the index of contacts that come from a
       // specific store.
-      byStore: Object.create(null),
-      // Index by store and external uid
-      byExternalUid: Object.create(null)
+      byStore: Object.create(null)
     };
   }
 
@@ -90,12 +88,19 @@ var GCDSOps = (function GCDSOps() {
     }
   }
 
-  function indexByStore(contact, originStore) {
+  function indexByStore(contact, originStore, idx) {
+    if (!contact || !contact.uid || !originStore || !originStore.owner) {
+      return;
+    }
+    // TODO: Investigate, do we need to index by original id, or just
+    // keep an array of gcds ids by this store?
+    var storeIndex = index.byStore[originStore.owner];
+    if (!storeIndex) {
+      storeIndex = {};
+      index.byStore[originStore.owner] = storeIndex;
+    }
 
-  }
-
-  function indexByExternalUid(contact, originStore) {
-
+    storeIndex[contact.uid] = idx;
   }
 
   var add = function add(obj, originStore) {
@@ -107,8 +112,7 @@ var GCDSOps = (function GCDSOps() {
       }];
       store.put(data, key).then(function() {
         indexByPhone(obj, key);
-        indexByStore(obj, originStore);
-        indexByExternalUid(obj, originStore);
+        indexByStore(obj, originStore, key);
         isIndexDirty = true;
         console.log('Added contact at ' + key);
         resolve(data);
