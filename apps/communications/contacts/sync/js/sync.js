@@ -71,6 +71,7 @@ var ContactsSync = (function ContactsSync() {
   }
 
   function endSync() {
+    console.log('GCDS ::: Sync done');
     window.close();
   }
 
@@ -81,9 +82,11 @@ var ContactsSync = (function ContactsSync() {
       case 'update':
       break;
       case 'add':
-        return GCDSOps.add(change.data, store);
+        return GCDSOps.add(change.data, store, change.id);
       case 'clear':
-      break;
+        return GCDSOps.clear(store);
+      case 'remove':
+        return GCDSOps.remove(change.id, store);
       default:
       break;
     }
