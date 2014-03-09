@@ -76,17 +76,19 @@ var ContactsSync = (function ContactsSync() {
 
   // We got a single change, apply it
   function applySingleChange(store, change) {
+    //console.log('---->> op ' + JSON.stringify(change));
     switch (change.operation) {
       case 'update':
       break;
       case 'add':
-        GCDSOps.add(change.data, store);
-      break;
+        return GCDSOps.add(change.data, store);
       case 'clear':
       break;
       default:
       break;
     }
+
+    return Promise.resolve();
   }
 
   function applySync(store) {
@@ -94,11 +96,17 @@ var ContactsSync = (function ContactsSync() {
       var cursor = store.sync(revisionId);
       function resolveCursor(task) {
         if (task.operation === 'done') {
-          setLastRevision(store, endSync);
+          GCDSOps.flush().then(function() {
+            setLastRevision(store, endSync);
+          });
           return;
         }
-        applySingleChange(store, task);
-        cursor.next().then(resolveCursor);
+        // applySingleChange(store, task).
+        //   then(cursor.next).
+        //   then(resolveCursor);
+        applySingleChange(store, task).then(function() {
+          cursor.next().then(resolveCursor);
+        });
       }
       cursor.next().then(resolveCursor);
     });
@@ -114,7 +122,12 @@ var ContactsSync = (function ContactsSync() {
   // Save current DS revision as the last one
   // we sync.
   function setLastRevision(store, done) {
-    asyncStorage.setItem(store.owner, store.revisionId, done);
+    asyncStorage.setItem(store.owner, store.revisionId, function() {
+      // We cannnot execute the done (window.close) sequentially
+      // otherwise we get the following error:
+      // [JavaScript Error: "IndexedDB UnknownErr: IDBTransaction.cpp:863"]
+      setTimeout(done, 1000);
+    });
   }
 
   return {

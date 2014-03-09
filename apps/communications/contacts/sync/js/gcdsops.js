@@ -58,13 +58,13 @@ var GCDSOps = (function GCDSOps() {
   }
 
   function setIndex(obj) {
-    isIndexDirty = false;
     index = (obj || createIndex());
   }
 
   function loadIndex() {
     return new Promise(function(resolve, reject) {
       store.get(INDEX_ID).then(function(idx) {
+        isIndexDirty = false;
         setIndex(idx);
         resolve(idx);
       }, reject);
@@ -81,11 +81,11 @@ var GCDSOps = (function GCDSOps() {
         var variants = SimplePhoneMatcher.generateVariants(aTel.value);
 
         variants.forEach(function(aVariant) {
-          index.byTel[aVariant] = newId;
+          index.byTel[aVariant] = idx;
         });
         // To avoid the '+' char
         TelIndexer.index(index.treeTel, aTel.value.substring(1),
-         newId);
+         idx);
       });
     }
   }
@@ -105,18 +105,34 @@ var GCDSOps = (function GCDSOps() {
         uid: obj.uid,
         origin: originStore.owner
       }];
-      store.add(data, key).then(function() {
+      store.put(data, key).then(function() {
         indexByPhone(obj, key);
         indexByStore(obj, originStore);
         indexByExternalUid(obj, originStore);
+        isIndexDirty = true;
+        console.log('Added contact at ' + key);
         resolve(data);
       }, reject);
     });
   };
 
+  var flush = function flush() {
+    if (!store) {
+      return Promise.reject();
+    }
+
+    if (!isIndexDirty) {
+      return Promise.resolve();
+    }
+    // Not really accurate
+    isIndexDirty = false;
+    return store.put(index, INDEX_ID);
+  };
+
   return {
     init: init,
-    add: add
+    add: add,
+    flush: flush
   };
 
 })();
