@@ -75,6 +75,32 @@ var GCDSOps = (function GCDSOps() {
     return contact.uid + '_' + originStore.owner;
   }
 
+  // Returns false if not mergeable by phone number or the
+  // index that should be added to.
+  function shouldBeMerged(contact) {
+    if (!Array.isArray(contact.tel) || contact.tel.length === 0) {
+      return false;
+    }
+
+    var merge = false;
+    for (var i = 0; i < contact.tel.length; i++) {
+      var tel = contact.tel[i];
+      if (!tel.value) {
+        continue;
+      }
+
+      var variants = SimplePhoneMatcher.generateVariants(tel.value);
+      variants.forEach(function(variant) {
+        if (index.byTel[variant]) {
+          merge = index.byTel[variant];
+          return merge;
+        }
+      });
+    }
+
+    return merge;
+  }
+
   function indexByPhone(obj, idx) {
     if (Array.isArray(obj.tel)) {
       obj.tel.forEach(function(aTel) {
@@ -114,20 +140,56 @@ var GCDSOps = (function GCDSOps() {
   var add = function add(obj, originStore, originIndex) {
     return new Promise(function(resolve, reject) {
       var key = getContactIndex(obj, originStore);
-      var data = [{
+      var data = {
         uid: obj.uid,
         origin: originStore.owner,
         origin_index: originIndex
-      }];
-      store.put(data, key).then(function() {
-        indexByPhone(obj, key);
-        indexByStore(obj, originStore, key, originIndex);
+      };
+      var shouldMerge = shouldBeMerged(obj);
+      if (shouldMerge) {
+        doAppend(data, originStore, shouldMerge, originIndex, obj).
+          then(resolve, reject);
+      } else {
+        doAdd(data, originStore, key, originIndex, obj).
+          then(resolve, reject);
+      }
+    });
+  };
+
+  // Add a new contact with specific index
+  function doAdd(info, originStore, index, originIndex, contact) {
+    var data = [info];
+
+    return new Promise(function(resolve, reject) {
+      store.put(data, index).then(function() {
+        indexByPhone(contact, index);
+        indexByStore(contact, originStore, index, originIndex);
         isIndexDirty = true;
-        console.log('Added contact at ' + key);
+        console.log('Added contact at ' + index);
         resolve(data);
       }, reject);
     });
-  };
+  }
+
+  // Append a contact to an specific index
+  function doAppend(data, originStore, index, originIndex, contact) {
+    return new Promise(function(resolve, reject) {
+      store.get(index).then(function(obj) {
+        if (!obj || !Array.isArray(obj)) {
+          obj = [];
+        }
+
+        obj.push(data);
+        store.put(obj, index).then(function() {
+          indexByPhone(contact, index);
+          indexByStore(contact, originStore, index, originIndex);
+          isIndexDirty = true;
+          console.log('Merged contact into ' + index);
+          resolve(data);
+        }, reject);
+      }, reject);
+    });
+  }
 
   // Get a list of all contacts by this DS and perform
   // remove operations over it.
