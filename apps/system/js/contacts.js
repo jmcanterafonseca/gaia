@@ -19,7 +19,7 @@ var ContactsProvider = (function ContactsProvider() {
       stores = sts;
       // TODO: filter any DS from contacts (be careful with FB DS)
       stores.forEach(function onStore(store) {
-        console.log('Registering for listening to changes on ' + store.owner);
+        console.log('Registering for listening to changes on ', store.owner);
         store.onchange = onStoreChange.bind(store);
       });
     });
@@ -34,11 +34,11 @@ var ContactsProvider = (function ContactsProvider() {
     var owner = null;
     /* jshint ignore:start */
     owner = this.owner;
-    console.log('owner: ' + owner);
+    console.log('owner: ',  owner);
     /* jshint ignore:end */
-    console.log('revision: ' + evt.revisionId);
-    console.log('id: ' + evt.id);
-    console.log('operation: ' + evt.operation);
+    console.log('revision: ', evt.revisionId);
+    console.log('id: ', evt.id);
+    console.log('operation: ', evt.operation);
 
     //Do a bit of throlling
     var revision = new String(evt.revisionId);
@@ -59,23 +59,25 @@ var ContactsProvider = (function ContactsProvider() {
   }
 
   function notifyChange(owner, change) {
-    console.log('Notifying change to ' + owner);
+    console.log('Notifying change to ', owner);
+
     navigator.mozApps.getSelf().onsuccess = function(evt) {
       var app = evt.target.result;
       app.connect('contacts-sync').then(function onConnAccepted(ports) {
         ports.forEach(function(port) {
-          var message = {};
-          message.owner = owner;
-          message.multiple = isMultipleChange;
-          message.revisionId = change.revisionId;
-          message.id = change.id;
-          message.operation = change.operation;
-          isMultipleChange = false;
+          var message = {
+            owner: owner,
+            multiple: isMultipleChange,
+            revisionId: change.revisionId,
+            id: change.id,
+            operation: change.operation,
+            isMultipleChange: false
+          };
           port.postMessage(message);
         });
       }, function onConnRejected(reason) {
-        console.log('Cannot notify Contacts for change ' +
-         JSON.stringify(change));
+        console.log('Cannot notify Contacts for change ',
+                    JSON.stringify(change));
         console.log(reason);
       });
     };

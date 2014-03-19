@@ -1,4 +1,4 @@
-{
+ {
   "name": "Communications",
   "description": "Gaia Communications",
   "type": "certified",
@@ -166,7 +166,7 @@
     "Gaia_Facebook_Friends": {
       "description": "Imported Facebook Friends"
     },
-    "aggregated_contacts": {
+    "Global_Contacts_Datastore": {
       "description": "Fetch contacts from different data sources"
     }
   },

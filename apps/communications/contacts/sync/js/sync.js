@@ -1,4 +1,5 @@
-/* global asyncStorage, Promise, GCDSOps */
+/* global asyncStorage, Promise, GlobalMergedContacts */
+/* exported ContactsSync */
 'use strict';
 
 var ContactsSync = (function ContactsSync() {
@@ -20,7 +21,7 @@ var ContactsSync = (function ContactsSync() {
         stores[store.owner] = store;
       });
       return Promise.resolve();
-    }).then(GCDSOps.init).then(function() {
+    }).then(GlobalMergedContacts.init).then(function() {
       if (typeof cb === 'function') {
         cb();
       }
@@ -29,6 +30,7 @@ var ContactsSync = (function ContactsSync() {
 
   var onSync = function onSync(evt) {
     var message = evt.data;
+    console.log('On Sync invoked', JSON.stringify(message));
     applyChange(message);
   };
 
@@ -57,7 +59,7 @@ var ContactsSync = (function ContactsSync() {
     // revision.
     // Unfortunately, the revisionId parameter to ask for the cursor
     // is being ignored if it's incorrect :(
-    if (!store || !change || !change.id || !change.operation) {
+    if (!store || !change || !change.operation) {
       // Do nothing
       return;
     }
@@ -77,16 +79,19 @@ var ContactsSync = (function ContactsSync() {
 
   // We got a single change, apply it
   function applySingleChange(store, change) {
-    //console.log('---->> op ' + JSON.stringify(change));
+    console.log('---->> op ', JSON.stringify(change), store);
     switch (change.operation) {
       case 'update':
       break;
       case 'add':
-        return GCDSOps.add(change.data, store, change.id);
+        console.log('Going to add a record');
+        return GlobalMergedContacts.add(store, change.id, change.data);
       case 'clear':
-        return GCDSOps.clear(store);
+        console.log('Going to clear all records from a store');
+        return GlobalMergedContacts.clear(store);
       case 'remove':
-        return GCDSOps.remove(change.id, store);
+        console.log('Going to remove a record');
+        return GlobalMergedContacts.remove(store, change.id);
       default:
       break;
     }
@@ -96,10 +101,12 @@ var ContactsSync = (function ContactsSync() {
 
   function applySync(store) {
     getLastRevision(store, function(revisionId) {
+      console.log('RevisionId: ', revisionId);
+
       var cursor = store.sync(revisionId);
       function resolveCursor(task) {
         if (task.operation === 'done') {
-          GCDSOps.flush().then(function() {
+          GlobalMergedContacts.flush().then(function() {
             setLastRevision(store, endSync);
           });
           return;
@@ -109,6 +116,9 @@ var ContactsSync = (function ContactsSync() {
         //   then(resolveCursor);
         applySingleChange(store, task).then(function() {
           cursor.next().then(resolveCursor);
+        }, function error(err) {
+            console.error('Error while applying change: ', err);
+            cursor.next().then(resolveCursor);
         });
       }
       cursor.next().then(resolveCursor);
@@ -143,6 +153,8 @@ navigator.mozSetMessageHandler('connection', function(connectionRequest) {
   if (connectionRequest.keyword !== 'contacts-sync') {
     return;
   }
+
+  console.log('Connection Request for Syncing');
 
   var port = connectionRequest.port;
   port.onmessage = ContactsSync.onSync;
