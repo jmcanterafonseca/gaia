@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1">
+    <title>Contacts Manager</title>
+    <script defer src="js/suffix_array.js"></script>
+    <script defer src="js/suffix_array_idb.js"></script>
+    <script defer src="js/contacts_saver.js"></script>
+    <script defer src="js/ds_writer.js"></script>
+    <link rel="stylesheet" href="style/cm.css">
+  </head>
+
+  <body role="application">
+    <button type=button id="bt_load_cts">Load Contacts</button>
+    <button type=button id="bt_load_index">Load Index</button>
+    <button type=button id="bt_persist">Persist Index</button><br>
+
+    <label>Indexed DB:<input id="search-term" type=search size="15"></label><br>
+    <label>Suffix Array:<input id="search-term2" type=search size="15"></label>
+    <p id="status"></p>
+
+    <ul id="search-result">
+    </ul>
+  </body>
+</html>

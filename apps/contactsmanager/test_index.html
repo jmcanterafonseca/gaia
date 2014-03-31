@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <script src="js/suffix_array_idb.js"></script>
+  </head>
+
+  <body>
+    <script>
+      function index(args) {
+        var indexing = new SuffixArrayIndexedDB();
+
+        indexing.init().then(function() {
+          indexing.index({
+            word: 'banana',
+            id: 890
+          }).then(function done() {
+              console.log('Entry has been indexed');
+              return indexing.index({
+                word: 'canana',
+                id: 300
+              });
+          }).then(function done() {
+              console.log('Entry has been indexed');
+          }).catch(function error(err) {
+              console.error('Error while indexing: ', err);
+          });
+        });
+      }
+
+      function search() {
+        var indexing = new SuffixArrayIndexedDB();
+
+        var val = document.getElementById('pattern').value;
+
+        var list = document.querySelector('ul');
+
+        indexing.search(val).then(function(result) {
+          console.log(JSON.stringify(result));
+
+           Object.keys(result).forEach(function(aResult) {
+            var li = document.createElement('li');
+            var span = document.createElement('span');
+            li.appendChild(span);
+
+            var matches = result[aResult].matches;
+            var innerHTML = '';
+            console.log('Matches length: ', matches.length);
+
+            var nextEnd = 0;
+            for(var j = 0; j < matches.length; j++) {
+              var aMatch = matches[j];
+
+              var firstSubstr = aResult.substring(nextEnd, aMatch.start);
+
+              innerHTML += firstSubstr + '<em>';
+              var midSubstr = aResult.substring(aMatch.start, aMatch.end + 1);
+              innerHTML += (midSubstr + '</em>');
+
+              if (matches[j + 1]) {
+                nextEnd = matches[j + 1].start;
+              }
+              else {
+                nextEnd = aResult.length;
+              }
+              innerHTML += aResult.substring(aMatch.end + 1, nextEnd);
+              span.innerHTML = innerHTML;
+            }
+
+            list.appendChild(li);
+          });
+        });
+      }
+    </script>
+
+    <p>
+      <input type=text id="pattern" size="10"></input>
+      <button type=button onclick="index()">Index</button>
+      <button type=button onclick="search()">Search</button>
+    </p>
+
+    <p>
+      <ul>
+
+      </ul>
+    </p>
+  </body>
+</html>

@@ -1,0 +1,34 @@
+{
+  "name": "ContactsManager",
+  "launch_path": "/index.html",
+  "description": "Global Contacts Manager Firefox OS",
+  "type": "certified",
+  "developer": {
+    "name": "The Gaia Team",
+    "url": "https://github.com/mozilla-b2g/gaia"
+  },
+  "locales": {
+    "en-US": {
+      "name": "ContactsManager",
+      "description": "Global Contacts Manager"
+    },
+    "fr": {
+      "name": "ContactsManager",
+      "description": "Global Contacts Manager"
+    }
+  },
+  "permissions": {
+    "contacts": { "access": "readwrite" },
+    "phonenumberservice": {},
+    "device-storage:sdcard":{ "access": "readwrite" }
+  },
+  "datastores-owned": {
+    "Global_Contacts": {
+      "description": "Global Contacts"
+    }
+  },
+  "default_locale": "en-US",
+  "icons": {
+    "128": "/style/icons/ds-test.png"
+  }
+}
