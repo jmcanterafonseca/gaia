@@ -1,0 +1,8 @@
+li > span > em {
+  background-color: yellow;
+  color: red;
+}
+
+li > span {
+  color: green;
+}
