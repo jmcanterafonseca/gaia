@@ -19,7 +19,8 @@
   },
   "permissions": {
     "contacts": { "access": "readwrite" },
-    "phonenumberservice": {}
+    "phonenumberservice": {},
+    "device-storage:sdcard":{ "access": "readcreate" }
   },
   "datastores-owned": {
     "Global_Contacts": {
