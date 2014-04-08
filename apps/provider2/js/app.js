@@ -19,6 +19,23 @@ var App = function App() {
     initDS();
   };
 
+  function notifyContactsManager() {
+    navigator.mozApps.getSelf().onsuccess = function(evt) {
+      var app = evt.target.result;
+      app.connect('contacts-sync').then(function onConnAccepted(ports) {
+        ports.forEach(function(port) {
+          var message = {
+            owner: store.owner,
+            revisionId: store.revisionId
+          };
+          port.postMessage(message);
+        });
+      }, function onConnRejected(reason) {
+          console.log('Cannot notify Contacts Manager: ', reason);
+      });
+    };
+  }
+
   function handleEvent(evt) {
     var btn = evt.target.id;
 
@@ -31,6 +48,7 @@ var App = function App() {
             info.textContent = count + ' elements';
           });
           fillButton.disabled = false;
+          notifyContactsManager();
         });
       });
       break;
@@ -38,6 +56,7 @@ var App = function App() {
       store.clear().then(function() {
         store.getLength().then(function(count) {
           info.textContent = count + ' elements';
+          notifyContactsManager();
         });
       });
       break;

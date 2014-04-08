@@ -40,7 +40,7 @@ var ContactsSync = (function ContactsSync() {
       if (!store) {
         return;
       }
-      doApplyChanges(store, message);
+      doApplyChanges(store);
     });
   }
 
@@ -53,13 +53,13 @@ var ContactsSync = (function ContactsSync() {
     });
   }
 
-  function doApplyChanges(store, change) {
+  function doApplyChanges(store) {
     // Since there is a bug in datastore that launch event changes
     // in all DS of the same kind, use the cursor with the
     // revision.
     // Unfortunately, the revisionId parameter to ask for the cursor
     // is being ignored if it's incorrect :(
-    if (!store || !change || !change.operation) {
+    if (!store) {
       // Do nothing
       return;
     }
@@ -150,6 +150,8 @@ var ContactsSync = (function ContactsSync() {
 })();
 
 navigator.mozSetMessageHandler('connection', function(connectionRequest) {
+  console.log('Connection Request for Syncing');
+
   if (connectionRequest.keyword !== 'contacts-sync') {
     return;
   }
