@@ -72,9 +72,35 @@ var ContactsSync = (function ContactsSync() {
     applySync(store);
   }
 
+  function notifyContactsApp() {
+    return new Promise(function(resolve, reject) {
+      navigator.mozApps.getSelf().onsuccess = function(evt) {
+        var app = evt.target.result;
+        app.connect('contactsLocalData-sync').then(function onConn(ports) {
+          ports.forEach(function(port) {
+            var message = {
+              'a': 'a'
+            };
+            console.log('Sending message ....');
+            port.postMessage(message);
+          });
+          resolve(null);
+        }, function onConnRejected(reason) {
+            console.log('Cannot notify Contacts Manager: ', reason);
+            reject({
+              name: reason
+            });
+        });
+      };
+    });
+  }
+
   function endSync() {
     console.log('GCDS ::: Sync done');
-    window.close();
+    notifyContactsApp().then(function() {
+      console.log('Contacts app has been notified');
+      setTimeout(window.close, 5000);
+    });
   }
 
   // We got a single change, apply it
@@ -139,7 +165,7 @@ var ContactsSync = (function ContactsSync() {
       // We cannnot execute the done (window.close) sequentially
       // otherwise we get the following error:
       // [JavaScript Error: "IndexedDB UnknownErr: IDBTransaction.cpp:863"]
-      setTimeout(done, 1000);
+      setTimeout(done, 0);
     });
   }
 

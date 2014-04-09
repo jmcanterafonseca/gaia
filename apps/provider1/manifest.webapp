@@ -14,7 +14,7 @@
   ],
   "permissions": {
     "systemXHR": {
-      "description": "This permission is require to contact Google serves"
+      "description": "This permission is required to contact Google servers"
     }
   }
 }

@@ -165,15 +165,12 @@
   "datastores-owned": {
     "Gaia_Facebook_Friends": {
       "description": "Imported Facebook Friends"
-    },
-    "Global_Contacts_Datastore": {
-      "description": "Fetch contacts from different data sources"
     }
   },
   "datastores-access": {
-    "contacts": {
+    "Global_Contacts_Datastore": {
       "readonly": true,
-      "description": "Read different contacts sources"
+      "description": "Contains contacts from different data sources"
     }
   },
   "icons": {
@@ -181,12 +178,12 @@
         "45": "/style/icons/communication_45.png"
   },
   "connections": {
-    "contacts-sync": {
-      "description": "Contacts DataBase synchronization",
+    "contactsLocalData-sync": {
+      "description": "Contacts App Data Synchronization",
       "rules": {
-        "manifestURLs": ["app://system.gaiamobile.org/manifest.webapp"]
+        "manifestURLs": ["app://contactsmanager.gaiamobile.org/manifest.webapp"]
       },
-      "handler_path": "/contacts/sync/index.html"
+      "handler_path": "/contacts/data/index.html"
     }
   }
 }
