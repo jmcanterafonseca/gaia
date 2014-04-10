@@ -51,8 +51,8 @@ var ContactsData = (function() {
 
   function save(contact) {
     return new Promise(function(resolve, reject) {
-      getDatabase.then(function(db) {
-        var transaction = database.transaction([STORE_NAME], 'readonly');
+      getDatabase().then(function(db) {
+        var transaction = db.transaction([STORE_NAME], 'readwrite');
         var objectStore = transaction.objectStore(STORE_NAME);
         var req = objectStore.put(contact);
         req.onsuccess = resolve;
@@ -63,10 +63,22 @@ var ContactsData = (function() {
 
   function remove(id) {
     return new Promise(function(resolve, reject) {
-      getDatabase.then(function(db) {
-        var transaction = database.transaction([STORE_NAME], 'readwrite');
+      getDatabase().then(function(db) {
+        var transaction = db.transaction([STORE_NAME], 'readwrite');
         var objectStore = transaction.objectStore(STORE_NAME);
         var req = objectStore.delete(id);
+        req.onsuccess = resolve;
+        req.onerror = reject;
+      });
+    });
+  }
+
+  function clear() {
+    return new Promise(function(resolve, reject) {
+      getDatabase().then(function(db) {
+        var transaction = db.transaction([STORE_NAME], 'readwrite');
+        var objectStore = transaction.objectStore(STORE_NAME);
+        var req = objectStore.clear();
         req.onsuccess = resolve;
         req.onerror = reject;
       });
@@ -79,6 +91,8 @@ var ContactsData = (function() {
 
   return {
     'save': save,
+    'remove': remove,
+    'clear': clear,
     'getAll': getAll
   }
 })();

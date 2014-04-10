@@ -60,13 +60,15 @@ var ContactsSync = (function ContactsSync() {
   }
 
   function synchronizeData() {
+    var cursor;
+
     function resolveCursor(task) {
       if (task.operation === 'done') {
-        setLastRevision(store, endSync);
+        setLastRevision(endSync);
         return;
       }
 
-      applySingleChange( task).then(function() {
+      applySingleChange(task).then(function() {
         cursor.next().then(resolveCursor);
       }, function error(err) {
           console.error('Error while applying change: ', err);
@@ -77,8 +79,8 @@ var ContactsSync = (function ContactsSync() {
     getLastRevision(function(revisionId) {
       console.log('RevisionId: ', revisionId);
 
-      getGlobalDataStore.then(function(store) {
-        var cursor = store.sync(revisionId);
+      getGlobalDataStore().then(function(store) {
+        cursor = store.sync(revisionId);
         cursor.next().then(resolveCursor);
       });
     });
