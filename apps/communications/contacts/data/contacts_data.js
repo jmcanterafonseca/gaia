@@ -52,10 +52,14 @@ var ContactsData = (function() {
   function save(contact) {
     return new Promise(function(resolve, reject) {
       getDatabase().then(function(db) {
+        console.log('Saving ....');
         var transaction = db.transaction([STORE_NAME], 'readwrite');
         var objectStore = transaction.objectStore(STORE_NAME);
         var req = objectStore.put(contact);
-        req.onsuccess = resolve;
+        req.onsuccess = function() {
+          console.log('Record Saved!!!: ', contact.id);
+          resolve();
+        };
         req.onerror = reject;
       });
     });
@@ -64,10 +68,15 @@ var ContactsData = (function() {
   function remove(id) {
     return new Promise(function(resolve, reject) {
       getDatabase().then(function(db) {
+        console.log('Removing ....');
+
         var transaction = db.transaction([STORE_NAME], 'readwrite');
         var objectStore = transaction.objectStore(STORE_NAME);
         var req = objectStore.delete(id);
-        req.onsuccess = resolve;
+        req.onsuccess = function() {
+          console.log('Record Removed: ', id);
+          resolve();
+        };
         req.onerror = reject;
       });
     });
@@ -76,10 +85,15 @@ var ContactsData = (function() {
   function clear() {
     return new Promise(function(resolve, reject) {
       getDatabase().then(function(db) {
+        console.log('Clearing ...');
+        
         var transaction = db.transaction([STORE_NAME], 'readwrite');
         var objectStore = transaction.objectStore(STORE_NAME);
         var req = objectStore.clear();
-        req.onsuccess = resolve;
+        req.onsuccess = function() {
+          console.log('Cleared!!!');
+          resolve();
+        };
         req.onerror = reject;
       });
     });

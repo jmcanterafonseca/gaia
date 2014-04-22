@@ -169,8 +169,12 @@
   },
   "datastores-access": {
     "Global_Contacts_Datastore": {
-      "readonly": true,
+      "access": "readonly",
       "description": "Contains contacts from different data sources"
+    },
+    "contacts": {
+      "access": "readonly",
+      "description": "Datastores corresponding to contact providers"
     }
   },
   "icons": {

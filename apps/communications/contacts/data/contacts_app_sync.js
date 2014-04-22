@@ -40,23 +40,49 @@ var ContactsSync = (function ContactsSync() {
 
   // We got a single change, apply it
   function applySingleChange(change) {
-    switch (change.operation) {
-      case 'update':
-      break;
-      case 'add':
-        console.log('Going to add a record');
-        return ContactsData.save(change.data);
-      case 'clear':
-        console.log('Going to clear all records from a store');
-        return ContactsData.clear();
-      case 'remove':
-        console.log('Going to remove a record');
-        return ContactsData.remove(change.id);
-      default:
-      break;
-    }
+    return new Promise(function(resolve, reject) {
+      switch (change.operation) {
+        case 'update':
+        break;
 
-    return Promise.resolve();
+        case 'add':
+          console.log('Going to add a record');
+          if (!Array.isArray(change.data)) {
+            console.log('It is not an Array');
+            resolve();
+            break;
+          }
+          MultiContact.getData({
+            id: change.id,
+            entryData: change.data
+          }).then(function success(contactData) {
+              console.log('Multicontact data: ', JSON.stringify(contactData));
+              return ContactsData.save(contactData);
+          }, function err(error) {
+              console.log('Error while getting multicontact data: ', error.name);
+          }).then(function success() {
+              resolve();
+          }, function error(err) { reject(error); });
+        break;
+
+        case 'clear':
+          console.log('Going to clear all records from a store');
+          ContactsData.clear().then(resolve, reject);
+        break;
+
+        case 'remove':
+          console.log('Going to remove a record');
+          if (!Array.isArray(change.data)) {
+            resolve();
+            break;
+          }
+          ContactsData.remove.then(resolve, reject);
+        break;
+
+        default:
+          break;
+      }
+    });
   }
 
   function synchronizeData() {
