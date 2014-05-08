@@ -2,7 +2,6 @@
   "name": "FTU",
   "description": "First Time Experience",
   "type": "certified",
-  "role": "system",
   "launch_path": "/index.html",
   "fullscreen": "true",
 
@@ -29,6 +28,8 @@
       "description": "Gaia 電話"
     }
   },
+
+  "default_locale": "en-US",
 
   "permissions": {
     "telephony":{},
