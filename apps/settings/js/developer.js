@@ -27,6 +27,7 @@ var Developer = {
     var req = settings.createLock().get(key);
     req.onsuccess = function ftuManifest() {
       var ftuManifestURL = req.result[key];
+      console.log('Manifest: ', ftuManifestURL);
 
       // fallback if no settings present
       if (!ftuManifestURL) {

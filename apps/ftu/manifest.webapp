@@ -1,0 +1,66 @@
+{
+  "name": "FTU",
+  "description": "First Time Experience",
+  "type": "certified",
+  "role": "system",
+  "launch_path": "/index.html",
+  "fullscreen": "true",
+
+  "developer": {
+    "name": "The Gaia Team",
+    "url": "https://github.com/mozilla-b2g/gaia"
+  },
+
+  "locales": {
+    "ar": {
+      "name": "هاتف",
+      "description": "Gaia هاتف"
+    },
+    "en-US": {
+      "name": "Phone",
+      "description": "Gaia Phone"
+    },
+    "fr": {
+      "name": "téléphone",
+      "description": "téléphone Gaia"
+    },
+    "zh-TW": {
+      "name": "電話",
+      "description": "Gaia 電話"
+    }
+  },
+
+  "permissions": {
+    "telephony":{},
+    "contacts":{ "access": "readwrite" },
+    "mobileconnection":{},
+    "settings":{ "access": "readwrite" },
+    "systemXHR": {},
+    "wifi-manage":{},
+    "time": {},
+    "device-storage:sdcard": { "access": "readcreate" },
+    "phonenumberservice": {}
+  },
+
+  "orientation": "default",
+
+  "redirects": [
+    {"from": "facebook",
+    "to": "/redirects/redirect.html"},
+    {"from": "facebook_dialogs",
+    "to": "/redirects/dialogs_end.html"},
+    {"from": "facebook_logout",
+    "to": "/redirects/dialogs_end.html"},
+    {"from": "live",
+    "to": "/redirects/redirect.html"},
+    {"from": "gmail",
+    "to": "/redirects/redirect.html"}
+  ],
+
+  "datastores-access": {
+    "contacts": {
+      "readonly": false,
+      "description": "Facebook contacts"
+    }
+  }
+}
