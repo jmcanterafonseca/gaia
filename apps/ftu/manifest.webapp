@@ -11,25 +11,20 @@
   },
 
   "locales": {
-    "ar": {
-      "name": "هاتف",
-      "description": "Gaia هاتف"
-    },
     "en-US": {
-      "name": "Phone",
+      "name": "FTU",
       "description": "Gaia Phone"
-    },
-    "fr": {
-      "name": "téléphone",
-      "description": "téléphone Gaia"
-    },
-    "zh-TW": {
-      "name": "電話",
-      "description": "Gaia 電話"
     }
   },
 
   "default_locale": "en-US",
+
+  "icons": {
+    "30": "/style/icons/System.png",
+    "45": "/style/icons/System_45.png",
+    "60": "/style/icons/System_60.png",
+    "68": "/style/icons/System_68.png"
+  },
 
   "permissions": {
     "telephony":{},
