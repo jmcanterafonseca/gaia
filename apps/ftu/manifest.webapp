@@ -1,0 +1,62 @@
+{
+  "name": "FTU",
+  "description": "First Time Experience",
+  "type": "certified",
+  "launch_path": "/index.html",
+  "fullscreen": "true",
+
+  "developer": {
+    "name": "The Gaia Team",
+    "url": "https://github.com/mozilla-b2g/gaia"
+  },
+
+  "locales": {
+    "en-US": {
+      "name": "FTU",
+      "description": "First Time Experience"
+    }
+  },
+
+  "default_locale": "en-US",
+
+  "icons": {
+    "30": "/style/icons/System.png",
+    "45": "/style/icons/System_45.png",
+    "60": "/style/icons/System_60.png",
+    "68": "/style/icons/System_68.png"
+  },
+
+  "permissions": {
+    "telephony":{},
+    "contacts":{ "access": "readwrite" },
+    "mobileconnection":{},
+    "settings":{ "access": "readwrite" },
+    "systemXHR": {},
+    "wifi-manage":{},
+    "time": {},
+    "device-storage:sdcard": { "access": "readcreate" },
+    "phonenumberservice": {}
+  },
+
+  "orientation": "default",
+
+  "redirects": [
+    {"from": "facebook",
+    "to": "/shared/pages/import/redirects/redirect.html"},
+    {"from": "facebook_dialogs",
+    "to": "/shared/pages/import/redirects/dialogs_end.html"},
+    {"from": "facebook_logout",
+    "to": "/shared/pages/import/redirects/dialogs_end.html"},
+    {"from": "live",
+    "to": "/shared/pages/import/redirects/redirect.html"},
+    {"from": "gmail",
+    "to": "/shared/pages/import/redirects/redirect.html"}
+  ],
+
+  "datastores-owned": {
+    "Gaia_Facebook_Friends": {
+      "description": "Imported Facebook Friends"
+    }
+  }
+
+}
