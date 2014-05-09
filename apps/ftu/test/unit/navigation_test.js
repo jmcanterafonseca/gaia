@@ -3,22 +3,22 @@
 require('/shared/test/unit/mocks/mock_navigator_moz_mobile_connections.js');
 require('/shared/test/unit/mocks/mock_icc_helper.js');
 
-requireApp('communications/ftu/js/external_links.js');
-requireApp('communications/ftu/js/navigation.js');
+requireApp('js/external_links.js');
+requireApp('js/navigation.js');
 
-requireApp('communications/ftu/test/unit/mock_l10n.js');
-requireApp('communications/ftu/test/unit/mock_wifi_manager.js');
-requireApp('communications/ftu/test/unit/mock_data_mobile.js');
-requireApp('communications/ftu/test/unit/mock_sim_manager.js');
-requireApp('communications/ftu/test/unit/mock_sd_manager.js');
-requireApp('communications/ftu/test/unit/mock_import_services.js');
-requireApp('communications/ftu/test/unit/mock_ui_manager.js');
-requireApp('communications/ftu/test/unit/mock_tutorial.js');
-requireApp('communications/ftu/test/unit/mock_wifi_manager.js');
-requireApp('communications/ftu/test/unit/mock_utils.js');
-requireApp('communications/ftu/test/unit/mock_operatorVariant.js');
-requireApp('communications/shared/test/unit/mocks/mock_navigator_moz_settings.js');
-requireApp('communications/ftu/test/unit/mock_navigation.html.js');
+requireApp('test/unit/mock_l10n.js');
+requireApp('test/unit/mock_wifi_manager.js');
+requireApp('test/unit/mock_data_mobile.js');
+requireApp('test/unit/mock_sim_manager.js');
+requireApp('test/unit/mock_sd_manager.js');
+requireApp('test/unit/mock_import_services.js');
+requireApp('test/unit/mock_ui_manager.js');
+requireApp('test/unit/mock_tutorial.js');
+requireApp('test/unit/mock_wifi_manager.js');
+requireApp('test/unit/mock_utils.js');
+requireApp('test/unit/mock_operatorVariant.js');
+requireApp('test/unit/mocks/mock_navigator_moz_settings.js');
+requireApp('test/unit/mock_navigation.html.js');
 
 mocha.globals(['open']);
 
