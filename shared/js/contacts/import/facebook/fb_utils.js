@@ -173,6 +173,19 @@ window.fb = fb;
       });
     };
 
+    Utils.setCachedAccessToken = function(data, callback) {
+      window.asyncStorage.setItem(STORAGE_KEY, data, function done() {
+        if (typeof callback === 'function') {
+          callback();
+        }
+      }, function error() {
+          console.error('Error while saving access token');
+          if (typeof callback === 'function') {
+            callback();
+          }
+      });
+    };
+
     // Obtains the number locally
     Utils.getCachedNumFbFriends = function(callback) {
       window.asyncStorage.getItem(CACHE_FRIENDS_KEY, function(data) {
