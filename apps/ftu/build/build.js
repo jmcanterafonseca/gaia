@@ -28,7 +28,7 @@ FtuAppBuilder.prototype.execute = function(options) {
   this.setOptions(options);
   importBuild.generateManifest(this.webapp, this.commsServices, this.gaia);
   importBuild.generateConfig('ftu', '', this.gaia);
-  importBuild.generateServicesConfig(this.commsServices, this.official,
+  importBuild.generateServicesConfig(this.commsServices, null, this.official,
                                      this.gaia);
 };
 

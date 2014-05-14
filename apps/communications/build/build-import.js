@@ -66,7 +66,7 @@ function generateConfig (app, destination, gaia) {
     utils.getDistributionFileContent(app, defaultConfig, gaia.distributionDir));
 }
 
-function generateServicesConfig(commServices, official, gaia) {
+function generateServicesConfig(commServices, dest, official, gaia) {
   var commsServicesFile = utils.getFile(gaia.stageDir.path, 'shared',
     'pages', 'import', 'js', 'parameters.js');
 
@@ -80,9 +80,13 @@ function generateServicesConfig(commServices, official, gaia) {
     utils.getDistributionFileContent('communications_services',
       commServices, gaia.distributionDir);
 
-  utils.writeContent(commsServicesFile,
-    'var oauthflow = this.oauthflow || {}; oauthflow.params = ' +
-    commsServices + ';');
+  var jsPrefix =  'var oauthflow = this.oauthflow || {}; oauthflow.params = ';
+
+  utils.writeContent(commsServicesFile, jsPrefix + commsServices + ';');
+
+  if (dest) {
+    utils.writeContent(dest, jsPrefix + commsServices + ';');
+  }
 }
 
 exports.getCommsServices = getCommsServices;

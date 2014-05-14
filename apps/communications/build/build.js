@@ -2,7 +2,7 @@
 
 /* global require, exports */
 const utils = require('utils');
-const importBuild = require('../../apps/communications/build/build-import.js');
+const importBuild = require('./build-import.js');
 
 var CommAppBuilder = function() {
 };
@@ -31,7 +31,9 @@ CommAppBuilder.prototype.generateContactsConfig = function(app, destination) {
 };
 
 CommAppBuilder.prototype.generateServicesConfig = function() {
-  importBuild.generateServicesConfig(this.commsServices,
+  var dest = utils.getFile(this.gaia.stageDir.path, 'contacts',
+                           'js', 'parameters.js');
+  importBuild.generateServicesConfig(this.commsServices, dest, 
                                      this.official, this.gaia);
 };
 

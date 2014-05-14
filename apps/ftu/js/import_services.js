@@ -80,11 +80,11 @@ var ImportIntegration = {
       case 'fb_imported':
         this.toggleToImportedState();
         this.updateContactsNumber(function(imported, total) {
-          // Here we establish a connection to the comms app in order to propagate
+          // We establish a connection to the comms app in order to propagate
           // token data and the number of imported friends in order to have
           // consistency
-          this.notifyContactsApp(imported, total);
-        });
+          window.setTimeout(this.notifyContactsApp, 0, imported, total);
+        }.bind(this));
         break;
     }
   },
