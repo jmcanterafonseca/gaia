@@ -50,9 +50,9 @@
                    '/shared/js/contacts/import/facebook/fb_contact_utils.js',
                    '/shared/js/contacts/import/facebook/fb_query.js',
                    '/shared/js/contacts/import/facebook/fb_contact.js',
-                   '/shared/js/contacts/import/facebook/facebook_connector.js',
-                   '/facebook/js/fb_sync.js',
-                   '/contacts/style/fb/facebook.css'
+                   '/shared/js/contacts/import/facebook/facebook_connector.js'/*,
+                   '/facebook/js/fb_sync.js' */,
+                   '/shared/pages/import/style/facebook.css'
       ];
       LazyLoader.load(files, function() {
         cb(FacebookConnector);
