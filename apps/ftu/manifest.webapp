@@ -13,7 +13,7 @@
   "locales": {
     "en-US": {
       "name": "FTU",
-      "description": "First Time Experience"
+      "description": "Gaia Phone"
     }
   },
 
@@ -53,10 +53,10 @@
     "to": "/shared/pages/import/redirects/redirect.html"}
   ],
 
-  "datastores-owned": {
+  "datastores-access": {
     "Gaia_Facebook_Friends": {
-      "description": "Imported Facebook Friends"
+      "readonly": false,
+      "description": "Facebook contacts"
     }
   }
-
 }
