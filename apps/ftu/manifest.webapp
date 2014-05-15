@@ -4,6 +4,7 @@
   "type": "certified",
   "launch_path": "/index.html",
   "fullscreen": "true",
+  "role": "system",
 
   "developer": {
     "name": "The Gaia Team",
@@ -13,7 +14,7 @@
   "locales": {
     "en-US": {
       "name": "FTU",
-      "description": "Gaia Phone"
+      "description": "First Time Experience"
     }
   },
 

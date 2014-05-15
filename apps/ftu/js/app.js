@@ -5,6 +5,8 @@
 
 var _ = navigator.mozL10n.get;
 
+console.log('Loading app.js of FTU');
+
 var AppManager = {
 
   init: function init() {
@@ -17,10 +19,15 @@ var AppManager = {
     Navigation.init();
     DataMobile.init();
     var kSplashTimeout = 700;
+
+    console.log('In init');
+
     // Retrieve mobile connection if available
     // this is used to keep all tests passing while introducing multi-sim APIs
     var conn = window.navigator.mozMobileConnections &&
                window.navigator.mozMobileConnections[0];
+
+     console.log('After conn');
 
     if (!conn) {
       setTimeout(function() {
@@ -38,7 +45,9 @@ var AppManager = {
     setTimeout(function() {
       // TODO Include VIVO SIM Card management
       // https://bugzilla.mozilla.org/show_bug.cgi?id=801269#c6
+      console.log('Before manage step');
       Navigation.manageStep();
+      console.log('After manage step');
       UIManager.activationScreen.classList.add('show');
       // Remove the splash
       UIManager.splashScreen.classList.remove('show');
@@ -47,7 +56,10 @@ var AppManager = {
 };
 
 navigator.mozL10n.ready(function showBody() {
+  console.log('After mozL10N ready');
+
   if (!AppManager.isInitialized) {
+    console.log('Initializing ....');
     AppManager.init();
   } else {
     UIManager.initTZ();
