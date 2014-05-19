@@ -68,6 +68,7 @@ if (!contacts.MatchingController) {
         parent.contacts.List.getContactById(cid, function success(mContact) {
           // Master contact
           contact = mContact;
+          contacts.Matcher.dataProvider = ContactsData;
           contacts.Matcher.match(contact, 'active', callbacks);
         }, abort);
       });

@@ -10,6 +10,9 @@ contacts.Matcher = (function() {
   var FB_CATEGORY = 'facebook';
   var FB_LINKED = 'fb_linked';
 
+  // The data provider to be used
+  var dataProvider;
+
   // Multiple matcher Object. It tries to find a set of Contacts that match at
   // least one of the targets passed as parameters
   // ptargets: They are the targets (telephone numbers, emails) we want to find
@@ -32,77 +35,74 @@ contacts.Matcher = (function() {
         filterOp: matchingOptions.filterOp
       };
 
-      var req = navigator.mozContacts.find(options);
-
-      req.onsuccess = function() {
-        var matchings = req.result.filter(function(aResult) {
-          return filterFacebook(aResult, matchingOptions.linkParams);
-        });
-
-        var filterBy = options.filterBy;
-
-        var sanitizedTarget = SimplePhoneMatcher.sanitizedNumber(target);
-        var targetVariants = SimplePhoneMatcher.generateVariants(target);
-
-        matchings.forEach(function(aMatching) {
-          if (matchingOptions.selfContactId === aMatching.id) {
-            return;
-          }
-
-          var field = options.filterBy[0];
-          var values = aMatching[field];
-
-          values.forEach(function(aValue) {
-            var value = aValue.value;
-            var sanitizedValue = SimplePhoneMatcher.sanitizedNumber(value);
-            var valueMatched = false;
-
-            if (targetVariants.length > 1) {
-              if (targetVariants.indexOf(sanitizedValue) !== -1) {
-                valueMatched = true;
-              }
-            } else if (SimplePhoneMatcher.generateVariants(sanitizedValue).
-                       indexOf(sanitizedTarget) !== -1) {
-                valueMatched = true;
-              }
-
-            if (valueMatched) {
-              var matchings, matchingObj;
-              if (!finalMatchings[aMatching.id]) {
-                matchingObj = {
-                  matchings: {},
-                  matchingContact: aMatching
-                };
-                finalMatchings[aMatching.id] = matchingObj;
-                matchingObj.matchings[filterBy[0]] = [];
-              }
-              else {
-                matchingObj = finalMatchings[aMatching.id];
-              }
-              matchings = matchingObj.matchings[filterBy[0]];
-
-              // Avoinding to report multiple matchings due to variants
-              var sameValueMatchings = matchings.filter(function(matching) {
-                return (matching.matchedValue === value);
-              });
-              if (sameValueMatchings.length === 0) {
-                matchings.push({
-                  'target': target,
-                  'matchedValue': value
-                });
-              }
-            }
+      dataProvider.findBy(matchingOptions.filterBy[0], target).then(
+        function(result) {
+          var matchings = result.filter(function(aResult) {
+            return filterFacebook(aResult, matchingOptions.linkParams);
           });
-        });  // matchings.forEach
+
+          var filterBy = options.filterBy;
+
+          var sanitizedTarget = SimplePhoneMatcher.sanitizedNumber(target);
+          var targetVariants = SimplePhoneMatcher.generateVariants(target);
+
+          matchings.forEach(function(aMatching) {
+            if (matchingOptions.selfContactId === aMatching.id) {
+              return;
+            }
+
+            var field = options.filterBy[0];
+            var values = aMatching[field];
+
+            values.forEach(function(aValue) {
+              var value = aValue.value;
+              var sanitizedValue = SimplePhoneMatcher.sanitizedNumber(value);
+              var valueMatched = false;
+
+              if (targetVariants.length > 1) {
+                if (targetVariants.indexOf(sanitizedValue) !== -1) {
+                  valueMatched = true;
+                }
+              } else if (SimplePhoneMatcher.generateVariants(sanitizedValue).
+                         indexOf(sanitizedTarget) !== -1) {
+                  valueMatched = true;
+                }
+
+              if (valueMatched) {
+                var matchings, matchingObj;
+                if (!finalMatchings[aMatching.id]) {
+                  matchingObj = {
+                    matchings: {},
+                    matchingContact: aMatching
+                  };
+                  finalMatchings[aMatching.id] = matchingObj;
+                  matchingObj.matchings[filterBy[0]] = [];
+                }
+                else {
+                  matchingObj = finalMatchings[aMatching.id];
+                }
+                matchings = matchingObj.matchings[filterBy[0]];
+
+                // Avoinding to report multiple matchings due to variants
+                var sameValueMatchings = matchings.filter(function(matching) {
+                  return (matching.matchedValue === value);
+                });
+                if (sameValueMatchings.length === 0) {
+                  matchings.push({
+                    'target': target,
+                    'matchedValue': value
+                  });
+                }
+              }
+            });
+          });  // matchings.forEach
 
         carryOn();
-      }; // onsuccess
-
-      req.onerror = function(e) {
-        window.console.error('Error while trying to do the matching',
+      }, function error(err) {
+            window.console.error('Error while trying to do the matching',
                              e.target.error.name);
-        notifyMismatch(self);
-      };
+            notifyMismatch(self);
+      }); // onsuccess
     }
 
     function carryOn() {
@@ -385,24 +385,16 @@ contacts.Matcher = (function() {
       var targetName = aContact.name[0].trim();
       // Filter by familyName using startsWith. Gecko 'startsWith' operation
       // acts as 'equal' but does not match case.
-      var reqName = navigator.mozContacts.find({
-        filterValue: targetName,
-        filterBy: ['name'],
-        filterOp: 'startsWith'
-      });
-
-      reqName.onsuccess = function() {
-        resultsByName = reqName.result.filter(function(aResult) {
+      dataProvider.findBy('name', targetName).then(function(result) {
+        resultsByName = result.filter(function(aResult) {
           return filterFacebook(aResult, options);
         });
         notifyFindNameReady();
-      };
-
-      reqName.onerror = function(e) {
-        window.console.warn('Error while trying to find by name: ',
-                                e.target.error.name);
-        notifyFindNameReady();
-      };
+      }, function error(err) {
+          window.console.warn('Error while trying to find by name: ',
+                                  e.target.error.name);
+          notifyFindNameReady();
+      });
     }
     else {
       notifyFindNameReady();
@@ -415,15 +407,7 @@ contacts.Matcher = (function() {
       var targetFamilyName = aContact.familyName[0].trim();
       // Filter by familyName using startsWith. Gecko 'startsWith' operation
       // acts as 'equal' but does not match case.
-      var reqFamilyName = navigator.mozContacts.find({
-        filterValue: targetFamilyName,
-        filterBy: ['familyName'],
-        filterOp: 'startsWith'
-      });
-
-      reqFamilyName.onsuccess = function() {
-        var results = reqFamilyName.result;
-
+      dataProvider.findBy('familyName', targetFamilyName).then(function(results) {
         var givenNames = [];
         var targetGN = null;
 
@@ -475,13 +459,11 @@ contacts.Matcher = (function() {
             endOfMatchByName(finalResult, aContact, resultsByName, callbacks);
           });
         }
-      };
-
-      reqFamilyName.onerror = function(e) {
-        window.console.error('Error while trying to find by familyName: ',
+      }, function err(error) {
+          window.console.error('Error while trying to find by familyName: ',
                              e.target.error.name);
-        notifyMismatch(callbacks);
-      };
+          notifyMismatch(callbacks);
+      });
     }
   }
 
@@ -635,6 +617,9 @@ contacts.Matcher = (function() {
   }
 
   return {
-    match: doMatch
+    match: doMatch,
+    set dataProvider(provider) {
+      dataProvider = provider;
+    }
   };
 })();

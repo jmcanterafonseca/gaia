@@ -984,6 +984,8 @@ contacts.List = (function() {
   };
 
   var getContactById = function(contactID, successCb, errorCb) {
+    ContactsData.get(contactID).then(successCb, errorCb);
+    /*
     var options = {
       filterBy: ['id'],
       filterOp: 'equals',
@@ -1009,7 +1011,7 @@ contacts.List = (function() {
 
     if (typeof errorCb === 'function') {
       request.onerror = errorCb;
-    }
+    } */
   };
 
   var getAllContacts = function cl_getAllContacts(errorCb, successCb) {
@@ -1021,7 +1023,7 @@ contacts.List = (function() {
         sortOrder: 'ascending'
       };
 
-      var cursor = navigator.mozContacts.getAll(options);
+      var cursor = ContactsData.getAll(options);
       var successCb = successCb || loadChunk;
       var num = 0;
       var chunk = [];
@@ -1711,7 +1713,7 @@ contacts.List = (function() {
                              'contact-text-selecting');
         row.dataset.selectStyleSet = true;
       }
-      
+
       var label = row.querySelector('label');
       if (isDangerSelectList) {
         label.classList.add('danger');

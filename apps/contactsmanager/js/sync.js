@@ -1,0 +1,223 @@
+/* global asyncStorage, Promise, GlobalMergedContacts */
+/* exported ContactsSync */
+'use strict';
+
+var ContactsSync = (function ContactsSync() {
+
+  var stores = {};
+
+  // Make sure the contacts stores are loaded
+  function ensureStores(cb) {
+    console.log('Ensure Stores ...');
+
+    if (!navigator.getDataStores) {
+      if (typeof cb === 'function') {
+        cb('No DS available');
+      }
+      return;
+    }
+
+    stores = {};
+    navigator.getDataStores('contacts').then(function(ds) {
+      ds.forEach(function onStore(store) {
+        stores[store.owner] = store;
+      });
+      return Promise.resolve();
+    }).then(GlobalMergedContacts.init).then(function() {
+      if (typeof cb === 'function') {
+        cb();
+      }
+    });
+  }
+
+  var onSync = function onSync(port, evt) {
+    var message = evt.data;
+
+    // If it is a mozContactId it is a mozContact created from the Contacts app
+    if (message.mozContact) {
+      var ownerMozContacts = 'app://communications.gaiamobile.org';
+      console.log('Message from the Contacts app with a new mozContact');
+
+      ensureStores(function() {
+        console.log('Ensure stores finished. Going to add GCDS');
+
+        GlobalMergedContacts.add({ owner: ownerMozContacts },
+          message.mozContact.id,
+          message.mozContact).then(function success() {
+            console.log('Added record to the GCDS');
+            port.postMessage({
+              revisionId: GlobalMergedContacts.revisionId
+            });
+            GlobalMergedContacts.flush().then(function() {
+              window.setTimeout(window.close, 5000);
+            });
+        });
+      });
+
+      return;
+    }
+
+    console.log('On Sync invoked', JSON.stringify(message));
+    applyChange(message);
+  };
+
+  function applyChange(message) {
+    var owner = message.owner;
+    findStore(owner, function(store) {
+      if (!store) {
+        return;
+      }
+      doApplyChanges(store);
+    });
+  }
+
+  function findStore(owner, cb) {
+    ensureStores(function() {
+      var result = stores[owner] || null;
+      if (typeof cb === 'function') {
+        cb(result);
+      }
+    });
+  }
+
+  function doApplyChanges(store) {
+    // Since there is a bug in datastore that launch event changes
+    // in all DS of the same kind, use the cursor with the
+    // revision.
+    // Unfortunately, the revisionId parameter to ask for the cursor
+    // is being ignored if it's incorrect :(
+    if (!store) {
+      // Do nothing
+      return;
+    }
+
+    // if (change.multipe) {
+    //   applySync(store);
+    // } else {
+    //   applySingleChange(store, change);
+    // }
+    applySync(store);
+  }
+
+  function notifyContactsApp() {
+    // return Promise.resolve();
+
+    return new Promise(function(resolve, reject) {
+      navigator.mozApps.getSelf().onsuccess = function(evt) {
+        var app = evt.target.result;
+        app.connect('contactsLocalData-sync').then(function onConn(ports) {
+          var message = {
+            'a': 'a'
+          };
+          ports.forEach(function(port) {
+            console.log('Sending message ....');
+            port.postMessage(message);
+          });
+          resolve(null);
+        }, function onConnRejected(reason) {
+            console.log('Cannot notify Contacts Manager: ', reason);
+            reject({
+              name: reason
+            });
+        });
+      };
+    });
+  }
+
+  function endSync() {
+    console.log('GCDS ::: Sync done');
+    notifyContactsApp().then(function() {
+      console.log('Contacts app has been notified');
+      setTimeout(window.close, 5000);
+    });
+  }
+
+  // We got a single change, apply it
+  function applySingleChange(store, change) {
+    console.log('---->> op ', JSON.stringify(change), store);
+    switch (change.operation) {
+      case 'update':
+      break;
+
+      case 'add':
+        console.log('Going to add a record');
+        return GlobalMergedContacts.add(store, change.id, change.data);
+
+      case 'clear':
+        console.log('Going to clear all records from a store');
+        return GlobalMergedContacts.clear(store);
+
+      case 'remove':
+        console.log('Going to remove a record');
+        return GlobalMergedContacts.remove(store, change.id);
+
+      default:
+      break;
+    }
+
+    return Promise.resolve();
+  }
+
+  function applySync(store) {
+    getLastRevision(store, function(revisionId) {
+      console.log('RevisionId: ', revisionId);
+
+      var cursor = store.sync(revisionId || '');
+
+      function resolveCursor(task) {
+        if (task.operation === 'done') {
+          GlobalMergedContacts.flush().then(function() {
+            setLastRevision(store, endSync);
+          });
+          return;
+        }
+
+        applySingleChange(store, task).then(function() {
+          cursor.next().then(resolveCursor);
+        }, function error(err) {
+            console.error('Error while applying change: ', err);
+            cursor.next().then(resolveCursor);
+        });
+      }
+
+      cursor.next().then(resolveCursor);
+    });
+  }
+
+  // Given the current store, gets last time we
+  // perform a sync. If we never did, we will get a
+  // null.
+  function getLastRevision(store, done) {
+    asyncStorage.getItem(store.owner, done);
+  }
+
+  // Save current DS revision as the last one
+  // we sync.
+  function setLastRevision(store, done) {
+    asyncStorage.setItem(store.owner, store.revisionId, function() {
+      // We cannnot execute the done (window.close) sequentially
+      // otherwise we get the following error:
+      // [JavaScript Error: "IndexedDB UnknownErr: IDBTransaction.cpp:863"]
+      setTimeout(done, 0);
+    });
+  }
+
+  return {
+    onSync: onSync
+  };
+
+})();
+
+navigator.mozSetMessageHandler('connection', function(connectionRequest) {
+  console.log('Connection Request for Syncing');
+
+  if (connectionRequest.keyword !== 'contacts-sync') {
+    return;
+  }
+
+  console.log('Connection Request for Syncing');
+
+  var port = connectionRequest.port;
+  port.onmessage = ContactsSync.onSync.bind(null, port);
+  port.start();
+});

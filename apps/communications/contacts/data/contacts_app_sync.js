@@ -56,7 +56,10 @@ var ContactsSync = (function ContactsSync() {
             id: change.id,
             entryData: change.data
           }).then(function success(contactData) {
-              console.log('Multicontact data: ', JSON.stringify(contactData));
+              // This is the id of this record in the GCDS
+              contactData.multiContactId = change.id;
+              contactData.id = 'c' + change.id;
+              
               return ContactsData.save(contactData);
           }, function err(error) {
               console.log('Error while getting multicontact data: ', error.name);
@@ -106,7 +109,7 @@ var ContactsSync = (function ContactsSync() {
       console.log('RevisionId: ', revisionId);
 
       getGlobalDataStore().then(function(store) {
-        cursor = store.sync(revisionId);
+        cursor = store.sync(revisionId || '');
         cursor.next().then(resolveCursor);
       });
     });

@@ -687,6 +687,9 @@ contacts.Form = (function() {
       var callbacks = cookMatchingCallbacks(contact);
       cancelHandler = doCancel.bind(callbacks);
       cancelButton.addEventListener('click', cancelHandler);
+
+      console.log('Here ......');
+
       doMatch(contact, callbacks);
     });
   };
@@ -848,6 +851,7 @@ contacts.Form = (function() {
     LazyLoader.load(['/shared/js/text_normalizer.js',
                      '/shared/js/simple_phone_matcher.js',
                      '/shared/js/contacts/contacts_matcher.js'], function() {
+      contacts.Matcher.dataProvider = ContactsData;
       contacts.Matcher.match(contact, 'active', callbacks);
     });
   };
@@ -856,9 +860,19 @@ contacts.Form = (function() {
     // Deleting auxiliary objects created for dates
     delete contact.date;
 
-    var request = navigator.mozContacts.save(utils.misc.toMozContact(contact));
+    var theContact = utils.misc.toMozContact(contact);
+    var request = navigator.mozContacts.save(theContact);
+
+    var idbObj = JSON.parse(JSON.stringify(contact));
+    ContactsData.save(idbObj);
 
     request.onsuccess = function onsuccess() {
+      // We need to clone the object otherwise it will not be saved on indexedDB
+      notifyContactsManager({
+        mozContact: theContact,
+        merged: false
+      });
+
       hideThrobber();
       // Reloading contact, as it only allows to be updated once
       if (ActivityHandler.currentlyHandling) {
@@ -874,6 +888,32 @@ contacts.Form = (function() {
       console.error('Error saving contact', request.error.name);
     };
   };
+
+  function notifyContactsManager(message) {
+    navigator.mozApps.getSelf().onsuccess = function(evt) {
+      var app = evt.target.result;
+      app.connect('contacts-sync').then(function onConn(ports) {
+        ports.forEach(function(port) {
+          console.log('Sending message to the Contacts Manager ....');
+          port.postMessage(message);
+        });
+
+        ports[0].onmessage = function(evt) {
+          console.log('Message from the Contacts Manager!!!!');
+          var data = evt.data;
+          setLastRevision(data.revisionId);
+        }
+
+      }, function onConnRejected(reason) {
+          console.error('Cannot notify Contacts Manager: ', reason);
+      });
+    };
+  }
+
+  // Save current DS revision as the last one we sync.
+  function setLastRevision(revisionId, done) {
+    asyncStorage.setItem('GCDS_RevId', revisionId, done);
+  }
 
   var showThrobber = function showThrobber() {
     throbber.classList.remove('hide');

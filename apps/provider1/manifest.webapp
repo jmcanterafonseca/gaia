@@ -1,0 +1,20 @@
+{
+  "name": "Provider 1",
+  "type": "certified",
+  "launch_path": "/index.html",
+  "datastores-owned": {
+    "contacts": {
+      "access": "readwrite",
+      "description": "Provider 1 contacts"
+    }
+  },
+  "redirects": [
+    {"from": "http://postmessageitor.eu01.aws.af.cm/",
+     "to": "/redirect.html"}
+  ],
+  "permissions": {
+    "systemXHR": {
+      "description": "This permission is required to contact Google servers"
+    }
+  }
+}

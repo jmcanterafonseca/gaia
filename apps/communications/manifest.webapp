@@ -158,9 +158,14 @@
     "to": "/shared/pages/import/redirects/redirect.html"}
   ],
 
-  "datastores-owned": {
-    "Gaia_Facebook_Friends": {
-      "description": "Imported Facebook Friends"
+  "datastores-access": {
+    "contacts": {
+      "access": "readonly"
+    },
+
+    "Global_Contacts_Datastore": {
+      "access": "readonly",
+      "description": "Contains contacts from different data sources"
     }
   },
 
@@ -171,6 +176,13 @@
         "manifestURLs": ["app://ftu.gaiamobile.org/manifest.webapp"]
       },
       "handler_path": "/contacts/iac.html"
+    },
+    "contactsLocalData-sync": {
+      "description": "Contacts App Data Synchronization",
+      "rules": {
+        "manifestURLs": ["app://contactsmanager.gaiamobile.org/manifest.webapp"]
+      },
+      "handler_path": "/contacts/data/index.html"
     }
   },
 
