@@ -871,7 +871,7 @@ contacts.Form = (function() {
       notifyContactsManager({
         mozContact: theContact,
         merged: false
-      });
+      }, idbObj);
 
       hideThrobber();
       // Reloading contact, as it only allows to be updated once
@@ -889,7 +889,7 @@ contacts.Form = (function() {
     };
   };
 
-  function notifyContactsManager(message) {
+  function notifyContactsManager(message, contact) {
     navigator.mozApps.getSelf().onsuccess = function(evt) {
       var app = evt.target.result;
       app.connect('contacts-sync').then(function onConn(ports) {
@@ -902,6 +902,10 @@ contacts.Form = (function() {
           console.log('Message from the Contacts Manager!!!!');
           var data = evt.data;
           setLastRevision(data.revisionId);
+          // And now the multiContactId is captured on the Contact
+          console.log('MultiContactId: ', data.multiContactId);
+          contact.multiContactId = data.multiContactId;
+          ContactsData.save(contact);
         }
 
       }, function onConnRejected(reason) {

@@ -43,10 +43,11 @@ var ContactsSync = (function ContactsSync() {
 
         GlobalMergedContacts.add({ owner: ownerMozContacts },
           message.mozContact.id,
-          message.mozContact).then(function success() {
+          message.mozContact).then(function success(newId) {
             console.log('Added record to the GCDS');
             port.postMessage({
-              revisionId: GlobalMergedContacts.revisionId
+              revisionId: GlobalMergedContacts.revisionId,
+              multiContactId: newId
             });
             GlobalMergedContacts.flush().then(function() {
               window.setTimeout(window.close, 5000);

@@ -43,10 +43,41 @@ var ContactsSync = (function ContactsSync() {
     return new Promise(function(resolve, reject) {
       switch (change.operation) {
         case 'update':
+          // Ignore index changes
+          if (change.id === 1) {
+            resolve();
+            break;
+          }
+          console.log('Going to update a record ...');
+
+          ContactsData.getMultiContact(change.id).then(
+            function success(affectedRecord) {
+              // The current multiContact data needs to be updated
+              MultiContact.getData({
+                id: change.id,
+                entryData: change.data
+              }).then(function success(contactData) {
+                  // This is the id of this record in the GCDS
+                  contactData.multiContactId = change.id;
+                  contactData.id = affectedRecord.id;
+
+                  return ContactsData.save(contactData);
+              }, function err(error) {
+                  console.log('Error while getting multicontact data: ',
+                              error.name);
+              }).then(function success() {
+                  resolve();
+              }, function error(err) { reject(err); });
+          });
         break;
 
         case 'add':
-          console.log('Going to add a record');
+          // Ignore index changes
+          if (change.id === 1) {
+            resolve();
+            break;
+          }
+          console.log('Going to add a record ...');
           if (!Array.isArray(change.data)) {
             console.log('It is not an Array');
             resolve();
@@ -59,13 +90,13 @@ var ContactsSync = (function ContactsSync() {
               // This is the id of this record in the GCDS
               contactData.multiContactId = change.id;
               contactData.id = 'c' + change.id;
-              
+
               return ContactsData.save(contactData);
           }, function err(error) {
               console.log('Error while getting multicontact data: ', error.name);
           }).then(function success() {
               resolve();
-          }, function error(err) { reject(error); });
+          }, function error(err) { reject(err); });
         break;
 
         case 'clear':
@@ -79,7 +110,7 @@ var ContactsSync = (function ContactsSync() {
             resolve();
             break;
           }
-          ContactsData.remove.then(resolve, reject);
+          ContactsData.remove(change.id).then(resolve, reject);
         break;
 
         default:
@@ -93,9 +124,12 @@ var ContactsSync = (function ContactsSync() {
 
     function resolveCursor(task) {
       if (task.operation === 'done') {
+        console.log('Operation done!!!!!');
         setLastRevision(endSync);
         return;
       }
+
+      console.log('Before Appy single change');
 
       applySingleChange(task).then(function() {
         cursor.next().then(resolveCursor);
@@ -110,6 +144,7 @@ var ContactsSync = (function ContactsSync() {
 
       getGlobalDataStore().then(function(store) {
         cursor = store.sync(revisionId || '');
+        console.log('Before cursor next');
         cursor.next().then(resolveCursor);
       });
     });

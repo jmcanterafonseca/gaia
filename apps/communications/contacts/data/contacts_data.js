@@ -4,12 +4,13 @@ var ContactsData = (function() {
   var DB_NAME = 'Local_Contacts_Database';
   var STORE_NAME = 'LocalContacts';
 
-  var INDEX_BY_NAME = 'by_name';
-  var INDEX_BY_GN   = 'by_givenName';
-  var INDEX_BY_FN   = 'by_familyName';
+  var INDEX_BY_NAME          = 'by_name';
+  var INDEX_BY_GN            = 'by_givenName';
+  var INDEX_BY_FN            = 'by_familyName';
 
-  var INDEX_BY_TEL   = 'by_tel';
-  var INDEX_BY_EMAIL = 'by_email';
+  var INDEX_BY_TEL           = 'by_tel';
+  var INDEX_BY_EMAIL         = 'by_email';
+  var INDEX_BY_MULTI_CONTACT = 'by_multi_contact';
 
   var dbRequested = false;
   var DB_READY_EVENT = 'contacts_db_ready';
@@ -79,6 +80,10 @@ var ContactsData = (function() {
     store.createIndex(INDEX_BY_EMAIL, 'email1', {
       unique: false,
       multiEntry: true
+    });
+
+    store.createIndex(INDEX_BY_MULTI_CONTACT, 'multiContactId', {
+      unique: true
     });
   }
 
@@ -151,6 +156,27 @@ var ContactsData = (function() {
 
         req.onsuccess = function() {
           console.log('Record obtained: ', id);
+          console.log(JSON.stringify(req.result));
+          resolve(req.result);
+        };
+
+        req.onerror = reject;
+      });
+    });
+  }
+
+  function getMultiContact(multiContactId) {
+    return new Promise(function(resolve, reject) {
+      getDatabase().then(function(db) {
+        console.log('Getting multicontact by id ....', multiContactId);
+
+        var transaction = db.transaction([STORE_NAME], 'readonly');
+        var objectStore = transaction.objectStore(STORE_NAME);
+        var index = objectStore.index(INDEX_BY_MULTI_CONTACT);
+
+        var req = index.get(multiContactId);
+        req.onsuccess = function() {
+          console.log('Record by multicontact obtained: ', multiContactId);
           console.log(JSON.stringify(req.result));
           resolve(req.result);
         };
@@ -277,6 +303,7 @@ var ContactsData = (function() {
 
   return {
     'get': get,
+    'getMultiContact': getMultiContact,
     'save': save,
     'remove': remove,
     'clear': clear,

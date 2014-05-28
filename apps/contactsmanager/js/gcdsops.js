@@ -169,7 +169,7 @@ var GlobalMergedContacts = (function GCDSOps() {
         console.log('Added contact with id: ', globalDsId);
         console.log('Index content: ', JSON.stringify(index.byEmail));
 
-        resolve(data);
+        resolve(globalDsId);
       }, reject);
     });
   }
