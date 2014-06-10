@@ -1,6 +1,12 @@
 'use strict';
 
-var MockDatastore = {
+function MockDatastore(name, owner, records) {
+  this.name = name;
+  this.owner = owner;
+  this._records = records;
+}
+
+MockDatastore.prototype = {
   readOnly: false,
   revisionId: '123456',
   name: 'Mock_Datastore',
@@ -116,6 +122,8 @@ var MockDatastore = {
 };
 
 var MockNavigatorDatastore = {
+  _datastores: null,
+  
   getDataStores: function() {
     if (MockNavigatorDatastore._notFound === true) {
       return new window.Promise(function(resolve, reject) {
@@ -124,7 +132,12 @@ var MockNavigatorDatastore = {
     }
 
     return new window.Promise(function(resolve, reject) {
-      resolve([MockDatastore]);
+      if (!MockNavigatorDatastore._datastores) {
+        resolve([new MockDatastore()]);
+      }
+      else {
+        resolve(MockNavigatorDatastore._datastores);
+      }
     });
   }
 };
