@@ -37,10 +37,22 @@ MockDatastoreObj.prototype = {
     if (this._inError === true) {
       return this._reject();
     }
-
-    var record = this._clone(this._records[dsId]);
+    
+    var self = this;
+    
     return new window.Promise(function(resolve, reject) {
-      resolve(record);
+      var dsIds = Array.isArray(dsId) ? dsId : [dsId];
+      
+      var results = [];
+  
+      dsIds.forEach(function(aId) {
+        var record = self._clone(self._records[aId]);
+        results.push(record);
+      });
+      
+      var out = Array.isArray(dsId) ? results : results[0];
+     
+      resolve(out);
     });
   },
 
