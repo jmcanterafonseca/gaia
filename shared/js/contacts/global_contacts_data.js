@@ -225,6 +225,7 @@ var GlobalContacts = (function GCDSOps() {
 
       var callbacks = {
         onmatch: function(results) {
+          console.log('On match');
           var key = Object.keys(results)[0];
 
           var entryIdToMerge = results[key].matchingContact.id;
@@ -232,6 +233,7 @@ var GlobalContacts = (function GCDSOps() {
                                                                      reject);
         },
         onmismatch: function() {
+          console.log('On mismatch');
           doAdd(entry, originStore, contact).then(resolve, reject);
         }
       };
@@ -240,6 +242,14 @@ var GlobalContacts = (function GCDSOps() {
       // contacts in this datastore and find the corresponding duplicates
       matcher.dataProvider = GlobalContacts;
       matcher.match(contact, 'passive', callbacks);
+    });
+  };
+
+  var get = function get(globalDsId) {
+    return new Promise(function(resolve, reject) {
+      getDatastore().then(function success(store) {
+        return store.get(globalDsId);
+      }).then(resolve).catch (reject);
     });
   };
 
@@ -258,6 +268,8 @@ var GlobalContacts = (function GCDSOps() {
 
   // Append a contact to an specific index
   function doAppend(entry, originStore, globalDsId, contact) {
+    console.log('Append: ', globalDsId);
+
     return new Promise(function(resolve, reject) {
       store.get(globalDsId).then(function(obj) {
         if (!obj || !Array.isArray(obj)) {
@@ -389,7 +401,7 @@ var GlobalContacts = (function GCDSOps() {
 
   // This function is used to find a corresponding target element on the index
   // Allowing us to remove it when it is no longer necessary
-  // The matching must correspond to the same GCDS id, owner and DS UID 
+  // The matching must correspond to the same GCDS id, owner and DS UID
   function fnIndex(target, element) {
     return target.id && element.id === target.id &&
             element.owner === target.owner && element.uid === target.uid;
@@ -588,14 +600,20 @@ var GlobalContacts = (function GCDSOps() {
   };
 
   function getContactData(contactIds) {
+    console.log('Contact Ids: ', JSON.stringify(contactIds));
+
     return new Promise(function(resolve, reject) {
-      store.get(contactIds).then(function success(entries) {
+      store.get.apply(store, contactIds).then(function success(entries) {
+        if (contactIds.length === 1) {
+          entries = [entries];
+        }
+
         var operations = [];
         entries.forEach(function(aEntry, i) {
-          operations.push(MultiContact.getData([{
+          operations.push(MultiContact.getData({
             id: contactIds[i],
             entryData: aEntry
-          }]));
+          }));
         });
         return Promise.all(operations);
       }, reject).then(resolve, reject);
@@ -611,6 +629,7 @@ var GlobalContacts = (function GCDSOps() {
     return {
       set onsuccess(cb) {
         findBy(by, targetValue).then(function success(result) {
+          console.log('Result: ', JSON.stringify(result));
           this.result = result;
           cb();
         }.bind(this), this.errorCb);
@@ -635,6 +654,7 @@ var GlobalContacts = (function GCDSOps() {
 
   return {
     add: add,
+    get: get,
     remove: remove,
     flush: flush,
     clear: clear,

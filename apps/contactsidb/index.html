@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1">
+    <meta charset="utf-8">
+    <title>Contacts IDB</title>
+
+    <style>
+      html, body {
+        width: 100%;
+        height: 100%;
+        background-color: pink;
+        overflow: hidden;
+      }
+    </style>
+
+    <script src="/shared/js/lazy_loader.js"></script>
+    <script src="/shared/js/simple_phone_matcher.js"></script>
+    <script src="/shared/js/text_normalizer.js"></script>
+    <script src="js/contacts_data.js"></script>
+    <script src="/shared/js/contact_photo_helper.js"></script>
+    <script src="/shared/js/contacts/utilities/image_thumbnail.js"></script>
+    <script src="/shared/js/contacts/multi_contact.js"></script>
+    <script src="/shared/js/contacts/contacts_matcher.js"></script>
+    <script src="/shared/js/contacts/contacts_merger.js"></script>
+    <script src="/shared/js/contacts/global_contacts_data.js"></script>
+    <script defer src="js/contacts_saver.js"></script>
+    <script defer src="js/main.js"></script>
+    <script defer src="js/multi.js"></script>
+  </head>
+
+  <body>
+
+    <p><button type=button id="add">Add Records</button>
+        <button type=button id="workload">Add Workload</button>
+        <br><br>
+       <button type=button id="read">Read Records</button>
+       <button type=button id="getall">Get All</button>
+    </p>
+
+    <p>
+      <button type=button id="addDS">Add to Global DS</button>
+      <button type=button id="readMulti">Read MultiContact</button>
+    </p>
+
+  </body>
+
+</html>
