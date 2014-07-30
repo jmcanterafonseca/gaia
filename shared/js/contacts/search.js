@@ -302,7 +302,7 @@ contacts.Search = (function() {
 
   function onInput(e) {
     if (e.target.id === searchBox.id) {
-      search();
+      searchNG();
     }
   }
 
@@ -488,6 +488,58 @@ contacts.Search = (function() {
     }
   };
 
+  var searchNG = function performSearchNG(searchDoneCb) {
+    prevTextToSearch = currentTextToSearch;
+
+    currentTextToSearch = Normalizer.toAscii(searchBox.value.trim());
+    currentTextToSearch = Normalizer.escapeRegExp(currentTextToSearch);
+    var thisSearchText = String(currentTextToSearch);
+
+    if (thisSearchText.length === 0) {
+      resetState();
+      window.setTimeout(fillInitialSearchPage, 0);
+    }
+    else {
+      showProgress();
+      if (!searchEnabled) {
+        resetState();
+        return;
+      }
+      emptySearch = false;
+
+      Contacts.suffixIndex.search(thisSearchText).then(function(results) {
+        console.log('Search results: ', JSON.stringify(results));
+        searchList.innerHTML = '';
+        var resultList = Object.keys(results);
+        if(resultList.length === 0) {
+          showNoResults();
+        }
+        else {
+          // Avoiding the same contact to appear several times
+          var contactsProcessed = [];
+          resultList.forEach(function(aResult) {
+            var entries = results[aResult].entries;
+            var contactId = entries[0];
+            console.log('Contact Id: ', contactId);
+
+            if (contactsProcessed.indexOf(contactId) === -1) {
+              contactsProcessed.push(contactId);
+
+              var node = document.querySelector('[data-uuid="' +
+                                                            contactId + '"]');
+
+              console.log('Node: ', node);
+              searchList.appendChild(source.clone(node));
+            }
+            hideProgressResults();
+          });
+        }
+      }).catch(function error(err) {
+          console.error('Error while searching: ', err);
+      });
+    }
+  };
+
   var search = function performSearch(searchDoneCb) {
     prevTextToSearch = currentTextToSearch;
 
@@ -614,6 +666,7 @@ contacts.Search = (function() {
     'appendNodes': appendNodes,
     'removeContact': removeContact,
     'search': search,
+    'searchNG': search,
     'enterSearchMode': enterSearchMode,
     'exitSearchMode': exitSearchMode,
     'isInSearchMode': isInSearchMode,

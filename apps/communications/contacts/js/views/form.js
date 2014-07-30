@@ -46,7 +46,8 @@ contacts.Form = (function() {
       nonEditableValues,
       deviceContact,
       fbContact,
-      currentPhoto;
+      currentPhoto,
+      suffixIndex;
 
   var REMOVED_CLASS = 'removed';
   var FB_CLASS = 'facebook';
@@ -157,6 +158,8 @@ contacts.Form = (function() {
   };
 
   var init = function cf_init(tags, currentDom) {
+    suffixIndex = Contacts.suffixIndex;
+
     dom = currentDom || document;
 
     _ = navigator.mozL10n.get;
@@ -868,6 +871,64 @@ contacts.Form = (function() {
     });
   };
 
+  function indexContact(contact) {
+    console.log('Id of contact to be indexed: ', contact.id);
+
+    return new Promise(function(resolve, reject) {
+      var fieldsToIndex = [
+        'tel',
+        'email',
+        'name',
+        'org'
+      ];
+
+      var wordList = [];
+      fieldsToIndex.forEach(function(aField) {
+        var data = contact[aField];
+
+        if (!Array.isArray(data)) {
+          return;
+        }
+        if (data[0]) {
+          if (data[0].value) {
+            data.forEach(function(aElem) {
+              wordList.push({
+                word: aElem.value,
+                id: contact.id
+              });
+            });
+          }
+          else {
+            wordList.push({
+              word: data[0],
+              id: contact.id
+            });
+          }
+        }
+      });
+
+      indexWordList(wordList).then(resolve, reject);
+    });
+  }
+
+  function indexWordList(wordList) {
+    return new Promise(function(resolve, reject) {
+      var sequence = Promise.resolve();
+
+      var numExecs = 0;
+      wordList.forEach(function(entry, index) {
+        sequence = sequence.then(function() {
+          return suffixIndex.index(entry);
+        }).then(function() {
+            numExecs++;
+            if (numExecs === wordList.length) {
+              resolve();
+            }
+        }).catch(reject);
+      });
+    });
+  }
+
   var doSave = function doSave(contact, noTransition) {
     // Deleting auxiliary objects created for dates
     delete contact.date;
@@ -875,25 +936,32 @@ contacts.Form = (function() {
     // When we add new contact, it has no id at the beginning. We have one, if
     // we edit current contact. We will use this information below.
     var isNew = contact.id !== 'undefined';
-    var request = navigator.mozContacts.save(utils.misc.toMozContact(contact));
+    var theMozContact = utils.misc.toMozContact(contact);
+    var request = navigator.mozContacts.save(theMozContact);
 
     request.onsuccess = function onsuccess() {
-      hideThrobber();
-      // Reloading contact, as it only allows to be updated once
-      if (ActivityHandler.currentlyHandling) {
-        ActivityHandler.postNewSuccess(contact);
-      }
-      if (!noTransition) {
-        Contacts.cancel();
-      }
+      indexContact(theMozContact).then(function() {
+        console.log('Contact indexed correctly');
 
-      // Since editing current contact returns to the details view, and adding
-      // the new one to the contacts list, we call setCurrent() only in the
-      // first case, so NFC listeners are not set on the Contact List
-      // (Bug 1041455).
-      if (isNew) {
-        Contacts.setCurrent(contact);
-      }
+        hideThrobber();
+        // Reloading contact, as it only allows to be updated once
+        if (ActivityHandler.currentlyHandling) {
+          ActivityHandler.postNewSuccess(contact);
+        }
+        if (!noTransition) {
+          Contacts.cancel();
+        }
+
+        // Since editing current contact returns to the details view, and adding
+        // the new one to the contacts list, we call setCurrent() only in the
+        // first case, so NFC listeners are not set on the Contact List
+        // (Bug 1041455).
+        if (isNew) {
+          Contacts.setCurrent(contact);
+        }
+      }).catch(function(error) {
+          console.error('Error while indexing: ', error);
+      });
     };
 
     request.onerror = function onerror() {
