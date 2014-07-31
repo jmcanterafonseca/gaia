@@ -537,7 +537,7 @@ contacts.Search = (function() {
               else {
                 // Wait for the node to be rendered
                 window.setTimeout(function renderNode() {
-                  
+
                 }, 500);
               }
             }
