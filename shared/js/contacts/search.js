@@ -508,7 +508,9 @@ contacts.Search = (function() {
       emptySearch = false;
 
       Contacts.suffixIndex.search(thisSearchText).then(function(results) {
-        console.log('Search results: ', JSON.stringify(results));
+        if (thisSearchText !== currentTextToSearch) {
+          return;
+        }
         searchList.innerHTML = '';
         var resultList = Object.keys(results);
         if(resultList.length === 0) {
@@ -529,7 +531,15 @@ contacts.Search = (function() {
                                                             contactId + '"]');
 
               console.log('Node: ', node);
-              searchList.appendChild(source.clone(node));
+              if (node) {
+                searchList.appendChild(source.clone(node));
+              }
+              else {
+                // Wait for the node to be rendered
+                window.setTimeout(function renderNode() {
+                  
+                }, 500);
+              }
             }
             hideProgressResults();
           });
@@ -666,7 +676,7 @@ contacts.Search = (function() {
     'appendNodes': appendNodes,
     'removeContact': removeContact,
     'search': search,
-    'searchNG': search,
+    'searchNG': searchNG,
     'enterSearchMode': enterSearchMode,
     'exitSearchMode': exitSearchMode,
     'isInSearchMode': isInSearchMode,

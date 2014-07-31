@@ -940,8 +940,12 @@ contacts.Form = (function() {
     var request = navigator.mozContacts.save(theMozContact);
 
     request.onsuccess = function onsuccess() {
+      var then = window.performance.now();
+
       indexContact(theMozContact).then(function() {
-        console.log('Contact indexed correctly');
+        var now = window.performance.now();
+
+        console.log('Contact indexed correctly: ', now - then);
 
         hideThrobber();
         // Reloading contact, as it only allows to be updated once
