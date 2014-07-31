@@ -285,12 +285,88 @@ var DatastoreMigration = function(db) {
     }
   }
 
+  function indexContact(contact) {
+    console.log('Id of contact to be indexed: ', contact.id);
+
+    return new Promise(function(resolve, reject) {
+      var fieldsToIndex = [
+        'tel',
+        'email',
+        'name',
+        'org'
+      ];
+
+      var wordList = [];
+      fieldsToIndex.forEach(function(aField) {
+        var data = contact[aField];
+
+        if (!Array.isArray(data)) {
+          return;
+        }
+        if (data[0]) {
+          if (data[0].value) {
+            data.forEach(function(aElem) {
+              wordList.push({
+                word: aElem.value,
+                id: contact.id
+              });
+            });
+          }
+          else {
+            wordList.push({
+              word: data[0],
+              id: contact.id
+            });
+          }
+        }
+      });
+
+      indexWordList(wordList).then(resolve, reject);
+    });
+  }
+
+  function indexWordList(wordList) {
+    return new Promise(function(resolve, reject) {
+      var sequence = Promise.resolve();
+
+      var numExecs = 0;
+      wordList.forEach(function(entry, index) {
+        sequence = sequence.then(function() {
+          return Contacts.suffixIndex.index(entry);
+        }).then(function() {
+            numExecs++;
+            if (numExecs === wordList.length) {
+              resolve();
+            }
+        }).catch(reject);
+      });
+    });
+  }
+
   var onidle = function onidle() {
     active = false;
     if (ongoingMigration) {
       return;
     }
     window.console.info('Idle event!!!. FB Migration about to start');
+
+    if (false) {
+      var cursor = navigator.mozContacts.getAll({});
+
+      cursor.onsuccess = function(evt) {
+        var contact = evt.target.result;
+
+        if (contact) {
+          indexContact(contact).then(function() {
+            console.log('Contact: ', contact.id, ' indexed');
+            cursor.continue();
+          }).catch(function error(err) {
+            console.error('Error while indexing: ', err);
+          });
+        }
+      }
+    }
+
     ongoingMigration = true;
     if (!migrator) {
       migrator = new DatastoreMigrator(db);
