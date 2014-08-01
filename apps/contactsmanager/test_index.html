@@ -12,21 +12,18 @@
         var indexing = new SuffixArrayIndexedDB();
 
         indexing.init().then(function() {
-          indexing.index({
+          indexing.index([{
             word: 'banana',
             id: 890
-          }).then(function done() {
-              console.log('Entry has been indexed');
-              return indexing.index({
-                word: 'canana',
-                id: 300
-              });
+          },{
+              word: 'canana',
+              id: 300
+            }]);
           }).then(function done() {
               console.log('Entry has been indexed');
           }).catch(function error(err) {
               console.error('Error while indexing: ', err);
           });
-        });
       }
 
       function search() {

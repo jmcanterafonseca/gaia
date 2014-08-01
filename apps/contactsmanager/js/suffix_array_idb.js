@@ -45,26 +45,72 @@ SuffixArrayIndexedDB.prototype = {
     });
   },
 
-  index: function si_index(entry) {
+  index: function si_index(entryList) {
     var self = this;
 
     return new Promise(function(resolve, reject) {
+      var then = window.performance.now();
+
+      var operations = [];
+
       self.init().then(function success() {
-        var tokens = entry.word.split(/\s+/);
-
-        var operations = [];
-
-        tokens.forEach(function(aToken) {
-          var normalized = aToken.toLowerCase();
-
-          operations.push(self._doIndex(normalized, entry.id));
-        });
+        operations.push(self._createWordEntries(entryList));
+        operations.push(self._createSuffixArray(entryList));
 
         Promise.all(operations).then(resolve, reject);
       }).catch (function error(err) {
-          console.error('Error while indexing: ', err && err.name);
+          console.error('Error while indexing: ', err);
           reject(err);
       });
+    });
+  },
+
+  _createWordEntries: function si__createWordEntries(entryList) {
+    var self = this;
+
+    var then = window.performance.now();
+
+    return new Promise(function(resolve, reject) {
+      var trans = self.db.transaction([self._STORE_WORDS], 'readwrite');
+      var store = trans.objectStore(self._STORE_WORDS);
+
+      for(var i = 0; i < entryList.length; i++) {
+        var entry = entryList[i];
+
+        var tokens = entry.word.split(/\s+/);
+        var entryId = entry.id;
+
+        for(var j = 0; j < tokens.length; j++) {
+          var word = tokens[j].toLowerCase();
+
+          var req = store.get(word);
+
+          req.onsuccess = function(theWord, theEntryId) {
+            var entries, obj;
+            if (this.result) {
+              obj = this.result;
+              entries = obj.entries;
+              if (entries.indexOf(theEntryId) === -1) {
+                entries.push(theEntryId);
+              }
+            }
+            else {
+              obj = {
+                word: theWord,
+                entries: [theEntryId]
+              };
+            }
+
+            store.put(obj);
+            trans.oncomplete = function() {
+              var now = window.performance.now();
+              console.log('Time for creating word entries: ', now - then);
+              resolve();
+            };
+            trans.onerror = reject;
+          }.bind(req, word, entryId); // req.onsuccess
+        } // for tokens
+      }
     });
   },
 
@@ -74,12 +120,14 @@ SuffixArrayIndexedDB.prototype = {
     return new Promise(function(resolve, reject) {
       self._createWordEntry(token, entryId).then(function() {
         return self._createSuffixArray(token);
-      }).then(resolve).catch (reject);
+      }).then(resolve).catch(reject);
     });
   },
 
   _createWordEntry: function si__createWordEntry(word, entryId) {
     var self = this;
+
+    var then = window.performance.now();
 
     return new Promise(function(resolve, reject) {
       var db = self.db;
@@ -105,11 +153,13 @@ SuffixArrayIndexedDB.prototype = {
           };
         }
 
-        var trans2 = db.transaction([self._STORE_WORDS], 'readwrite');
-        var store2 = trans2.objectStore(self._STORE_WORDS);
-        var req2 = store2.put(obj);
-        req2.onsuccess = resolve;
-        req2.onerror = reject;
+        var req2 = store.put(obj);
+        trans.oncomplete = function() {
+          var now = window.performance.now();
+          console.log('Time for creating a word entry: ', now - then);
+          resolve();
+        };
+        req2.onerror = trans.onerror = reject;
       }; // req.onsuccess
 
       req.onerror = reject;
@@ -164,7 +214,7 @@ SuffixArrayIndexedDB.prototype = {
     });
   },
 
-  _createEntry: function si__createEntry(suffix, word, position) {
+  _createEntry: function si__createEntry(suffix, word) {
     var self = this;
 
     return new Promise(function(resolve, reject) {
@@ -174,10 +224,9 @@ SuffixArrayIndexedDB.prototype = {
           entry.suffix = suffix;
           entry.wordData = [];
         }
-        entry.wordData.push({
-          word: word,
-          position: position
-        });
+
+        entry.wordData.push(word);
+
         return self._updateSuffixHashEntry(entry);
       }).then(resolve, reject).catch (function error(err) {
           console.error('Error while creating entry: ', err);
@@ -186,20 +235,58 @@ SuffixArrayIndexedDB.prototype = {
     });
   },
 
-  _createSuffixArray: function si__createSuffixArray(word) {
+  _createSuffixArray: function si__createSuffixArray(entryList) {
     var self = this;
 
-    word += '~';
+    var then = window.performance.now();
 
     return new Promise(function(resolve, reject) {
-      var operations = [];
+      var trans = self.db.transaction([self._STORE_SUFFIXES], 'readwrite');
+      var store = trans.objectStore(self._STORE_SUFFIXES);
 
-      for (var j = 0; j < word.length; j++) {
-        var suffix = word.substr(j);
-        operations.push(self._createEntry(suffix, word, j));
+      var suffixes = Object.create(null);
+      
+      for(var i = 0; i < entryList.length; i++) {
+        var entry = entryList[i];
+        var wordList = entry.word.split(/\s+/);
+
+        for(var t = 0; t < wordList.length; t++) {
+          var word = wordList[t].toLowerCase() + '~';
+
+          for (var j = 0; j < word.length; j++) {
+            var suffix = word.substr(j);
+            suffixes[suffix] = suffixes[suffix] || [];
+            suffixes[suffix].push(word);
+          }
+        }
       }
 
-      Promise.all(operations).then(resolve, reject);
+      var suffixesList = Object.keys(suffixes);
+
+      for(var i = 0; i < suffixesList.length; i++) {
+        var suffix = suffixesList[i];
+
+        var req = store.get(suffix);
+        req.onsuccess = function(theSuffix, theWord) {
+          var entry = this.result;
+
+          if (!entry) {
+            entry = Object.create(null);
+            entry.suffix = theSuffix;
+            entry.wordData = suffixes[theSuffix];
+          }
+
+          entry.wordData.concat(suffixes[theSuffix]);
+          store.put(entry);
+        }.bind(req, suffix, word);
+
+        req.onerror = function(e) {
+          reject(e.target.error);
+        };
+      }
+
+      trans.oncomplete = resolve;
+      trans.onerror = reject;
     });
   },
 
@@ -250,13 +337,13 @@ SuffixArrayIndexedDB.prototype = {
           if (cursor && self._numResults < self._MAX_RESULTS) {
             var wordList = cursor.value.wordData;
             wordList.sort(function(a, b) {
-              return b.word.length - a.word.length;
+              return b.length - a.length;
             });
 
             for (var j = 0; j < wordList.length &&
                  self._numResults < self._MAX_RESULTS; j++) {
               var aWord = wordList[j];
-              var wordData = aWord.word.substring(0, aWord.word.length - 1);
+              var wordData = aWord.substring(0, aWord.length - 1);
               if (out[wordData]) {
                 break;
               }
