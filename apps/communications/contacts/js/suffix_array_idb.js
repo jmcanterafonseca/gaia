@@ -45,7 +45,7 @@ SuffixArrayIndexedDB.prototype = {
     });
   },
 
-  index: function si_index(entry) {
+  index: function si_index(entryList) {
     var self = this;
 
     return new Promise(function(resolve, reject) {
@@ -54,9 +54,8 @@ SuffixArrayIndexedDB.prototype = {
       var operations = [];
 
       self.init().then(function success() {
-        operations.push(self._createWordEntries(entry));
-        var tokens = entry.word.split(/\s+/);
-        operations.push(self._createSuffixArray(tokens));
+        operations.push(self._createWordEntries(entryList));
+        operations.push(self._createSuffixArray(entryList));
 
         Promise.all(operations).then(resolve, reject);
       }).catch (function error(err) {
@@ -66,49 +65,52 @@ SuffixArrayIndexedDB.prototype = {
     });
   },
 
-  _createWordEntries: function si__createWordEntries(entry) {
+  _createWordEntries: function si__createWordEntries(entryList) {
     var self = this;
 
     var then = window.performance.now();
 
     return new Promise(function(resolve, reject) {
-      var tokens = entry.word.split(/\s+/);
-
       var trans = self.db.transaction([self._STORE_WORDS], 'readwrite');
       var store = trans.objectStore(self._STORE_WORDS);
 
-      var entryId = entry.id;
+      for(var i = 0; i < entryList.length; i++) {
+        var entry = entryList[i];
 
-      for(var j = 0; j < tokens.length; j++) {
-        var word = tokens[j].toLowerCase();
+        var tokens = entry.word.split(/\s+/);
+        var entryId = entry.id;
 
-        var req = store.get(word);
+        for(var j = 0; j < tokens.length; j++) {
+          var word = tokens[j].toLowerCase();
 
-        req.onsuccess = function(e) {
-          var entries, obj;
-          if (e.target.result) {
-            obj = e.target.result;
-            entries = obj.entries;
-            if (entries.indexOf(entryId) === -1) {
-              entries.push(entryId);
+          var req = store.get(word);
+
+          req.onsuccess = function(e) {
+            var entries, obj;
+            if (e.target.result) {
+              obj = e.target.result;
+              entries = obj.entries;
+              if (entries.indexOf(entryId) === -1) {
+                entries.push(entryId);
+              }
             }
-          }
-          else {
-            obj = {
-              word: word,
-              entries: [entryId]
-            };
-          }
+            else {
+              obj = {
+                word: word,
+                entries: [entryId]
+              };
+            }
 
-          store.put(obj);
-          trans.oncomplete = function() {
-            var now = window.performance.now();
-            console.log('Time for creating word entries: ', now - then);
-            resolve();
-          };
-          trans.onerror = reject;
-        }; // req.onsuccess
-      } // for
+            store.put(obj);
+            trans.oncomplete = function() {
+              var now = window.performance.now();
+              console.log('Time for creating word entries: ', now - then);
+              resolve();
+            };
+            trans.onerror = reject;
+          }; // req.onsuccess
+        } // for tokens
+      }
     });
   },
 
@@ -233,7 +235,7 @@ SuffixArrayIndexedDB.prototype = {
     });
   },
 
-  _createSuffixArray: function si__createSuffixArray(wordList) {
+  _createSuffixArray: function si__createSuffixArray(entryList) {
     var self = this;
 
     var then = window.performance.now();
@@ -242,28 +244,34 @@ SuffixArrayIndexedDB.prototype = {
       var trans = self.db.transaction([self._STORE_SUFFIXES], 'readwrite');
       var store = trans.objectStore(self._STORE_SUFFIXES);
 
-      for(var i = 0; i < wordList.length; i++) {
-        var word = wordList[i] + '~';
-        for (var j = 0; j < word.length; j++) {
-          var suffix = word.substr(j);
+      for(var i = 0; i < entryList.length; i++) {
+        var entry = entryList[i];
+        var wordList = entry.word.split(/\s+/);
 
-          var req = store.get(suffix);
-          req.onsuccess = function(e) {
-            var entry = e.target.result;
+        for(var t = 0; t < wordList.length; t++) {
+          var word = wordList[t].toLowerCase() + '~';
+          
+          for (var j = 0; j < word.length; j++) {
+            var suffix = word.substr(j);
 
-            if (!entry) {
-              entry = Object.create(null);
-              entry.suffix = suffix;
-              entry.wordData = [];
-            }
+            var req = store.get(suffix);
+            req.onsuccess = function(e) {
+              var entry = e.target.result;
 
-            entry.wordData.push(word);
-            store.put(entry);
-          };
+              if (!entry) {
+                entry = Object.create(null);
+                entry.suffix = suffix;
+                entry.wordData = [];
+              }
 
-          req.onerror = function() {
-            reject(e.target.error);
-          };
+              entry.wordData.push(word);
+              store.put(entry);
+            };
+
+            req.onerror = function() {
+              reject(e.target.error);
+            };
+          }
         }
       }
 

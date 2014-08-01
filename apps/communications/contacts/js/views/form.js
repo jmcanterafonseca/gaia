@@ -882,7 +882,7 @@ contacts.Form = (function() {
         'org'
       ];
 
-      var wordList = [];
+      var entryList = [];
       fieldsToIndex.forEach(function(aField) {
         var data = contact[aField];
 
@@ -892,14 +892,14 @@ contacts.Form = (function() {
         if (data[0]) {
           if (data[0].value) {
             data.forEach(function(aElem) {
-              wordList.push({
+              entryList.push({
                 word: aElem.value,
                 id: contact.id
               });
             });
           }
           else {
-            wordList.push({
+            entryList.push({
               word: data[0],
               id: contact.id
             });
@@ -907,25 +907,7 @@ contacts.Form = (function() {
         }
       });
 
-      indexWordList(wordList).then(resolve, reject);
-    });
-  }
-
-  function indexWordList(wordList) {
-    return new Promise(function(resolve, reject) {
-      var sequence = Promise.resolve();
-
-      var numExecs = 0;
-      wordList.forEach(function(entry, index) {
-        sequence = sequence.then(function() {
-          return suffixIndex.index(entry);
-        }).then(function() {
-            numExecs++;
-            if (numExecs === wordList.length) {
-              resolve();
-            }
-        }).catch(reject);
-      });
+      suffixIndex.index(entryList).then(resolve, reject);
     });
   }
 
