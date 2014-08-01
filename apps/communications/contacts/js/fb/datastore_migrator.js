@@ -321,25 +321,7 @@ var DatastoreMigration = function(db) {
         }
       });
 
-      indexWordList(wordList).then(resolve, reject);
-    });
-  }
-
-  function indexWordList(wordList) {
-    return new Promise(function(resolve, reject) {
-      var sequence = Promise.resolve();
-
-      var numExecs = 0;
-      wordList.forEach(function(entry, index) {
-        sequence = sequence.then(function() {
-          return Contacts.suffixIndex.index(entry);
-        }).then(function() {
-            numExecs++;
-            if (numExecs === wordList.length) {
-              resolve();
-            }
-        }).catch(reject);
-      });
+      Contacts.suffixIndex.index(wordList).then(resolve, reject);
     });
   }
 
@@ -350,7 +332,10 @@ var DatastoreMigration = function(db) {
     }
     window.console.info('Idle event!!!. FB Migration about to start');
 
-    if (false) {
+    var indexed = false;
+    if (!indexed) {
+      indexed = true;
+      var counter = 0;
       var cursor = navigator.mozContacts.getAll({});
 
       cursor.onsuccess = function(evt) {
@@ -358,7 +343,7 @@ var DatastoreMigration = function(db) {
 
         if (contact) {
           indexContact(contact).then(function() {
-            console.log('Contact: ', contact.id, ' indexed');
+            console.log('Contact: ', contact.id, ' indexed: ', ++counter);
             cursor.continue();
           }).catch(function error(err) {
             console.error('Error while indexing: ', err);

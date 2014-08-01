@@ -235,7 +235,7 @@ var Contacts = (function() {
 
     // If the migration is not complete
     var config = utils.cookie.load();
-    if (true) {
+    if (!config || !config.fbMigrated) {
       LazyLoader.load('js/fb/datastore_migrator.js', function() {
         new DatastoreMigration().start();
       });

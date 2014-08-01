@@ -1,6 +1,5 @@
 'use strict';
 
-
 var SuffixArrayIndexedDB = function() {
   this._MAX_RESULTS = 10;
 
@@ -85,19 +84,19 @@ SuffixArrayIndexedDB.prototype = {
 
           var req = store.get(word);
 
-          req.onsuccess = function(e) {
+          req.onsuccess = function(theWord, theEntryId) {
             var entries, obj;
-            if (e.target.result) {
-              obj = e.target.result;
+            if (this.result) {
+              obj = this.result;
               entries = obj.entries;
-              if (entries.indexOf(entryId) === -1) {
-                entries.push(entryId);
+              if (entries.indexOf(theEntryId) === -1) {
+                entries.push(theEntryId);
               }
             }
             else {
               obj = {
-                word: word,
-                entries: [entryId]
+                word: theWord,
+                entries: [theEntryId]
               };
             }
 
@@ -108,61 +107,9 @@ SuffixArrayIndexedDB.prototype = {
               resolve();
             };
             trans.onerror = reject;
-          }; // req.onsuccess
+          }.bind(req, word, entryId); // req.onsuccess
         } // for tokens
       }
-    });
-  },
-
-  _doIndex: function si__doIndex(token, entryId) {
-    var self = this;
-
-    return new Promise(function(resolve, reject) {
-      self._createWordEntry(token, entryId).then(function() {
-        return self._createSuffixArray(token);
-      }).then(resolve).catch(reject);
-    });
-  },
-
-  _createWordEntry: function si__createWordEntry(word, entryId) {
-    var self = this;
-
-    var then = window.performance.now();
-
-    return new Promise(function(resolve, reject) {
-      var db = self.db;
-
-      var trans = db.transaction([self._STORE_WORDS], 'readwrite');
-      var store = trans.objectStore(self._STORE_WORDS);
-
-      var req = store.get(word);
-
-      req.onsuccess = function() {
-        var entries, obj;
-        if (req.result) {
-          obj = req.result;
-          entries = obj.entries;
-          if (entries.indexOf(entryId) === -1) {
-            entries.push(entryId);
-          }
-        }
-        else {
-          obj = {
-            word: word,
-            entries: [entryId]
-          };
-        }
-
-        var req2 = store.put(obj);
-        trans.oncomplete = function() {
-          var now = window.performance.now();
-          console.log('Time for creating a word entry: ', now - then);
-          resolve();
-        };
-        req2.onerror = trans.onerror = reject;
-      }; // req.onsuccess
-
-      req.onerror = reject;
     });
   },
 
@@ -180,61 +127,6 @@ SuffixArrayIndexedDB.prototype = {
     db.createObjectStore(this._STORE_WORDS, { keyPath: 'word' });
   },
 
-  _getSuffixHashEntry: function si__getSuffixHashEntry(suffix) {
-    var self = this;
-
-    return new Promise(function(resolve, reject) {
-      var trans = self.db.transaction([self._STORE_SUFFIXES], 'readonly');
-      var store = trans.objectStore(self._STORE_SUFFIXES);
-
-      var req = store.get(suffix);
-      req.onsuccess = function() {
-        resolve(req.result);
-      };
-      req.onerror = function() {
-        reject(req.error);
-      };
-    });
-  },
-
-  _updateSuffixHashEntry: function si__updateSuffixHashEntry(entry) {
-    var self = this;
-
-    return new Promise(function(resolve, reject) {
-      var trans = self.db.transaction([self._STORE_SUFFIXES], 'readwrite');
-      var store = trans.objectStore(self._STORE_SUFFIXES);
-
-      var req = store.put(entry);
-      req.onsuccess = function() {
-        resolve();
-      };
-      req.onerror = function() {
-        reject(req.error);
-      };
-    });
-  },
-
-  _createEntry: function si__createEntry(suffix, word) {
-    var self = this;
-
-    return new Promise(function(resolve, reject) {
-      self._getSuffixHashEntry(suffix).then(function(entry) {
-        if (!entry) {
-          entry = Object.create(null);
-          entry.suffix = suffix;
-          entry.wordData = [];
-        }
-
-        entry.wordData.push(word);
-
-        return self._updateSuffixHashEntry(entry);
-      }).then(resolve, reject).catch (function error(err) {
-          console.error('Error while creating entry: ', err);
-          reject();
-      });
-    });
-  },
-
   _createSuffixArray: function si__createSuffixArray(entryList) {
     var self = this;
 
@@ -244,35 +136,45 @@ SuffixArrayIndexedDB.prototype = {
       var trans = self.db.transaction([self._STORE_SUFFIXES], 'readwrite');
       var store = trans.objectStore(self._STORE_SUFFIXES);
 
+      var suffixes = Object.create(null);
+
       for(var i = 0; i < entryList.length; i++) {
         var entry = entryList[i];
         var wordList = entry.word.split(/\s+/);
 
         for(var t = 0; t < wordList.length; t++) {
           var word = wordList[t].toLowerCase() + '~';
-          
+
           for (var j = 0; j < word.length; j++) {
             var suffix = word.substr(j);
-
-            var req = store.get(suffix);
-            req.onsuccess = function(e) {
-              var entry = e.target.result;
-
-              if (!entry) {
-                entry = Object.create(null);
-                entry.suffix = suffix;
-                entry.wordData = [];
-              }
-
-              entry.wordData.push(word);
-              store.put(entry);
-            };
-
-            req.onerror = function() {
-              reject(e.target.error);
-            };
+            suffixes[suffix] = suffixes[suffix] || [];
+            suffixes[suffix].push(word);
           }
         }
+      }
+
+      var suffixesList = Object.keys(suffixes);
+
+      for(var i = 0; i < suffixesList.length; i++) {
+        var suffix = suffixesList[i];
+
+        var req = store.get(suffix);
+        req.onsuccess = function(theSuffix, theWord) {
+          var entry = this.result;
+
+          if (!entry) {
+            entry = Object.create(null);
+            entry.suffix = theSuffix;
+            entry.wordData = suffixes[theSuffix];
+          }
+
+          entry.wordData.concat(suffixes[theSuffix]);
+          store.put(entry);
+        }.bind(req, suffix, word);
+
+        req.onerror = function(e) {
+          reject(e.target.error);
+        };
       }
 
       trans.oncomplete = resolve;
