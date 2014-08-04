@@ -11,7 +11,7 @@
       function index(args) {
         var indexing = new SuffixArrayIndexedDB();
 
-        indexing.init().then(function() {
+        indexing.clear().then(function() {
           indexing.index([{
             word: 'banana',
             id: 890
