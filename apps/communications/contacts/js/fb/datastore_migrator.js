@@ -297,6 +297,8 @@ var DatastoreMigration = function(db) {
       ];
 
       var wordList = [];
+      var wordHash = Object.create(null);
+
       fieldsToIndex.forEach(function(aField) {
         var data = contact[aField];
 
@@ -306,17 +308,23 @@ var DatastoreMigration = function(db) {
         if (data[0]) {
           if (data[0].value) {
             data.forEach(function(aElem) {
-              wordList.push({
-                word: aElem.value,
-                id: contact.id
-              });
+              if (!wordHash[aElem.value]) {
+                wordList.push({
+                  word: aElem.value,
+                  id: contact.id
+                });
+                wordHash[aElem.value] = true;
+              }
             });
           }
           else {
-            wordList.push({
-              word: data[0],
-              id: contact.id
-            });
+            if (!wordHash[data[0]]) {
+              wordList.push({
+                word: data[0],
+                id: contact.id
+              });
+              wordHash[data[0]] = true;
+            }
           }
         }
       });
@@ -336,20 +344,23 @@ var DatastoreMigration = function(db) {
     if (!indexed) {
       indexed = true;
       var counter = 0;
-      var cursor = navigator.mozContacts.getAll({});
 
-      cursor.onsuccess = function(evt) {
-        var contact = evt.target.result;
+      Contacts.suffixIndex.clear().then(function done() {
+        var cursor = navigator.mozContacts.getAll({});
 
-        if (contact) {
-          indexContact(contact).then(function() {
-            console.log('Contact: ', contact.id, ' indexed: ', ++counter);
-            cursor.continue();
-          }).catch(function error(err) {
-            console.error('Error while indexing: ', err);
-          });
+        cursor.onsuccess = function(evt) {
+          var contact = evt.target.result;
+
+          if (contact) {
+            indexContact(contact).then(function() {
+              console.log('Contact: ', contact.id, ' indexed: ', ++counter);
+              cursor.continue();
+            }).catch(function error(err) {
+              console.error('Error while indexing: ', err);
+            });
+          }
         }
-      }
+      });
     }
 
     ongoingMigration = true;

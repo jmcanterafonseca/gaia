@@ -6,14 +6,16 @@ var SuffixArrayIndexedDB = function() {
   // Minimum length of a matching for being reported
   this._THRESHOLD_LENGHT = 6;
 
-  this._DB_NAME = 'DB';
-  this._DB_VERSION = 4.0;
+  this._DB_NAME = 'SFA';
+  this._DB_VERSION = 8.0;
   this._STORE_SUFFIXES = 'suffixStore';
   this._STORE_WORDS = 'wordsStore';
 
   this._INDEX_BY_WORD = 'byWord';
 
   this._numResults = 0;
+
+  this._nextId = 1;
 };
 
 SuffixArrayIndexedDB.prototype = {
@@ -30,7 +32,7 @@ SuffixArrayIndexedDB.prototype = {
     }
 
     var objStore = db.createObjectStore(this._STORE_WORDS,
-                                        { autoincrement: true });
+                                        { keyPath: 'id' });
     objStore.createIndex(this._INDEX_BY_WORD, 'word', { unique: true });
   },
 
@@ -62,6 +64,26 @@ SuffixArrayIndexedDB.prototype = {
     });
   },
 
+  clear: function si_clear() {
+    var self = this;
+
+    return new Promise(function(resolve, reject) {
+      self.init().then(function success() {
+        var trans = self.db.transaction([self._STORE_SUFFIXES,
+                                         self._STORE_WORDS], 'readwrite');
+        var store1 = trans.objectStore(self._STORE_SUFFIXES);
+        var store2 = trans.objectStore(self._STORE_WORDS);
+
+        store1.clear();
+        store2.clear();
+
+        trans.oncomplete = resolve;
+        trans.onerror = trans.onabort = reject;
+
+      }).catch(reject);
+    });
+  },
+
   index: function si_index(entryList) {
     var self = this;
 
@@ -75,7 +97,8 @@ SuffixArrayIndexedDB.prototype = {
         operations.push(self._createSuffixArray(entryList));
 
         Promise.all(operations).then(function onSuffixReady(results) {
-          self._persistSuffixArray(results[1], results[0]);
+          self._persistSuffixArray(results[1], results[0]).then(
+                                                              resolve, reject);
         }, reject);
       }).catch (function error(err) {
           console.error('Error while indexing: ', err);
@@ -84,7 +107,17 @@ SuffixArrayIndexedDB.prototype = {
     });
   },
 
+  _getNextId: function si__getNextId() {
+    var nextId = this._nextId;
+
+    this._nextId++;
+
+    return nextId;
+  },
+
   _createWordEntries: function si__createWordEntries(entryList) {
+    console.log('In create word entries');
+
     var self = this;
 
     var then = window.performance.now();
@@ -94,7 +127,7 @@ SuffixArrayIndexedDB.prototype = {
     return new Promise(function(resolve, reject) {
       var trans = self.db.transaction([self._STORE_WORDS], 'readwrite');
       var store = trans.objectStore(self._STORE_WORDS);
-      var index = store.getIndex(self._INDEX_BY_WORD);
+      var wordIndex = store.index(self._INDEX_BY_WORD);
 
       for(var i = 0; i < entryList.length; i++) {
         var entry = entryList[i];
@@ -105,9 +138,14 @@ SuffixArrayIndexedDB.prototype = {
         for(var j = 0; j < tokens.length; j++) {
           var word = tokens[j].toLowerCase();
 
-          var req = index.get(word);
+          var req = wordIndex.get(word);
 
-          req.onsuccess = function(theWord, theEntryId) {
+          req.onerror = function() {
+            console.error('Error while obtaining data from the index');
+            reject(req.error && req.error.name);
+          }
+
+          req.onsuccess = function(theWord, theEntryId, newId) {
             var entries, obj;
             if (this.result) {
               obj = this.result;
@@ -119,29 +157,37 @@ SuffixArrayIndexedDB.prototype = {
             else {
               obj = {
                 word: theWord,
-                entries: [theEntryId]
+                entries: [theEntryId],
+                id: newId
               };
             }
 
-            var req = store.put(obj);
-            req.onsuccess = function(theWord) {
-              console.log('Id for word: ', req.result);
-              wordSet[theWord] = req.result;
-            }.bind(req, word);
+            var putReq = store.put(obj);
+            putReq.onsuccess = function(aWord, theObj) {
+              wordSet[aWord] = theObj.id;
+            }.bind(putReq, theWord, obj);
 
-            trans.oncomplete = function() {
-              var now = window.performance.now();
-              console.log('Time for creating word entries: ', now - then);
-              resolve(wordSet);
-            };
-            trans.onerror = reject;
-          }.bind(req, word, entryId); // req.onsuccess
+            putReq.onerror = function(aWord, theObj) {
+              console.error('Error while putting: ', aWord,
+                            JSON.stringify(wordSet), JSON.stringify(theObj));
+            }.bind(putReq, theWord, obj);
+
+          }.bind(req, word, entryId, self._getNextId()); // req.onsuccess
         } // for tokens
-      }
+      } // for entryList
+
+      trans.oncomplete = function() {
+        var now = window.performance.now();
+        console.log('Time for creating word entries: ', now - then);
+        resolve(wordSet);
+      };
+      trans.onerror = trans.onabort = reject;
     });
   },
 
   _createSuffixArray: function si__createSuffixArray(entryList) {
+    console.log('In create suffix array');
+
     var self = this;
 
     var then = window.performance.now();
@@ -159,7 +205,7 @@ SuffixArrayIndexedDB.prototype = {
           for (var j = 0; j < word.length; j++) {
             var suffix = word.substr(j);
             suffixes[suffix] = suffixes[suffix] || [];
-            suffixes[suffix].push(word);
+            suffixes[suffix].push(word.substring(0, word.length - 1));
           }
         }
       }
@@ -168,6 +214,11 @@ SuffixArrayIndexedDB.prototype = {
   },
 
   _persistSuffixArray: function si__persistSuffixArray(suffixes, wordSet) {
+    console.log('In persist suffix array', JSON.stringify(suffixes),
+                JSON.stringify(wordSet));
+
+    var self = this;
+
     return new Promise(function(resolve, reject) {
       var suffixesList = Object.keys(suffixes);
 
@@ -177,7 +228,7 @@ SuffixArrayIndexedDB.prototype = {
         var suffix = suffixesList[i];
 
         var req = store.get(suffix);
-        req.onsuccess = function(theSuffix, theWord) {
+        req.onsuccess = function(theSuffix) {
           var entry = this.result;
 
           if (!entry) {
@@ -192,9 +243,9 @@ SuffixArrayIndexedDB.prototype = {
             wordDataList.push(wordSet[wordList[j]]);
           }
 
-          entry.wordData.concat(wordDataList);
+          entry.wordData = entry.wordData.concat(wordDataList);
           store.put(entry);
-        }.bind(req, suffix, word);
+        }.bind(req, suffix);
 
         req.onerror = function(e) {
           reject(e.target.error);
@@ -202,7 +253,7 @@ SuffixArrayIndexedDB.prototype = {
       }
 
       trans.oncomplete = resolve;
-      trans.onerror = reject;
+      trans.onerror = trans.onabort = reject;
     });
   },
 
