@@ -513,6 +513,9 @@ contacts.Search = (function() {
         }
         searchList.innerHTML = '';
         var resultList = Object.keys(results);
+
+        console.log('Result Length: ', resultList.length);
+
         if(resultList.length === 0) {
           showNoResults();
         }
@@ -521,29 +524,26 @@ contacts.Search = (function() {
           var contactsProcessed = [];
           resultList.forEach(function(aResult) {
             var entries = results[aResult].entries;
-            var contactId = entries[0];
-            console.log('Contact Id: ', contactId);
+            entries.forEach(function(contactId) {
+              if (contactsProcessed.indexOf(contactId) === -1) {
+                contactsProcessed.push(contactId);
 
-            if (contactsProcessed.indexOf(contactId) === -1) {
-              contactsProcessed.push(contactId);
+                var node = document.querySelector('[data-uuid="' +
+                                                              contactId + '"]');
+                if (node) {
+                  searchList.appendChild(source.clone(node));
+                }
+                else {
+                  // Wait for the node to be rendered
+                  window.setTimeout(function renderNode() {
 
-              var node = document.querySelector('[data-uuid="' +
-                                                            contactId + '"]');
-
-              console.log('Node: ', node);
-              if (node) {
-                searchList.appendChild(source.clone(node));
+                  }, 500);
+                }
               }
-              else {
-                // Wait for the node to be rendered
-                window.setTimeout(function renderNode() {
-
-                }, 500);
-              }
-            }
-            hideProgressResults();
+            });
           });
-        }
+          hideProgressResults();
+        } // else
       }).catch(function error(err) {
           console.error('Error while searching: ', err);
       });

@@ -299,35 +299,43 @@ var DatastoreMigration = function(db) {
       var wordList = [];
       var wordHash = Object.create(null);
 
+      var values = [];
+
       fieldsToIndex.forEach(function(aField) {
         var data = contact[aField];
 
         if (!Array.isArray(data)) {
           return;
         }
+
         if (data[0]) {
           if (data[0].value) {
             data.forEach(function(aElem) {
-              if (!wordHash[aElem.value]) {
-                wordList.push({
-                  word: aElem.value,
-                  id: contact.id
-                });
-                wordHash[aElem.value] = true;
-              }
+              values.push(aElem.value);
             });
           }
           else {
-            if (!wordHash[data[0]]) {
-              wordList.push({
-                word: data[0],
-                id: contact.id
-              });
-              wordHash[data[0]] = true;
-            }
+            values.push(data[0]);
           }
         }
       });
+
+      for(var j = 0; j < values.length; j++) {
+        var value = values[j];
+        var tokens = value.split(/\s+/);
+
+        for(var t = 0; t < tokens.length; t++) {
+          var token = tokens[t];
+
+          if (!wordHash[token]) {
+            wordList.push({
+              word: token,
+              id: contact.id
+            });
+            wordHash[token] = true;
+          }
+        }
+      }
 
       Contacts.suffixIndex.index(wordList).then(resolve, reject);
     });
