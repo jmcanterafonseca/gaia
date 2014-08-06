@@ -7,7 +7,7 @@ var SuffixArrayIndexedDB = function() {
   this._THRESHOLD_LENGHT = 6;
 
   this._DB_NAME = 'SFA';
-  this._DB_VERSION = 9.0;
+  this._DB_VERSION = 11.0;
   this._STORE_SUFFIXES = 'suffixStore';
   this._STORE_WORDS = 'wordsStore';
 
@@ -124,17 +124,20 @@ SuffixArrayIndexedDB.prototype = {
 
         var word = entry.word.toLowerCase();
 
-        var req = wordIndex.get(word);
+        var req = wordIndex.openCursor(IDBKeyRange.only(word));
 
         req.onerror = function() {
-          console.error('Error while obtaining data from the index');
+          console.error('Error while obtaining data from the index',
+                        req.error && req.error.name);
           reject(req.error && req.error.name);
         }
 
         req.onsuccess = function(theWord, theEntryId) {
-          var entries, obj;
+          var entries, obj, cursor;
+          cursor = this.result;
+
           if (this.result) {
-            obj = this.result;
+            obj = cursor.value;
             entries = obj.entries;
             if (entries.indexOf(theEntryId) === -1) {
               entries.push(theEntryId);
@@ -147,15 +150,17 @@ SuffixArrayIndexedDB.prototype = {
             };
           }
 
-          var putReq = store.put(obj);
+          var objId = cursor && cursor.primaryKey;
+          var putReq = store.put(obj, objId);
           putReq.onsuccess = function(aWord) {
             wordSet[aWord] = this.result;
           }.bind(putReq, theWord);
 
           putReq.onerror = function(aWord, theObj) {
             console.error('Error while putting: ', aWord,
-                          JSON.stringify(wordSet), JSON.stringify(theObj));
-          }.bind(putReq, theWord, obj);
+                          JSON.stringify(wordSet), JSON.stringify(theObj),
+                          objId);
+          }.bind(putReq, theWord, obj, objId);
 
         }.bind(req, word, entryId); // req.onsuccess
       } // for entryList
