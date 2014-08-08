@@ -139,7 +139,7 @@ SuffixArrayIndexedDB.prototype = {
           if (this.result) {
             obj = cursor.value;
             entries = obj.entries;
-            if (entries.indexOf(theEntryId) === -1) {
+            if (entries.indexOf(theEntryId) === -1 && entries.length < 10) {
               entries.push(theEntryId);
             }
           }
@@ -184,12 +184,13 @@ SuffixArrayIndexedDB.prototype = {
 
       for(var i = 0; i < entryList.length; i++) {
         var entry = entryList[i];
-        var word = entry.word.toLowerCase() + '~';
+        var word = entry.word.toLowerCase();
+        var sword = word + '~';
 
-        for (var j = 0; j < word.length; j++) {
-          var suffix = word.substr(j);
+        for (var j = 0; j < sword.length - 3; j++) {
+          var suffix = sword.substr(j);
           suffixes[suffix] = suffixes[suffix] || [];
-          suffixes[suffix].push(word.substring(0, word.length - 1));
+          suffixes[suffix].push(word);
         }
       }
 
