@@ -50,13 +50,23 @@ document.getElementById('bt_persist').onclick = function() {
 
   var reqDel = storage.delete(FILE_NAME);
   reqDel.onsuccess = function() {
-    saveIndex(storage, blobContent);
+    saveIndex2(storage, blobContent);
   }
 
   reqDel.onerror = function() {
     console.warn('Old file could not be deleted');
-    saveIndex(storage, blobContent);
+    saveIndex2(storage, blobContent);
   }
+}
+
+function saveIndex2() {
+  suffixIndex.clear().then(function() {
+    return suffixIndex.save();
+  }).then(function() {
+      console.log('Suffix index saved correctly');
+  }).catch(function error(err) {
+      console.error('Error: ', err && err.name);
+  });
 }
 
 function saveIndex(storage, blobContent) {

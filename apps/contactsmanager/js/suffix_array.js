@@ -7,9 +7,161 @@ var SuffixArrayIndex = function() {
 
   this._suffixHash = Object.create(null);
   this._suffixesArray = [];
+
+  this._DB_NAME = 'SFA';
+  this._DB_VERSION = 7.0;
+  this._STORE_SUFFIXES = 'suffixStore';
 }
 
 SuffixArrayIndex.prototype = {
+
+  _createSchema: function si__createSchema(db) {
+    if (db.objectStoreNames.contains(this._STORE_SUFFIXES)) {
+      db.deleteObjectStore(this._STORE_SUFFIXES);
+    }
+
+    db.createObjectStore(this._STORE_SUFFIXES, { keyPath: 'startLetter' });
+  },
+
+  init: function si_init() {
+    var self = this;
+
+    if (self.db) {
+      return Promise.resolve(self.db);
+    }
+
+    return new Promise(function(resolve, reject) {
+      var req = window.indexedDB.open(self._DB_NAME, self._DB_VERSION);
+
+      req.onupgradeneeded = function(e) {
+        var db = e.target.result;
+        self._createSchema(db);
+      };
+
+      req.onsuccess = function() {
+        self.db = req.result;
+        resolve(self.db);
+      };
+
+      req.onerror = function() {
+        console.error('Error while getting Database: ', req.error &&
+                      req.error.name);
+        reject(req.error);
+      };
+    });
+  },
+
+  clear: function si_clear() {
+    var self = this;
+
+    return new Promise(function(resolve, reject) {
+      self.init().then(function success() {
+        var trans = self.db.transaction([self._STORE_SUFFIXES], 'readwrite');
+        var store1 = trans.objectStore(self._STORE_SUFFIXES);
+
+        store1.clear();
+
+        trans.oncomplete = resolve;
+        trans.onerror = trans.onabort = reject;
+
+      }).catch(reject);
+    });
+  },
+
+  save: function si_save() {
+    var self = this;
+
+    return new Promise(function(resolve, reject) {
+      self.init().then(function success() {
+        var indexPartition = Object.create(null);
+
+        var indexData = self.getIndexData();
+        var words = Object.keys(indexData.wordIndex);
+        words.sort(function(a,b) {
+          return a.localeCompare(b);
+        });
+
+        var nextWord = '', wordIndex = 0;
+        while(nextWord.charAt(0) !== 'a') {
+          nextWord = words[wordIndex++];
+        }
+
+        var suffixes = Object.keys(indexData.suffixHash);
+        suffixes.sort(function(a,b) {
+          return a.localeCompare(b);
+        });
+
+        var nextSuffix = '', suffixIndexx = 0;
+        while(nextSuffix.charAt(0) !== 'a') {
+          nextSuffix = suffixes[suffixIndexx++];
+        }
+
+        var suffixArray = indexData.suffixesArray;
+        var nextSuffixEntry = '', suffixEntryIndex = 0;
+        while(nextSuffixEntry.charAt(0) !== 'a') {
+          nextSuffixEntry = suffixes[suffixEntryIndex++];
+        }
+
+        var suffixHashChunk, wordChunk, suffixesArrayChunk;
+        var currentLetter, nextLetter;
+
+        for(var j = 97; j < 123; j++) {
+          currentLetter = String.fromCharCode(j);
+          nextLetter = currentLetter;
+
+          wordChunk = Object.create(null);
+          suffixHashChunk = Object.create(null);
+          suffixesArrayChunk = [];
+
+          while(nextLetter === currentLetter) {
+            nextWord = words[wordIndex++];
+
+            wordChunk[nextWord] = indexData.wordIndex[nextWord];
+            nextLetter = nextWord.charAt(0);
+          }
+
+          nextLetter = currentLetter;
+          while(nextLetter === currentLetter) {
+            nextSuffix = suffixes[suffixIndexx++];
+
+            suffixHashChunk[nextSuffix] = indexData.suffixHash[nextSuffix];
+            nextLetter = nextSuffix.charAt(0);
+          }
+
+          nextLetter = currentLetter;
+          while(nextLetter === currentLetter) {
+            nextSuffixEntry = suffixArray[suffixEntryIndex];
+
+            suffixesArrayChunk.push(suffixArray[suffixEntryIndex++]);
+            nextLetter = nextSuffixEntry.charAt(0);
+          }
+
+          indexPartition[currentLetter] = {
+            wordIndex: wordChunk,
+            suffixHash: suffixHashChunk,
+            suffixesArray: suffixesArrayChunk
+          }
+
+          console.log('Index partition: ', Object.keys(indexPartition).length);
+        }
+
+        var chunks = Object.keys(indexPartition);
+
+        var trans = self.db.transaction([self._STORE_SUFFIXES], 'readwrite');
+        var store = trans.objectStore(self._STORE_SUFFIXES);
+
+        trans.oncomplete = resolve;
+        trans.onerror = trans.onabort = reject;
+
+        for(var j = 0; j < chunks.length; j++) {
+          var aChunk = indexPartition[chunks[j]];
+
+          aChunk.startLetter = chunks[j];
+          store.put(aChunk);
+        }
+      }).catch(reject);
+    });
+  },
 
   index: function (entry) {
     var self = this;
@@ -62,6 +214,27 @@ SuffixArrayIndex.prototype = {
     this._suffixesArray = indexData.suffixesArray;
   },
 
+  _getSuffixArray: function(startLetter) {
+    var self = this;
+
+    return new Promise(function(resolve, reject) {
+      self.init().then(function success() {
+        var trans = self.db.transaction([self._STORE_SUFFIXES], 'readonly');
+        var store = trans.objectStore(self._STORE_SUFFIXES);
+
+        var req = store.get(startLetter);
+
+        req.onsuccess = function() {
+          resolve(req.result);
+        }
+
+        req.onerror = function() {
+          reject(req.error && req.error.name);
+        }
+      }).catch(reject);
+    });
+  },
+
   search: function search(pPattern) {
     var self = this;
 
@@ -75,92 +248,94 @@ SuffixArrayIndex.prototype = {
         return;
       }
 
-      var suffixesArray = self._suffixesArray;
+      self._getSuffixArray(pattern.charAt(0)).then(function succss(indexChunk) {
+        var suffixesArray = indexChunk.suffixesArray;
+        var suffixHash = indexChunk.suffixHash;
+        var wordIndex = indexChunk.wordIndex;
 
-      console.log(JSON.stringify(suffixesArray));
+        var left = 0, right = suffixesArray.length, mid;
+        var matching = false;
+        var pointer;
+        var state = 0;
+        var totalResults = 0;
 
-      var left = 0, right = self._suffixesArray.length, mid;
-      var matching = false;
-      var pointer;
-      var state = 0;
-      var totalResults = 0;
-
-      while (left < right) {
-        mid = Math.floor((left + right) / 2);
-        var suffix = suffixesArray[mid];
-        var startsWith = suffix.startsWith(pattern);
-        pointer = mid;
-        while ((startsWith || (matching && state !== 3)) &&
-               totalResults < self._MAX_RESULTS) {
-          matching = true;
-          if (startsWith) {
-            suffix = suffixesArray[pointer];
-            var wordList = self._suffixHash[suffix].wordData;
-
-            wordList.forEach(function(aWord) {
-              var wordData = aWord.word.substring(0,
-                                                aWord.word.length - 1);
-              var list = [];
-              if (out[wordData]) {
-                list = out[wordData].matches;
-              }
-              else {
-                out[wordData] = Object.create(null);
-                out[wordData].matches = list;
-              }
-              var obj = {
-                word: wordData,
-                start: aWord.position - 1,
-                entries: self._wordIndex[aWord.word]
-              }
-              obj.end = obj.start + pattern.length - 1;
-              out[wordData].matches.push(obj);
-              totalResults++;
-            });
-          }
-          // This part of the code tries to find more words that match
-          if (state === 0 || state === 1) {
-            pointer++;
-            startsWith = suffixesArray[pointer] &&
-                          suffixesArray[pointer].startsWith(pattern);
+        while (left < right) {
+          mid = Math.floor((left + right) / 2);
+          var suffix = suffixesArray[mid];
+          var startsWith = suffix.startsWith(pattern);
+          pointer = mid;
+          while ((startsWith || (matching && state !== 3)) &&
+                 totalResults < self._MAX_RESULTS) {
+            matching = true;
             if (startsWith) {
-              state = 1;
+              suffix = suffixesArray[pointer];
+              var wordList = suffixHash[suffix].wordData;
+
+              wordList.forEach(function(aWord) {
+                var wordData = aWord.word.substring(0,
+                                                  aWord.word.length - 1);
+                var list = [];
+                if (out[wordData]) {
+                  list = out[wordData].matches;
+                }
+                else {
+                  out[wordData] = Object.create(null);
+                  out[wordData].matches = list;
+                }
+                var obj = {
+                  word: wordData,
+                  start: aWord.position - 1,
+                  entries: wordIndex[aWord.word]
+                }
+                obj.end = obj.start + pattern.length - 1;
+                out[wordData].matches.push(obj);
+                totalResults++;
+              });
             }
-            else {
-              state = 2;
-              pointer = mid - 1;
+            // This part of the code tries to find more words that match
+            if (state === 0 || state === 1) {
+              pointer++;
               startsWith = suffixesArray[pointer] &&
                             suffixesArray[pointer].startsWith(pattern);
+              if (startsWith) {
+                state = 1;
+              }
+              else {
+                state = 2;
+                pointer = mid - 1;
+                startsWith = suffixesArray[pointer] &&
+                              suffixesArray[pointer].startsWith(pattern);
+              }
             }
-          }
-          else if (state === 2) {
-            pointer--;
-            if (pointer < 0) {
-              startsWith = false;
-              state = 3;
-            }
-            else {
-              startsWith = suffixesArray[pointer].startsWith(pattern);
-              if (!startsWith) {
+            else if (state === 2) {
+              pointer--;
+              if (pointer < 0) {
+                startsWith = false;
                 state = 3;
+              }
+              else {
+                startsWith = suffixesArray[pointer].startsWith(pattern);
+                if (!startsWith) {
+                  state = 3;
+                }
               }
             }
           }
+
+          if (matching) {
+            break;
+          }
+
+          if (pattern.localeCompare(suffix) > 0) {
+            left = mid + 1;
+          }
+          else {
+            right = mid;
+          }
         }
 
-        if (matching) {
-          break;
-        }
-
-        if (pattern.localeCompare(suffix) > 0) {
-          left = mid + 1;
-        }
-        else {
-          right = mid;
-        }
-      }
-
-      resolve(out);
+        resolve(out);
+      });
     });
   }
 }
