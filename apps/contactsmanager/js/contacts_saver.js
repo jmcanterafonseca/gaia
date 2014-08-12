@@ -60,14 +60,10 @@ function ContactsSaver(data) {
         listToIndex.push(entry);
       });
 
-      indexWordList(listToIndex).then(function() {
-        if (typeof self.onsaved === 'function') {
-          self.onsaved(next + 1);
-        }
-        continuee();
-      }).catch(function(err) {
-          console.error('Error while indexing DB', err && err.name);
-      });
+      if (typeof self.onsaved === 'function') {
+        self.onsaved(next + 1);
+      }
+      continuee();
     };
 
     req.onerror = function(e) {

@@ -60,12 +60,102 @@ document.getElementById('bt_persist').onclick = function() {
 }
 
 function saveIndex(storage, blobContent) {
+  var indexPartition = Object.create(null);
+
+  var indexData = suffixIndex.getIndexData();
+  var words = Object.keys(indexData.wordIndex);
+  words.sort(function(a,b) {
+    return a.localeCompare(b);
+  });
+
+  var nextWord = '', wordIndex = 0;
+  while(nextWord.charAt(0) !== 'a') {
+    nextWord = words[wordIndex++];
+  }
+
+  var suffixes = Object.keys(indexData.suffixHash);
+  suffixes.sort(function(a,b) {
+    return a.localeCompare(b);
+  });
+
+  var nextSuffix = '', suffixIndexx = 0;
+  while(nextSuffix.charAt(0) !== 'a') {
+    nextSuffix = suffixes[suffixIndexx++];
+  }
+
+  var suffixArray = indexData.suffixesArray;
+  var nextSuffixEntry = '', suffixEntryIndex = 0;
+  while(nextSuffixEntry.charAt(0) !== 'a') {
+    nextSuffixEntry = suffixes[suffixEntryIndex++];
+  }
+
+  var suffixHashChunk, wordChunk, suffixesArrayChunk;
+  var currentLetter, nextLetter;
+
+  for(var j = 97; j < 123; j++) {
+    currentLetter = String.fromCharCode(j);
+    nextLetter = currentLetter;
+
+    wordChunk = Object.create(null);
+    suffixHashChunk = Object.create(null);
+    suffixesArrayChunk = [];
+
+    while(nextLetter === currentLetter) {
+      nextWord = words[wordIndex++];
+
+      wordChunk[nextWord] = indexData.wordIndex[nextWord];
+      nextLetter = nextWord.charAt(0);
+    }
+
+    nextLetter = currentLetter;
+    while(nextLetter === currentLetter) {
+      nextSuffix = suffixes[suffixIndexx++];
+
+      suffixHashChunk[nextSuffix] = indexData.suffixHash[nextSuffix];
+      nextLetter = nextSuffix.charAt(0);
+    }
+
+    nextLetter = currentLetter;
+    while(nextLetter === currentLetter) {
+      nextSuffixEntry = suffixArray[suffixEntryIndex];
+
+      suffixesArrayChunk.push(suffixArray[suffixEntryIndex++]);
+      nextLetter = nextSuffixEntry.charAt(0);
+    }
+
+    indexPartition[currentLetter] = {
+      wordIndex: wordChunk,
+      suffixHash: suffixHashChunk,
+      suffixesArray: suffixesArrayChunk
+    }
+
+    console.log('Index partition: ', Object.keys(indexPartition).length);
+  }
+
   var req = storage.addNamed(new Blob(blobContent, {type: 'application/json'}),
                               FILE_NAME);
 
   req.onsuccess = function() {
-    datastore.put(suffixIndex.getIndexData(), 1).then(function() {
-      console.log('Persisted');
+    var operations = [];
+    var chunks = Object.keys(indexPartition);
+
+    console.log(JSON.stringify(chunks));
+
+    /*
+    operations.push();
+    Promise.all(operations).then(function() {
+      console.log('All the chunks have been saved');
+    }).catch(function error(err) {
+        console.error('Error: ', err && err.name);
+    });
+    */
+
+    chunks.forEach(function(aChunk) {
+      datastore.put(indexPartition[aChunk], aChunk).then(function success(theChunk) {
+        console.log('Chunk saved: ', theChunk);
+      }.bind(aChunk)).catch(function error(theChunk, err) {
+          console.error('Error in chunk: ', theChunk, err && err.name);
+      }.bind(aChunk));
     });
 
     var req2 = storage.get(FILE_NAME);

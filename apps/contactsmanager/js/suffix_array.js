@@ -23,7 +23,7 @@ SuffixArrayIndex.prototype = {
       }
       else {
         self._wordIndex[normalized] = [entry.id];
-        self._createSuffixArray(normalized + '$');
+        self._createSuffixArray(normalized + '~');
       }
     });
   },
@@ -76,6 +76,8 @@ SuffixArrayIndex.prototype = {
       }
 
       var suffixesArray = self._suffixesArray;
+
+      console.log(JSON.stringify(suffixesArray));
 
       var left = 0, right = self._suffixesArray.length, mid;
       var matching = false;
