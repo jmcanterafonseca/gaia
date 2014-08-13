@@ -514,8 +514,6 @@ contacts.Search = (function() {
         searchList.innerHTML = '';
         var resultList = Object.keys(results);
 
-        console.log('Result Length: ', resultList.length);
-
         if(resultList.length === 0) {
           showNoResults();
         }

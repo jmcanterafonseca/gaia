@@ -348,9 +348,9 @@ var DatastoreMigration = function(db) {
     }
     window.console.info('Idle event!!!. FB Migration about to start');
 
-    var indexed = false;
+    var indexed = true;
     if (!indexed) {
-      indexed = true;
+      indexed = false;
       var counter = 0;
 
       Contacts.suffixIndex.clear().then(function done() {
@@ -360,12 +360,23 @@ var DatastoreMigration = function(db) {
           var contact = evt.target.result;
 
           if (contact) {
+            var then = window.performance.now();
+
             indexContact(contact).then(function() {
-              console.log('Contact: ', contact.id, ' indexed: ', ++counter);
+              var now = window.performance.now();
+              console.log('Contact: ', contact.id, ' indexed: ', ++counter,
+                          now - then);
               cursor.continue();
             }).catch(function error(err) {
               console.error('Error while indexing: ', err);
             });
+          }
+          else {
+              Contacts.suffixIndex.save().then(function() {
+                console.log('Index has been properly created');
+              }).catch(function(err) {
+                  console.error('Error while saving: ', err && err.name);
+              });
           }
         }
       });

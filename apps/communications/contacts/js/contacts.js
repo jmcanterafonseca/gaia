@@ -36,7 +36,7 @@ var Contacts = (function() {
   var navigation = new navigationStack('view-contacts-list');
 
   // Contacts index
-  var suffixIndexedDB = new SuffixArrayIndexedDB();
+  var suffixIndex = new SuffixArrayIndex();
 
   var goToForm = function edit() {
     navigation.go('view-contact-form', 'popup');
@@ -993,7 +993,7 @@ var Contacts = (function() {
       return SHARED_CONTACTS;
     },
     get suffixIndex() {
-      return suffixIndexedDB;
+      return suffixIndex;
     }
   };
 })();
