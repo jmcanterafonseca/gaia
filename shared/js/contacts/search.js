@@ -508,11 +508,13 @@ contacts.Search = (function() {
       emptySearch = false;
 
       Contacts.suffixIndex.search(thisSearchText).then(function(results) {
-        if (thisSearchText !== currentTextToSearch) {
+        if (thisSearchText !== currentTextToSearch || !results) {
           return;
         }
         searchList.innerHTML = '';
         var resultList = Object.keys(results);
+
+        console.log('Result List length: ', resultList.length);
 
         if(resultList.length === 0) {
           showNoResults();
@@ -522,6 +524,9 @@ contacts.Search = (function() {
           var contactsProcessed = [];
           resultList.forEach(function(aResult) {
             var entries = results[aResult].entries;
+            if (!entries) {
+              return;
+            }
             entries.forEach(function(contactId) {
               if (contactsProcessed.indexOf(contactId) === -1) {
                 contactsProcessed.push(contactId);

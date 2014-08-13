@@ -11,6 +11,8 @@ var SuffixArrayIndex = function() {
   this._DB_NAME = 'SFA';
   this._DB_VERSION = 7.0;
   this._STORE_SUFFIXES = 'suffixStore';
+
+  this._currentPattern = '';
 }
 
 SuffixArrayIndex.prototype = {
@@ -279,7 +281,10 @@ SuffixArrayIndex.prototype = {
       prevLetter = matchingList[0].charAt(0);
 
       Promise.all(operations).then(function(results) {
-        for(var j = 0; j < matchingList.length; j++) {
+        var totalEntries = 0;
+
+        for(var j = 0; j < matchingList.length &&
+            totalEntries < self._MAX_RESULTS; j++) {
           var matching = matchingList[j];
           var word = matchings[matching].matches[0].word;
           currentLetter = word.charAt(0);
@@ -289,6 +294,8 @@ SuffixArrayIndex.prototype = {
           }
           matchings[matching].entries =
                             results[currentGroup].wordIndex[word];
+
+          totalEntries += matchings[matching].entries.length;
 
           prevLetter = currentLetter;
         }
@@ -311,13 +318,18 @@ SuffixArrayIndex.prototype = {
       var out = {};
 
       var pattern = pPattern.toLowerCase();
+      self._currentPattern = pattern;
 
       if (!pattern || !pattern.trim()) {
         resolve(out);
         return;
       }
 
-      self._getIndexEntry(pattern.charAt(0)).then(function succss(indexChunk) {
+      self._getIndexEntry(pattern.charAt(0)).then(function(op, indexChunk) {
+        if (op !== self._currentPattern) {
+          resolve();
+          return;
+        }
         var suffixesArray = indexChunk.suffixesArray;
         var suffixHash = indexChunk.suffixHash;
 
@@ -408,7 +420,7 @@ SuffixArrayIndex.prototype = {
           console.log('Search time: ', now - then);
           resolve(result);
         }).catch(reject);
-      });
+      }.bind(null, pattern));
     });
   }
 }
