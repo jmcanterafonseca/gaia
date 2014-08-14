@@ -9,8 +9,9 @@ var SuffixArrayIndex = function() {
   this._suffixesArray = [];
 
   this._DB_NAME = 'SFA';
-  this._DB_VERSION = 7.0;
+  this._DB_VERSION = 8.0;
   this._STORE_SUFFIXES = 'suffixStore';
+  this._STORE_WORDS = 'wordsStore';
 
   this._currentPattern = '';
 }
@@ -22,7 +23,12 @@ SuffixArrayIndex.prototype = {
       db.deleteObjectStore(this._STORE_SUFFIXES);
     }
 
+    if (db.objectStoreNames.contains(this._STORE_WORDS)) {
+      db.deleteObjectStore(this._STORE_WORDS);
+    }
+
     db.createObjectStore(this._STORE_SUFFIXES, { keyPath: 'startLetter' });
+    db.createObjectStore(this._STORE_WORDS, { keyPath: 'word' });
   },
 
   init: function si_init() {
@@ -154,9 +160,10 @@ SuffixArrayIndex.prototype = {
           }
         }
 
-        var trans = self.db.transaction([self._STORE_SUFFIXES], 'readwrite');
+        var trans = self.db.transaction([self._STORE_SUFFIXES,
+                                         self._STORE_WORDS], 'readwrite');
         var store = trans.objectStore(self._STORE_SUFFIXES);
-
+        var wordsStore = trans.objectStore(self._STORE_WORDS);
         trans.oncomplete = resolve;
         trans.onerror = trans.onabort = reject;
 
@@ -166,10 +173,18 @@ SuffixArrayIndex.prototype = {
           var aWordChunk = wordPartition[chunks[j]];
 
           aChunk.startLetter = chunks[j];
-          aWordChunk.startLetter = 'w_' + chunks[j];
+          var words = Object.keys(aWordChunk.wordIndex);
+
+          words.forEach(function(aWord) {
+            var obj = {
+              word: aWord,
+              entries: aWordChunk.wordIndex[aWord]
+            };
+            console.log('Entries.length: ', obj.entries.length);
+            wordsStore.put(obj);
+          });
 
           store.put(aChunk);
-          store.put(aWordChunk);
         }
       }).catch(reject);
     });
@@ -263,49 +278,37 @@ SuffixArrayIndex.prototype = {
         return a.localeCompare(b);
       });
 
-      var currentLetter, prevLetter;
-      var operations = [];
+      var trans = self.db.transaction([self._STORE_WORDS]);
+      var store = trans.objectStore(self._STORE_WORDS);
+      var req = store.openCursor(IDBKeyRange.bound(matchingList[0],
+                          matchingList[matchingList.length - 1], false, false));
 
-      for(var j = 0; j < matchingList.length; j++) {
-        var matching = matchingList[j];
-        var word = matchings[matching].matches[0].word;
-        currentLetter = word.charAt(0);
+      var index = 0;
+      req.onsuccess = function() {
+        var cursor = req.result;
 
-        if (currentLetter !== prevLetter) {
-          operations.push(self._getIndexEntry('w_' + currentLetter));
+        if (cursor) {
+          var obj = cursor.value;
+          var word = obj.word;
+          var entries = obj.entries;
+
+          matchings[word].entries = entries;
+
+          cursor.continue(matchingList[++index]);
         }
-        prevLetter = currentLetter;
+        else {
+          var now = window.performance.now();
+
+          console.log('Time for getting entries: ', now - then);
+
+          resolve(matchings);
+        }
       }
 
-      var currentGroup = 0;
-      prevLetter = matchingList[0].charAt(0);
-
-      Promise.all(operations).then(function(results) {
-        var totalEntries = 0;
-
-        for(var j = 0; j < matchingList.length &&
-            totalEntries < self._MAX_RESULTS; j++) {
-          var matching = matchingList[j];
-          var word = matchings[matching].matches[0].word;
-          currentLetter = word.charAt(0);
-
-          if (currentLetter !== prevLetter) {
-            currentGroup++;
-          }
-          matchings[matching].entries =
-                            results[currentGroup].wordIndex[word];
-
-          totalEntries += matchings[matching].entries.length;
-
-          prevLetter = currentLetter;
-        }
-
-        var now = window.performance.now();
-
-        console.log('Time for getting entries: ', now - then);
-
-        resolve(matchings);
-      });
+      req.onerror = function() {
+        console.error('Error while iterating: ', req.error && req.error.name);
+        reject(req.error);
+      }
     });
   },
 
