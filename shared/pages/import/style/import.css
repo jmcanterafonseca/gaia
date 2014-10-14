@@ -176,3 +176,9 @@ li[data-uuid]{
 li[data-uuid]:last-child {
   border-bottom: none !important;
 }
+
+/* Bug 1065731. Remove these rules to restore search icon on input fields */
+#searchview-container p input::-moz-placeholder,
+#search-container p input::-moz-placeholder {
+  background: none;
+}

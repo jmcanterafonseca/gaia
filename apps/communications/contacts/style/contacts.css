@@ -908,3 +908,9 @@ form[role="combobox"] span[data-field="type"] {
   margin: 1rem;
   width: calc(100% - 2rem);
 }
+
+/* Bug 1065731. Remove these rules to restore search icon on input fields */
+#searchview-container p input::-moz-placeholder,
+#search-container p input::-moz-placeholder {
+  background: none;
+}
