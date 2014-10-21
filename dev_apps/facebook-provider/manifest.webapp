@@ -1,0 +1,35 @@
+{
+  "name": "Facebook Contacts DS",
+  "type": "certified",
+  "role": "system",
+  "launch_path": "/index.html",
+
+  "datastores-owned": {
+    "contacts": {
+      "access": "readwrite",
+      "description": "Facebook data for contacts. Timeline"
+    }
+  },
+
+  "datastores-access": {
+    "Import_Status_Data": {
+      "access": "readonly",
+      "description": "Import status data shared between FTU and Contacts"
+    },
+    "Gaia_Facebook_Friends": {
+      "access": "readonly",
+      "description": "Imported Facebook Friends"
+    }
+  },
+
+  "permissions": {
+    "systemXHR": {
+      "description": "This permission is required to contact Facebook"
+    },
+    "alarms": {}
+  },
+
+  "messages": [
+    {"alarm": "/index.html" }
+  ]
+}
