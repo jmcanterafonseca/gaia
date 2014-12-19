@@ -7,6 +7,9 @@
 require('/shared/test/unit/mocks/mock_contact_all_fields.js');
 require('/shared/test/unit/mocks/mock_lazy_loader.js');
 require('/shared/js/contacts/import/utilities/misc.js');
+require('/shared/js/text_normalizer.js');
+require('/shared/js/setImmediate.js');
+
 requireApp('communications/contacts/js/activities.js');
 requireApp('communications/contacts/test/unit/mock_l10n.js');
 requireApp('communications/contacts/test/unit/mock_navigation.js');
@@ -195,6 +198,38 @@ suite('Test Activities', function() {
       contact = {};
       result = {};
       ConfirmDialog.hide();
+    });
+
+    test('text/vcard, 1 result', function(done) {
+      var vcardActivity = {
+        source: {
+          name: 'pick',
+          data: {
+          }
+        }
+      };
+      vcardActivity.source.data.type = 'text/vcard';
+      ActivityHandler._currentActivity = vcardActivity;
+
+      window.ContactToVcardBlob = function() {};
+      var stub = sinon.stub(window, 'ContactToVcardBlob',
+                                                      function(aContact, cb) {
+        cb(new Blob(['1234567'], {
+          type: 'text/vcard'
+        }));
+      });
+
+      vcardActivity.postResult = function(response) {
+        assert.equal(response.name, contact.givenName[0] + '_' +
+                      contact.familyName[0] + '.vcf');
+        assert.equal(response.blob.type, 'text/vcard');
+
+        stub.restore();
+
+        done();
+      };
+
+      ActivityHandler.dataPickHandler(contact);
     });
 
     test('webcontacts/tel, 0 results', function() {
