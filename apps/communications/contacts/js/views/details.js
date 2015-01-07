@@ -13,6 +13,8 @@
 /* global utils */
 /* global TAG_OPTIONS */
 /* global ICEData */
+/* global ContactToVcardBlob */
+/* global MozActivity */
 
 var contacts = window.contacts || {};
 
@@ -78,7 +80,8 @@ contacts.Details = (function() {
           handler: handleDetailsBack
         }
       ],
-      '#edit-contact-button': showEditContact
+      '#edit-contact-button': showEditContact,
+      '#share_button': shareContact
     });
 
     ContactsButtons.init(listContainer, contactDetails, ActivityHandler);
@@ -622,6 +625,36 @@ contacts.Details = (function() {
     contactDetails.style.transform = '';
     contactDetails.classList.add('no-photo');
     cover.dataset.imgHash = '';
+  };
+
+  var shareContact = function cd_shareContact() {
+    const VCARD_DEPS = [
+      '/shared/js/text_normalizer.js',
+      '/shared/js/contact2vcard.js',
+      '/shared/js/setImmediate.js'
+    ];
+
+    LazyLoader.load(VCARD_DEPS,function vcardLoaded() {
+      ContactToVcardBlob([contactData], function blobReady(vcardBlob) {
+        var activity = new MozActivity({
+          name: 'share',
+          data: {
+            type: 'text/vcard',
+            number: 1,
+            blobs: [vcardBlob],
+            filenames: ['vcard.vcf']
+          }
+        });
+
+        activity.onsuccess = function() {
+
+        };
+
+        activity.onerror = function() {
+
+        };
+      });
+    });
   };
 
   return {
